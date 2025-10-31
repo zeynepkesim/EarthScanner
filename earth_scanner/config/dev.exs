@@ -1,14 +1,14 @@
 import Config
 
 # Configure your database
-config :earth_scanner, EarthScanner.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "earth_scanner_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  config :earth_scanner, EarthScanner.Repo,
+    username: System.get_env("PGUSER", "postgres"),
+    password: System.get_env("PGPASSWORD", "postgres"),
+    hostname: System.get_env("PGHOST", "localhost"),
+    database: System.get_env("PGDATABASE_DEV", "earth_scanner_dev"),
+    stacktrace: true,
+    show_sensitive_data_on_connection_error: true,
+    pool_size: 10
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
