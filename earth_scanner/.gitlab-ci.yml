@@ -1,0 +1,40 @@
+image: elixir:1.16
+
+services:
+  - name: postgres:14
+    alias: db
+
+variables:
+  MIX_ENV: "test"
+  PGHOST: "db"
+  PGUSER: "postgres"
+  PGPASSWORD: "postgres"
+  PGDATABASE_TEST: "earth_scanner_test"
+  # Elixir build cache
+  MIX_HOME: "/root/.mix"
+  HEX_HOME: "/root/.hex"
+
+cache:
+  paths:
+    - deps
+    - _build
+    - ~/.mix
+    - ~/.hex
+
+before_script:
+  - apt-get update -y
+  - apt-get install -y build-essential inotify-tools curl
+  - mix local.hex --force
+  - mix local.rebar --force
+  - mix deps.get
+  - mix compile
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - mix ecto.create
+    - mix ecto.migrate || true
+    - mix test
