@@ -18,7 +18,7 @@ config :earth_scanner, EarthScanner.Repo,
 config :earth_scanner, EarthScannerWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "/NwrOk7PMEuOqynsnaaW4tbNRwZFi538h9LdSIVIXBqq2S2DE14Vnh74sU7qAZeI",
-  server: false
+  server: true
 
 # In test we don't send emails
 config :earth_scanner, EarthScanner.Mailer, adapter: Swoosh.Adapters.Test
@@ -35,3 +35,9 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+config :hound,
+  driver: "chrome_driver",
+  browser: "chrome",
+  host: "http://localhost",
+  port: 9515
