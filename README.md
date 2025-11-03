@@ -89,6 +89,7 @@ mix ecto.migrate
 
 # Start the Phoenix server
 mix phx.server
+```bash
 
 ## 🤖 AI Usage
 
