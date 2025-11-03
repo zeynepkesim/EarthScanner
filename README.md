@@ -1,93 +1,102 @@
-# EarthScanner ASD 
+# 🌍 EarthScanner — Explore the Planet
 
+> *“Travel not to discover, but to be discovered.”*  
+> A satirical yet smart travel planner platform designed to help users compare, book, and brag about their trips — all while pretending to care about their carbon footprint.
 
+---
 
-## Getting started
+## 🧭 Overview
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+**EarthScanner** is a web-based trip-planning system developed as part of the **Agile Software Development** course.  
+The goal is to design and implement a **Minimum Viable Product (MVP)** that enables admins to post travel offers and regular users to search, filter, and purchase trips around the world.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+The project follows **Scrum methodology** with six sprints (from environment setup to final presentation).
 
-## Add your files
+---
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## ✨ Core Features (MVP)
 
+### 👥 User Management
+- Registration for two roles: **Admin** and **Regular User**
+- Secure authentication (password hashing)
+- Login, logout, password change, and account deletion
+
+### 🧳 Trip Management (Admin)
+- Create, update, or delete trip offers
+- Each trip includes: transportation mode, cities, times, duration, price, CO₂ emissions, and ticket availability
+- Automatic price recommendation based on similar trips in the database
+- List of past and future trips
+
+### 🌍 Trip Search & Booking (Regular User)
+- Search trips by **source** and **destination**
+- Filter results by price, duration, CO₂ pollution, departure/arrival time
+- Sort results by price, CO₂ degree, or duration
+- Highlight: fastest, cheapest, and least-polluting trips
+- Book or return tickets (before departure)
+- Visual indicators for sold-out or purchased trips
+- Display similar recommended trips (top 5 by similarity)
+- Save the last 5 searches for quick access
+
+### ⚙️ General Rules
+- Unauthorized users can only view the home page and login page
+- Admins can only view/manage their own trips
+- Regular users can see only their purchased trips
+- Secure authentication and access control enforced
+
+---
+
+## 🧩 Additional Features (to be implemented later)
+1. **Carbon-Footprint Tracker:** Track and visualize CO₂ emissions of user-purchased trips.  
+2. **Gamification System:** Award badges for eco-friendly travel and completed trips.
+
+---
+
+## 🧱 Tech Stack
+
+| Component | Technology |
+|------------|-------------|
+| Language | Elixir 1.17 + Phoenix 1.7 |
+| Database | PostgreSQL 16 |
+| Environment | macOS + Colima (Docker Engine alternative) |
+| Version Control | GitLab |
+| CI/CD | GitLab CI |
+| Testing | WhiteBread (acceptance) + Hound (integration) |
+| Frontend | Phoenix HEEx templates + TailwindCSS |
+| Containerization | Docker / Colima |
+
+---
+
+## ⚙️ Local Setup
+
+### 1️⃣ Prerequisites
+- **Elixir ≥ 1.14**, **Phoenix ≥ 1.7**
+- **PostgreSQL 16** (local or via Colima)
+- **Colima + QEMU** (Docker engine replacement on macOS 12)
+- **GitLab account**
+
+### 2️⃣ Run Locally
+```bash
+# Clone repository
+git clone https://gitlab.cs.ut.ee/team-3-asd/earthscanner-asd.git
+cd earthscanner-asd
+
+# Install dependencies
+mix deps.get
+
+# Setup database
+mix ecto.create
+mix ecto.migrate
+
+# Start the Phoenix server
+mix phx.server
 ```
-cd existing_repo
-git remote add origin https://gitlab.cs.ut.ee/team-3-asd/earthscanner-asd.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
+## 🤖 AI Usage
 
-- [ ] [Set up project integrations](https://gitlab.cs.ut.ee/team-3-asd/earthscanner-asd/-/settings/integrations)
+This project benefited from AI-assisted development for:
 
-## Collaborate with your team
+- Identifying and fixing bugs efficiently  
+- Improving code readability, comments, and documentation  
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+All AI-generated code and documentation were **reviewed and validated by the author**  
+to ensure **correctness, functionality, and code quality**.
