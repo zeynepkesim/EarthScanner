@@ -1,40 +1,44 @@
 image: elixir:1.16
 
-services:
-  - name: postgres:14
-    alias: db
+stages: [test]
 
 variables:
   MIX_ENV: "test"
-  PGHOST: "db"
-  PGUSER: "postgres"
-  PGPASSWORD: "postgres"
-  PGDATABASE_TEST: "earth_scanner_test"
-  # Elixir build cache
-  MIX_HOME: "/root/.mix"
-  HEX_HOME: "/root/.hex"
+  POSTGRES_HOST: "db"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  POSTGRES_DB: "earth_scanner_test"
+
+services:
+  - name: postgres:16
+    alias: db
+    command: ["postgres", "-c", "max_connections=200", "-c", "shared_buffers=256MB"]
+    variables:
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_DB: "earth_scanner_test"
 
 cache:
   paths:
     - deps
     - _build
-    - ~/.mix
-    - ~/.hex
 
 before_script:
-  - apt-get update -y
-  - apt-get install -y build-essential inotify-tools curl
   - mix local.hex --force
   - mix local.rebar --force
   - mix deps.get
-  - mix compile
-
-stages:
-  - test
 
 test:
   stage: test
   script:
-    - mix ecto.create
-    - mix ecto.migrate || true
-    - mix test
+    - |
+      for i in $(seq 1 30); do
+        (echo > /dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT) >/dev/null 2>&1 && echo "Postgres is up" && break
+        echo "Waiting for Postgres ($i/30) ..."
+        sleep 1
+      done
+    - MIX_ENV=test mix ecto.create
+    - MIX_ENV=test mix ecto.migrate
+    - mix format --check-formatted
+    - MIX_ENV=test mix test --color
