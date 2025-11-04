@@ -8,6 +8,7 @@ defmodule EarthScannerWeb.Router do
     plug :put_root_layout, html: {EarthScannerWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug EarthScannerWeb.FetchCurrentUser
   end
 
   pipeline :api do
@@ -21,6 +22,8 @@ defmodule EarthScannerWeb.Router do
     get "/users/register", UserRegistrationController, :new
     post "/users/register", UserRegistrationController, :create
     get "/users/log-in", SessionController, :new
+    post "/users/log-in", SessionController, :create
+    delete "/users/log-out", SessionController, :delete
   end
 
   # Other scopes may use custom stacks.

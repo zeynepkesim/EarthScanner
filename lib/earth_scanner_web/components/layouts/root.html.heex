@@ -32,5 +32,31 @@
     </script>
   </head>
   
-  <body>{@inner_content}</body>
+  <body>
+    <header class="w-full border-b border-base-200 sticky top-0 z-20 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <a href={~p"/"} class="font-semibold">EarthScanner</a>
+        <div class="flex items-center gap-3">
+          <%= if assigns[:current_user] do %>
+            <span class="text-sm opacity-80">
+              Logged in as <%= assigns.current_user.email %>
+              <%= if assigns.current_user.role do %>
+                (<%= assigns.current_user.role %>)
+              <% end %>
+            </span>
+            <form action={~p"/users/log-out"} method="post">
+              <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+              <input type="hidden" name="_method" value="delete" />
+              <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white">Log out</button>
+            </form>
+          <% else %>
+            <a href={~p"/users/log-in"} class="text-sm font-medium text-indigo-600">Log in</a>
+            <a href={~p"/users/register"} class="text-sm font-medium">Register</a>
+          <% end %>
+        </div>
+      </div>
+    </header>
+
+    {@inner_content}
+  </body>
 </html>

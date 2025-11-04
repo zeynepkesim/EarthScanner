@@ -1,5 +1,33 @@
-<div class="max-w-md mx-auto py-10">
-  <h1 class="text-2xl font-semibold mb-6">Log in</h1>
-  
-  <p class="text-sm text-gray-600">Login form coming soon.</p>
+<div class="min-h-screen bg-white px-6 py-12">
+  <div class="mx-auto w-full max-w-md">
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold text-slate-900">Log in</h1>
+      <p class="mt-1 text-sm text-slate-600">Welcome back. Enter your email and password.</p>
+    </div>
+
+    <%= if assigns[:error] do %>
+      <div class="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <.icon name="hero-exclamation-triangle" class="h-5 w-5 mt-0.5" />
+        <div>{@error}</div>
+      </div>
+    <% end %>
+
+    <.form for={@form} id="login-form" action={~p"/users/log-in"} method="post" class="space-y-5">
+      <div class="space-y-1.5">
+        <label class="text-sm font-medium text-slate-700">Email</label>
+        <.input field={@form[:email]} type="email" placeholder="you@example.com" />
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-sm font-medium text-slate-700">Password</label>
+        <.input field={@form[:password]} type="password" placeholder="••••••••" />
+      </div>
+
+      <div class="pt-2 flex items-center justify-between">
+        <a href={~p"/users/register"} class="text-sm font-medium text-indigo-600">Create account</a>
+        <button class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+          Log in
+        </button>
+      </div>
+    </.form>
+  </div>
 </div>

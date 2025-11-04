@@ -69,4 +69,35 @@ defmodule EarthScannerWeb.SessionControllerTest do
       assert html =~ "Invalid email or password"
     end
   end
+
+  describe "DELETE /users/log-out" do
+    test "clears session and redirects to login", %{conn: conn} do
+      # log in first
+      uniq = Integer.to_string(System.unique_integer([:positive]))
+      email = "logout" <> uniq <> "@example.com"
+      {:ok, _} =
+        Accounts.register_user(%{
+          "username" => "logout_user_" <> uniq,
+          "password" => "verylongpassword",
+          "password_confirmation" => "verylongpassword",
+          "name" => "Out",
+          "last_name" => "User",
+          "email" => email,
+          "birthdate" => "1990-01-01",
+          "nationality" => "ID",
+          "residence_address" => "Jl. Test 999",
+          "phone_number" => "+620000000001"
+        })
+
+      conn =
+        conn
+        |> post(~p"/users/log-in", %{ "session" => %{ "email" => email, "password" => "verylongpassword" }})
+      assert get_session(conn, :user_id)
+
+      conn = delete(recycle(conn), ~p"/users/log-out")
+      assert redirected_to(conn) == ~p"/users/log-in"
+      # session cleared in a renewed session
+      refute get_session(conn, :user_id)
+    end
+  end
 end
