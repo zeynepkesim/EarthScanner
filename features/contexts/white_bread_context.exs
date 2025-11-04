@@ -1,6 +1,7 @@
 defmodule WhiteBreadContext do
   use WhiteBread.Context
   use Hound.Helpers
+  alias EarthScanner.Accounts
 
   # 1-arity: state
   scenario_starting_state fn state ->
@@ -100,6 +101,74 @@ defmodule WhiteBreadContext do
   then_ ~r/^I should see a registration error$/, fn state, _extra ->
     page_text = visible_page_text()
     assert String.contains?(page_text, "Please fix the errors below and try again.")
+    {:ok, state}
+  end
+
+  # --- Login steps ---
+
+  given_ ~r/^a user exists$/, fn state, _extra ->
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    email = "login_bdd_" <> suffix <> "@example.com"
+    password = "Password123!"
+
+    {:ok, _user} =
+      Accounts.register_user(%{
+        "username" => "bdd_login_user_" <> suffix,
+        "password" => password,
+        "password_confirmation" => password,
+        "name" => "BDD",
+        "last_name" => "User",
+        "email" => email,
+        "birthdate" => "1995-05-05",
+        "nationality" => "ID",
+        "residence_address" => "Jl. BDD 1",
+        "phone_number" => "+628222222222"
+      })
+
+    {:ok, Map.merge(state, %{email: email, password: password})}
+  end
+
+  given_ ~r/^I am on the login page$/, fn state, _extra ->
+    navigate_to("http://localhost:4002/users/log-in")
+    {:ok, state}
+  end
+
+  when_ ~r/^I submit correct login credentials$/, fn state, _extra ->
+    fill_field({:css, "input[name='session[email]']"}, state.email)
+    fill_field({:css, "input[name='session[password]']"}, state.password)
+    submit_element({:id, "login-form"})
+    {:ok, state}
+  end
+
+  when_ ~r/^I submit a wrong password$/, fn state, _extra ->
+    fill_field({:css, "input[name='session[email]']"}, state.email)
+    fill_field({:css, "input[name='session[password]']"}, "Wrong123!")
+    submit_element({:id, "login-form"})
+    {:ok, state}
+  end
+
+  when_ ~r/^I attempt login with unknown email$/, fn state, _extra ->
+    fill_field({:css, "input[name='session[email]']"}, "unknown_" <> Integer.to_string(System.unique_integer([:positive])) <> "@example.com")
+    fill_field({:css, "input[name='session[password]']"}, "Whatever123!")
+    submit_element({:id, "login-form"})
+    {:ok, state}
+  end
+
+  when_ ~r/^I click log out$/, fn state, _extra ->
+    # Submit the logout form present in the layout
+    submit_element({:css, "form[action='/users/log-out']"})
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see the home page$/, fn state, _extra ->
+    page_text = visible_page_text()
+    assert String.contains?(page_text, "Phoenix Framework")
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see a login error$/, fn state, _extra ->
+    page_text = visible_page_text()
+    assert String.contains?(page_text, "Invalid email or password")
     {:ok, state}
   end
 end
