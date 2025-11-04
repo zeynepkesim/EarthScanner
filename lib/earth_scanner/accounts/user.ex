@@ -1,0 +1,59 @@
+defmodule EarthScanner.Accounts.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @required_fields ~w(username name last_name email birthdate nationality residence_address phone_number)a
+  @password_min_len 8
+
+  schema "users" do
+    field :username, :string
+    field :password, :string, virtual: true
+    field :password_confirmation, :string, virtual: true
+    field :password_hash, :string
+    field :name, :string
+    field :last_name, :string
+    field :email, :string
+    field :birthdate, :date
+    field :nationality, :string
+    field :residence_address, :string
+    field :phone_number, :string
+
+    timestamps()
+  end
+
+  def registration_changeset(user, attrs) do
+    user
+    |> cast(attrs, [
+      :username,
+      :password,
+      :password_confirmation,
+      :name,
+      :last_name,
+      :email,
+      :birthdate,
+      :nationality,
+      :residence_address,
+      :phone_number
+    ])
+    |> validate_required(@required_fields ++ [:password])
+    |> validate_length(:password, min: @password_min_len)
+    |> validate_confirmation(:password)
+    |> validate_format(:email, ~r/^\S+@\S+$/)
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
+    |> maybe_put_password_hash()
+  end
+
+  # Hash the password when needed.
+  # - If the changeset is valid and has a new :password, set :password_hash.
+  # - Otherwise, do nothing.
+  defp maybe_put_password_hash(%Ecto.Changeset{valid?: true} = changeset) do
+    if password = get_change(changeset, :password) do
+      put_change(changeset, :password_hash, Pbkdf2.hash_pwd_salt(password))
+    else
+      changeset
+    end
+  end
+
+  defp maybe_put_password_hash(changeset), do: changeset
+end

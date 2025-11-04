@@ -36,6 +36,7 @@ defmodule EarthScannerWeb.UserRegistrationControllerTest do
           "user" => %{
             "username" => username,
             "password" => "verylongpassword",
+            "password_confirmation" => "verylongpassword",
             "name" => "Ada",
             "last_name" => "Lovelace",
             "email" => email,
@@ -78,6 +79,31 @@ defmodule EarthScannerWeb.UserRegistrationControllerTest do
             "residence_address" => "",
             "phone_number" => "",
             "password" => "short"
+          }
+        })
+
+      html = html_response(conn, 200)
+      assert html =~ "Register"
+      assert html =~ "error"
+    end
+
+    test "with mismatched password confirmation re-renders with error", %{conn: conn} do
+      uniq = Integer.to_string(System.unique_integer([:positive]))
+      email = "user" <> uniq <> "@example.com"
+
+      conn =
+        post(conn, ~p"/users/register", %{
+          "user" => %{
+            "username" => "user_" <> uniq,
+            "password" => "verylongpassword",
+            "password_confirmation" => "doesnotmatch",
+            "name" => "Ada",
+            "last_name" => "Lovelace",
+            "email" => email,
+            "birthdate" => "1990-01-15",
+            "nationality" => "Estonian",
+            "residence_address" => "123 River St, Tallinn",
+            "phone_number" => "+3725555555"
           }
         })
 

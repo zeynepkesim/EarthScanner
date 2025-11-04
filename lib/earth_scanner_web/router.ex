@@ -18,6 +18,9 @@ defmodule EarthScannerWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/users/register", UserRegistrationController, :new
+    post "/users/register", UserRegistrationController, :create
+    get "/users/log-in", SessionController, :new
   end
 
   # Other scopes may use custom stacks.
