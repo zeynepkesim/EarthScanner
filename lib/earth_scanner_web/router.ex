@@ -21,9 +21,9 @@ defmodule EarthScannerWeb.Router do
     get "/", PageController, :home
     get "/users/register", UserRegistrationController, :new
     post "/users/register", UserRegistrationController, :create
-    get "/users/log-in", SessionController, :new
-    post "/users/log-in", SessionController, :create
-    delete "/users/log-out", SessionController, :delete
+  get "/users/login", SessionController, :new
+  post "/users/login", SessionController, :create
+  delete "/users/logout", SessionController, :delete
   end
 
   # Other scopes may use custom stacks.

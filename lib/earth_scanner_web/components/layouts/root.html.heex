@@ -44,13 +44,13 @@
                 (<%= assigns.current_user.role %>)
               <% end %>
             </span>
-            <form action={~p"/users/log-out"} method="post">
+            <form action={~p"/users/logout"} method="post">
               <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
               <input type="hidden" name="_method" value="delete" />
               <button class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white">Log out</button>
             </form>
           <% else %>
-            <a href={~p"/users/log-in"} class="text-sm font-medium text-indigo-600">Log in</a>
+            <a href={~p"/users/login"} class="text-sm font-medium text-indigo-600">Log in</a>
             <a href={~p"/users/register"} class="text-sm font-medium">Register</a>
           <% end %>
         </div>

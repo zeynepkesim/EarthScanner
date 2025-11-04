@@ -13,7 +13,7 @@ defmodule EarthScannerWeb.UserRegistrationController do
       {:ok, _user} ->
         conn
         |> put_flash(:info, "Account created successfully. Please sign in.")
-        |> redirect(to: ~p"/users/log-in")
+        |> redirect(to: ~p"/users/login")
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn

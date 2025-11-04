@@ -12,7 +12,7 @@
       </div>
     <% end %>
 
-    <.form for={@form} id="login-form" action={~p"/users/log-in"} method="post" class="space-y-5">
+  <.form for={@form} id="login-form" action={~p"/users/login"} method="post" class="space-y-5">
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Email</label>
         <.input field={@form[:email]} type="email" placeholder="you@example.com" />

@@ -28,6 +28,6 @@ defmodule EarthScannerWeb.SessionController do
     |> configure_session(renew: true)
     |> delete_session(:user_id)
     |> put_flash(:info, "Signed out successfully")
-    |> redirect(to: ~p"/users/log-in")
+    |> redirect(to: ~p"/users/login")
   end
 end

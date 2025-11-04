@@ -92,7 +92,7 @@ defmodule WhiteBreadContext do
   end
 
   then_ ~r/^I should see the login page$/, fn state, _extra ->
-    # After successful registration we redirect to /users/log-in and flash a message
+    # After successful registration we redirect to /users/login and flash a message
     page_text = visible_page_text()
     assert String.contains?(page_text, "Log in")
     {:ok, state}
@@ -129,7 +129,7 @@ defmodule WhiteBreadContext do
   end
 
   given_ ~r/^I am on the login page$/, fn state, _extra ->
-    navigate_to("http://localhost:4002/users/log-in")
+    navigate_to("http://localhost:4002/users/login")
     {:ok, state}
   end
 
@@ -156,7 +156,7 @@ defmodule WhiteBreadContext do
 
   when_ ~r/^I click log out$/, fn state, _extra ->
     # Submit the logout form present in the layout
-    submit_element({:css, "form[action='/users/log-out']"})
+    submit_element({:css, "form[action='/users/logout']"})
     {:ok, state}
   end
 
