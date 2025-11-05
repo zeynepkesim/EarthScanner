@@ -1,0 +1,75 @@
+<div class="min-h-screen bg-white px-6 py-12">
+  <div class="mx-auto w-full max-w-3xl">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Your profile</h1>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <.icon name="hero-user-circle" class="h-12 w-12 text-slate-400" />
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white/60">
+      <dl class="divide-y divide-slate-200">
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Username</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">{@user.username}</dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Full name</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">{@user.name} {@user.last_name}</dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Email</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">{@user.email}</dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Birthdate</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">
+            {if @user.birthdate, do: @user.birthdate, else: "-"}
+          </dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Nationality</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">
+            {if @user.nationality, do: @user.nationality, else: "-"}
+          </dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Residence address</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">
+            {if @user.residence_address, do: @user.residence_address, else: "-"}
+          </dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Phone number</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">
+            {if @user.phone_number, do: @user.phone_number, else: "-"}
+          </dd>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
+          <dt class="text-sm font-medium text-slate-600">Role</dt>
+
+          <dd class="sm:col-span-2 text-sm text-slate-900">
+            {if @user.role, do: @user.role, else: "user"}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
