@@ -20,6 +20,7 @@ defmodule EarthScannerWeb.SessionControllerTest do
     setup do
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "login" <> uniq <> "@example.com"
+
       {:ok, _user} =
         Accounts.register_user(%{
           "username" => "login_user_" <> uniq,
@@ -75,6 +76,7 @@ defmodule EarthScannerWeb.SessionControllerTest do
       # log in first
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "logout" <> uniq <> "@example.com"
+
       {:ok, _} =
         Accounts.register_user(%{
           "username" => "logout_user_" <> uniq,
@@ -91,7 +93,10 @@ defmodule EarthScannerWeb.SessionControllerTest do
 
       conn =
         conn
-        |> post(~p"/users/login", %{ "session" => %{ "email" => email, "password" => "verylongpassword" }})
+        |> post(~p"/users/login", %{
+          "session" => %{"email" => email, "password" => "verylongpassword"}
+        })
+
       assert get_session(conn, :user_id)
 
       conn = delete(recycle(conn), ~p"/users/logout")

@@ -18,7 +18,7 @@ defmodule EarthScannerWeb.UserRegistrationControllerTest do
       assert html =~ ~s/name=\"user[nationality]\"/
       assert html =~ ~s/name=\"user[residence_address]\"/
       assert html =~ ~s/name=\"user[phone_number]\"/
-  assert html =~ to_string(~p"/users/login")
+      assert html =~ to_string(~p"/users/login")
     end
   end
 
@@ -47,7 +47,7 @@ defmodule EarthScannerWeb.UserRegistrationControllerTest do
           }
         })
 
-  assert redirected_to(conn) == ~p"/users/login"
+      assert redirected_to(conn) == ~p"/users/login"
 
       count =
         Repo.one(

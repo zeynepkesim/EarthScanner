@@ -1,5 +1,4 @@
 defmodule EarthScanner.Accounts do
-
   import Ecto.Query, warn: false
   alias EarthScanner.Repo
   alias EarthScanner.Accounts.User
