@@ -41,7 +41,7 @@ defmodule EarthScannerWeb.ProfileController do
             |> redirect(to: ~p"/users/delete")
 
           true ->
-          case EarthScanner.Accounts.delete_user(user, password) do
+            case EarthScanner.Accounts.delete_user(user, password) do
               {:ok, :deleted} ->
                 conn
                 |> configure_session(renew: true)
@@ -58,7 +58,7 @@ defmodule EarthScannerWeb.ProfileController do
                 conn
                 |> put_flash(:error, "Could not delete the account. Please try again.")
                 |> redirect(to: ~p"/users/delete")
-          end
+            end
         end
     end
   end

@@ -28,18 +28,18 @@ defmodule EarthScanner.Accounts do
   end
 
   def delete_user(%User{} = user, password) when is_binary(password) do
-  cond do
-    is_nil(user.password_hash) ->
-      {:error, :not_reauthenticated}
+    cond do
+      is_nil(user.password_hash) ->
+        {:error, :not_reauthenticated}
 
-    Pbkdf2.verify_pass(password, user.password_hash) ->
-      case Repo.delete(user) do
-        {:ok, _} -> {:ok, :deleted}
-        {:error, changeset} -> {:error, changeset}
-      end
+      Pbkdf2.verify_pass(password, user.password_hash) ->
+        case Repo.delete(user) do
+          {:ok, _} -> {:ok, :deleted}
+          {:error, changeset} -> {:error, changeset}
+        end
 
-    true ->
-      {:error, :invalid_password}
+      true ->
+        {:error, :invalid_password}
+    end
   end
-end
 end

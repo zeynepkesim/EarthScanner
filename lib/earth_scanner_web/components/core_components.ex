@@ -100,10 +100,11 @@ defmodule EarthScannerWeb.CoreComponents do
   def simple_form(assigns) do
     ~H"""
     <.form :let={f} for={@for} id={@id} method={@method} action={@action}>
-      <%= render_slot(@inner_block, f) %>
+      {render_slot(@inner_block, f)}
     </.form>
     """
   end
+
   # --- /add ---
 
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)

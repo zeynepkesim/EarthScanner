@@ -25,7 +25,7 @@ defmodule EarthScannerWeb.Router do
     post "/users/login", SessionController, :create
     delete "/users/logout", SessionController, :delete
     get "/profile", ProfileController, :show
-    get  "/users/delete", ProfileController, :confirm_delete
+    get "/users/delete", ProfileController, :confirm_delete
     post "/users/delete", ProfileController, :delete
   end
 

@@ -42,7 +42,8 @@ defmodule EarthScannerWeb.AccountDeleteControllerTest do
 
     assert redirected_to(conn) == ~p"/users/delete"
     assert get_flash(conn, :error) =~ "Invalid password"
-    assert Repo.get(User, user.id) # user still exists
+    # user still exists
+    assert Repo.get(User, user.id)
   end
 
   test "deletes account with correct password and logs out", %{conn: conn} do
@@ -51,10 +52,13 @@ defmodule EarthScannerWeb.AccountDeleteControllerTest do
     conn =
       conn
       |> init_test_session(%{user_id: user.id})
-      |> post(~p"/users/delete", %{"delete" => %{"password" => "Password123!", "confirm" => "yes"}})
+      |> post(~p"/users/delete", %{
+        "delete" => %{"password" => "Password123!", "confirm" => "yes"}
+      })
 
     assert redirected_to(conn) == ~p"/"
     assert get_flash(conn, :info) =~ "deleted"
-    refute Repo.get(User, user.id) # user deleted
+    # user deleted
+    refute Repo.get(User, user.id)
   end
 end
