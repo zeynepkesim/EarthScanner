@@ -89,6 +89,23 @@ defmodule EarthScannerWeb.CoreComponents do
       <.button phx-click="go" variant="primary">Send!</.button>
       <.button navigate={~p"/"}>Home</.button>
   """
+
+  # --- add: simple_form component ---
+  attr :for, :any, required: true
+  attr :id, :string, required: true
+  attr :method, :any, default: :post
+  attr :action, :any, required: true
+  slot :inner_block, required: true
+
+  def simple_form(assigns) do
+    ~H"""
+    <.form :let={f} for={@for} id={@id} method={@method} action={@action}>
+      <%= render_slot(@inner_block, f) %>
+    </.form>
+    """
+  end
+  # --- /add ---
+
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :string
   attr :variant, :string, values: ~w(primary)
