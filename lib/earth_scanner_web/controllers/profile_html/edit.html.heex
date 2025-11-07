@@ -1,16 +1,17 @@
 <div class="min-h-screen flex items-center justify-center bg-white px-6 py-12">
   <div class="w-full max-w-xl text-black">
-    <h2 class="text-2xl font-semibold mb-6 text-gray-500 dark:text-gray-200 text-center">Edit Profile</h2>
-
+    <h2 class="text-2xl font-semibold mb-6 text-gray-500 dark:text-gray-200 text-center">
+      Edit Profile
+    </h2>
+    
     <%= if @form.errors != [] do %>
       <div class="mb-4 rounded bg-red-100 px-4 py-2 text-red-700 text-center">
         Please fix the highlighted fields.
       </div>
     <% end %>
-
+    
     <.form for={@form} action={~p"/profile"} method="post" class="space-y-4">
       <input type="hidden" name="_method" value="put" />
-
       <.input field={@form[:username]} label="Username" class="w-full text-black" />
       <.input field={@form[:name]} label="Name" class="w-full text-black" />
       <.input field={@form[:last_name]} label="Last Name" class="w-full text-black" />
@@ -19,9 +20,10 @@
       <.input field={@form[:nationality]} label="Nationality" class="w-full text-black" />
       <.input field={@form[:residence_address]} label="Address" class="w-full text-black" />
       <.input field={@form[:phone_number]} label="Phone" class="w-full text-black" />
-
-      <button type="submit"
-              class="w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition-colors">
+      <button
+        type="submit"
+        class="w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition-colors"
+      >
         Save Changes
       </button>
     </.form>

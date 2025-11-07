@@ -20,7 +20,6 @@ defmodule EarthScannerWeb.ProfileController do
     render(conn, :edit, form: Phoenix.Component.to_form(changeset), user: user)
   end
 
-
   def update(conn, %{"user" => user_params}) do
     user = conn.assigns[:current_user]
 

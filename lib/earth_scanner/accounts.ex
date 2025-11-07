@@ -32,5 +32,4 @@ defmodule EarthScanner.Accounts do
     |> User.profile_changeset(attrs)
     |> Repo.update()
   end
-
 end

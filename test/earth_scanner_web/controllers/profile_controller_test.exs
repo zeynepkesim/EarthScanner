@@ -4,11 +4,10 @@ defmodule EarthScannerWeb.ProfileControllerTest do
   alias EarthScanner.Accounts
 
   test "redirects to login when not authenticated", %{conn: conn} do
-  conn = get(conn, ~p"/profile")
-  assert redirected_to(conn) == ~p"/users/login"
-  assert get_flash(conn, :error) =~ "Please log in"
-end
-
+    conn = get(conn, ~p"/profile")
+    assert redirected_to(conn) == ~p"/users/login"
+    assert get_flash(conn, :error) =~ "Please log in"
+  end
 
   test "renders profile with user info when logged in", %{conn: conn} do
     uniq = Integer.to_string(System.unique_integer([:positive]))
