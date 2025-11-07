@@ -27,6 +27,12 @@ defmodule EarthScanner.Accounts do
     end
   end
 
+  def update_user(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
   # FR-05: Change password
   def change_password(%User{} = user, current_password, new_password, new_password_confirmation)
       when is_binary(current_password) and is_binary(new_password) and
