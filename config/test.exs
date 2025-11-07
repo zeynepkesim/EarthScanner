@@ -10,9 +10,8 @@ config :earth_scanner, EarthScanner.Repo,
   # Default to "postgres" for local devs; override with POSTGRES_PASSWORD env if needed
   password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "5433")),
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
-  port: 5433, 
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
