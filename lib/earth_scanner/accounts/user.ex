@@ -75,4 +75,18 @@ defmodule EarthScanner.Accounts.User do
     |> unique_constraint(:email)
     |> unique_constraint(:username)
   end
+
+  # Changeset for admin creation (simpler than regular user registration)
+  def admin_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:username, :password, :password_confirmation, :email, :phone_number])
+    |> validate_required([:username, :password, :email, :phone_number])
+    |> validate_length(:password, min: @password_min_len)
+    |> validate_confirmation(:password)
+    |> validate_format(:email, ~r/^\S+@\S+$/)
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
+    |> put_change(:role, "admin")
+    |> maybe_put_password_hash()
+  end
 end

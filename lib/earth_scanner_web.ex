@@ -74,6 +74,15 @@ defmodule EarthScannerWeb do
 
       # Include general helpers for rendering HTML
       unquote(html_helpers())
+
+      # HTML escaping
+      import Phoenix.HTML
+
+      # Core UI components (simple_form, input, button, flash, vb.)
+      import EarthScannerWeb.CoreComponents
+
+      # LiveView/JS vs.
+      alias Phoenix.LiveView.JS
     end
   end
 

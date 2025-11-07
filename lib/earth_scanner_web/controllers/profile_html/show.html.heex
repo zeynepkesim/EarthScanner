@@ -79,5 +79,22 @@
         </div>
       </dl>
     </div>
+    
+<!-- Danger zone: Account deletion -->
+    <div class="mt-8 rounded-xl border border-red-200 bg-red-50 p-4">
+      <h2 class="text-sm font-semibold text-red-700">Danger zone</h2>
+      <p class="mt-1 text-sm text-red-700">
+        Deleting your account is <span class="font-semibold">irreversible</span>. This will permanently remove your profile and associated data.
+      </p>
+
+      <div class="mt-4">
+        <a
+          href={~p"/users/delete"}
+          class="inline-flex items-center rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2"
+        >
+          Delete my account
+        </a>
+      </div>
+    </div>
   </div>
 </div>

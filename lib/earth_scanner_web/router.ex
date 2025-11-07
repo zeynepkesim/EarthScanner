@@ -27,6 +27,8 @@ defmodule EarthScannerWeb.Router do
     get "/profile", ProfileController, :show
     get "/profile/edit", ProfileController, :edit
     put "/profile", ProfileController, :update
+    get "/users/delete", ProfileController, :confirm_delete
+    post "/users/delete", ProfileController, :delete
   end
 
   # Other scopes may use custom stacks.
