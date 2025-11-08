@@ -68,7 +68,8 @@ defmodule EarthScanner.MixProject do
       {:bandit, "~> 1.5"},
       {:white_bread, "~> 4.5", only: [:dev, :test]},
       {:hound, "~> 1.1", only: [:dev, :test]},
-      {:gherkin, "1.4.0", only: [:dev, :test], override: true}
+      {:gherkin, "1.4.0", only: [:dev, :test], override: true},
+      {:pbkdf2_elixir, "~> 2.0"}
     ]
   end
 

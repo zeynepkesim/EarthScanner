@@ -8,30 +8,48 @@ defmodule EarthScannerWeb.Router do
     plug :put_root_layout, html: {EarthScannerWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug EarthScannerWeb.FetchCurrentUser
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
+  pipeline :require_admin do
+    plug EarthScannerWeb.RequireAdmin
+  end
+
   scope "/", EarthScannerWeb do
     pipe_through :browser
 
     get "/", PageController, :home
+    get "/users/register", UserRegistrationController, :new
+    post "/users/register", UserRegistrationController, :create
+    get "/users/login", SessionController, :new
+    post "/users/login", SessionController, :create
+    delete "/users/logout", SessionController, :delete
+
+    get "/profile", ProfileController, :show
+
+    # teammate's profile edit/delete routes
+    get "/profile/edit", ProfileController, :edit
+    put "/profile", ProfileController, :update
+    get "/users/delete", ProfileController, :confirm_delete
+    post "/users/delete", ProfileController, :delete
+
+    # your change-password routes
+    get "/users/change-password", ProfileController, :edit_password
+    post "/users/change-password", ProfileController, :update_password
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", EarthScannerWeb do
-  #   pipe_through :api
-  # end
+  scope "/admin", EarthScannerWeb do
+    pipe_through [:browser, :require_admin]
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
+    get "/users/new", AdminUserController, :new
+    post "/users", AdminUserController, :create
+  end
+
   if Application.compile_env(:earth_scanner, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
