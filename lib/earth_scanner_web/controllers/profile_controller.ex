@@ -110,10 +110,14 @@ defmodule EarthScannerWeb.ProfileController do
         render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
 
       {:error, :password_too_short} ->
-        render(conn, :edit_password, changeset: %{error: "Password must be at least 8 characters"})
+        render(conn, :edit_password,
+          changeset: %{error: "Password must be at least 8 characters"}
+        )
 
       {:error, reason} ->
-        render(conn, :edit_password, changeset: %{error: "Could not change password: #{inspect(reason)}"})
+        render(conn, :edit_password,
+          changeset: %{error: "Could not change password: #{inspect(reason)}"}
+        )
     end
   end
 end
