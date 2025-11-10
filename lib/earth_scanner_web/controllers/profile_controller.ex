@@ -14,6 +14,7 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # --- Teammate's profile edit/update ---
   def edit(conn, _params) do
     user = conn.assigns.current_user
     changeset = Accounts.User.profile_changeset(user, %{})
@@ -24,7 +25,7 @@ defmodule EarthScannerWeb.ProfileController do
     user = conn.assigns[:current_user]
 
     case Accounts.update_user(user, user_params) do
-      {:ok, updated_user} ->
+      {:ok, _updated_user} ->
         conn
         |> put_flash(:info, "Profile updated successfully")
         |> redirect(to: ~p"/profile")
@@ -81,6 +82,42 @@ defmodule EarthScannerWeb.ProfileController do
                 |> redirect(to: ~p"/users/delete")
             end
         end
+    end
+  end
+
+  # --- Your change-password feature ---
+  def edit_password(conn, _params) do
+    render(conn, :edit_password, changeset: %{})
+  end
+
+  def update_password(conn, %{
+        "current_password" => current,
+        "new_password" => new_pass,
+        "new_password_confirmation" => confirm
+      }) do
+    user = conn.assigns.current_user
+
+    case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
+      {:ok, _updated_user} ->
+        conn
+        |> put_flash(:info, "Password changed successfully.")
+        |> redirect(to: ~p"/profile")
+
+      {:error, :invalid_current_password} ->
+        render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
+
+      {:error, :password_confirmation_mismatch} ->
+        render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
+
+      {:error, :password_too_short} ->
+        render(conn, :edit_password,
+          changeset: %{error: "Password must be at least 8 characters"}
+        )
+
+      {:error, reason} ->
+        render(conn, :edit_password,
+          changeset: %{error: "Could not change password: #{inspect(reason)}"}
+        )
     end
   end
 end
