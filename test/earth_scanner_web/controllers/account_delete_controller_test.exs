@@ -60,5 +60,10 @@ defmodule EarthScannerWeb.AccountDeleteControllerTest do
     assert get_flash(conn, :info) =~ "deleted"
     # user deleted
     refute Repo.get(User, user.id)
+
+    # ensure session is cleared (user logged out)
+    # simulate browser following the redirect so cookie/session changes take effect
+    conn = recycle(conn) |> get(~p"/")
+    assert get_session(conn, :user_id) == nil
   end
 end
