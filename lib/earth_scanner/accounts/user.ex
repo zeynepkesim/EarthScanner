@@ -57,6 +57,25 @@ defmodule EarthScanner.Accounts.User do
   end
 
   defp maybe_put_password_hash(changeset), do: changeset
+
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [
+      :username,
+      :name,
+      :last_name,
+      :email,
+      :birthdate,
+      :nationality,
+      :residence_address,
+      :phone_number
+    ])
+    |> validate_required([:username, :email, :name, :last_name])
+    |> validate_format(:email, ~r/^\S+@\S+$/)
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
+  end
+
   # Changeset for admin creation (simpler than regular user registration)
   def admin_changeset(user, attrs) do
     user
