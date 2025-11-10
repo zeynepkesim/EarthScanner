@@ -190,6 +190,13 @@ defmodule WhiteBreadContext do
     {:ok, state}
   end
 
+  then_ ~r/^I should see an irreversible warning$/, fn state, _ ->
+    text = visible_page_text()
+    # check for a short substring to be resilient to wording
+    assert String.contains?(String.downcase(text), "irreversible")
+    {:ok, state}
+  end
+
   when_ ~r/^I submit deletion with the correct password$/, fn state, _ ->
     # state.password is set in the login step
     fill_field({:css, "input[name='delete[password]']"}, state.password)

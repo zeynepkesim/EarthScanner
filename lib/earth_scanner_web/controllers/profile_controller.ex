@@ -65,9 +65,9 @@ defmodule EarthScannerWeb.ProfileController do
           true ->
             case EarthScanner.Accounts.delete_user(user, password) do
               {:ok, :deleted} ->
+                # drop the entire session to ensure the user is logged out immediately
                 conn
-                |> configure_session(renew: true)
-                |> delete_session(:user_id)
+                |> configure_session(drop: true)
                 |> put_flash(:info, "Your account has been deleted.")
                 |> redirect(to: ~p"/")
 
