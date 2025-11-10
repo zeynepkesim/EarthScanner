@@ -1,32 +1,45 @@
 <h1>Delete account</h1>
 
 <%= if @conn.assigns[:flash] do %>
-	<div class="mb-4">
-		<%= for {type, msg} <- @conn.assigns.flash do %>
-			<p class={"text-sm " <> (if type == :error, do: "text-red-500", else: "text-green-600")}><%= msg %></p>
-		<% end %>
-	</div>
+  <div class="mb-4">
+    <%= for {type, msg} <- @conn.assigns.flash do %>
+      <p class={"text-sm " <> (if type == :error, do: "text-red-500", else: "text-green-600")}>
+        {msg}
+      </p>
+    <% end %>
+  </div>
 <% end %>
 
-<p class="mb-4">This action is irreversible. To delete your account, enter your password and confirm.</p>
+<p class="mb-4">
+  This action is irreversible. To delete your account, enter your password and confirm.
+</p>
 
 <form action={~p"/users/delete"} method="post" class="space-y-4">
-	<input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+  <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
 
-	<div>
-		<label class="block text-sm font-medium">Password</label>
-		<input name="delete[password]" type="password" required class="mt-1 block w-full rounded-md border px-3 py-2" />
-	</div>
+  <div>
+    <label class="block text-sm font-medium">Password</label>
+    <input
+      name="delete[password]"
+      type="password"
+      required
+      class="mt-1 block w-full rounded-md border px-3 py-2"
+    />
+  </div>
 
-	<div class="flex items-center gap-2">
-		<!-- include a hidden default so the param is always present when unchecked -->
-		<input type="hidden" name="delete[confirm]" value="no" />
-		<input id="confirm_delete" name="delete[confirm]" type="checkbox" value="yes" />
-		<label for="confirm_delete" class="text-sm">Yes, I want to permanently delete my account</label>
-	</div>
+  <div class="flex items-center gap-2">
+    <!-- include a hidden default so the param is always present when unchecked -->
+    <input type="hidden" name="delete[confirm]" value="no" />
+    <input id="confirm_delete" name="delete[confirm]" type="checkbox" value="yes" />
+    <label for="confirm_delete" class="text-sm">
+      Yes, I want to permanently delete my account
+    </label>
+  </div>
 
-	<div>
-		<button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-white font-semibold">Delete my account</button>
-		<a href={~p"/profile"} class="ml-3 text-sm">Cancel</a>
-	</div>
+  <div>
+    <button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-white font-semibold">
+      Delete my account
+    </button>
+    <a href={~p"/profile"} class="ml-3 text-sm">Cancel</a>
+  </div>
 </form>
