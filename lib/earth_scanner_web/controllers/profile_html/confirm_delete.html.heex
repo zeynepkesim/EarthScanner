@@ -14,7 +14,7 @@
   This action is irreversible. To delete your account, enter your password and confirm.
 </p>
 
-<form action={~p"/users/delete"} method="post" class="space-y-4">
+<form id="delete-account-form" action={~p"/users/delete"} method="post" class="space-y-4">
   <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
 
   <div>

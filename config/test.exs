@@ -8,7 +8,7 @@ import Config
 config :earth_scanner, EarthScanner.Repo,
   username: System.get_env("POSTGRES_USER", "postgres"),
   # Default to "postgres" for local devs; override with POSTGRES_PASSWORD env if needed
-  password: System.get_env("POSTGRES_PASSWORD", "12345678"),
+  password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
@@ -39,6 +39,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :hound,
-  driver: "chrome",
+  driver: "chrome_driver",
   browser: "chrome",
+  host: "http://localhost",
   port: 9515

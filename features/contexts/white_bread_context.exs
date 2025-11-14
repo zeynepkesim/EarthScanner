@@ -4,40 +4,40 @@ defmodule WhiteBreadContext do
   alias EarthScanner.Accounts
 
   # 1-arity: state
-  scenario_starting_state fn state ->
+  scenario_starting_state(fn state ->
     Hound.start_session()
     state
-  end
+  end)
 
   # 2-arity: status, state
-  scenario_finalize fn _status, _state ->
+  scenario_finalize(fn _status, _state ->
     Hound.end_session()
     :ok
-  end
+  end)
 
-  given_ ~r/^I am a visitor$/, fn state, _extra ->
+  given_(~r/^I am a visitor$/, fn state, _extra ->
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I visit the homepage$/, fn state, _extra ->
+  when_(~r/^I visit the homepage$/, fn state, _extra ->
     navigate_to("http://localhost:4002/")
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see a Phoenix welcome message$/, fn state, _extra ->
+  then_(~r/^I should see a Phoenix welcome message$/, fn state, _extra ->
     page_text = visible_page_text()
     assert String.contains?(page_text, "Phoenix")
     {:ok, state}
-  end
+  end)
 
   # Registration steps
 
-  given_ ~r/^I am on the registration page$/, fn state, _extra ->
+  given_(~r/^I am on the registration page$/, fn state, _extra ->
     navigate_to("http://localhost:4002/users/register")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit a valid registration$/, fn state, _extra ->
+  when_(~r/^I submit a valid registration$/, fn state, _extra ->
     suffix = :erlang.unique_integer([:positive]) |> Integer.to_string()
     email = "bdd_" <> suffix <> "@example.com"
     username = "bdduser_" <> suffix
@@ -59,9 +59,9 @@ defmodule WhiteBreadContext do
     submit_element({:id, "registration-form"})
 
     {:ok, Map.put(state, :email, email)}
-  end
+  end)
 
-  when_ ~r/^I submit a registration with mismatched passwords$/, fn state, _extra ->
+  when_(~r/^I submit a registration with mismatched passwords$/, fn state, _extra ->
     suffix = :erlang.unique_integer([:positive]) |> Integer.to_string()
     email = "bdd_mismatch_" <> suffix <> "@example.com"
 
@@ -79,9 +79,9 @@ defmodule WhiteBreadContext do
     submit_element({:id, "registration-form"})
 
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit an invalid registration$/, fn state, _extra ->
+  when_(~r/^I submit an invalid registration$/, fn state, _extra ->
     # Intentionally leave most fields blank or invalid; only set a couple
     fill_field({:css, "input[name='user[username]']"}, "")
     fill_field({:css, "input[name='user[email]']"}, "not-an-email")
@@ -89,24 +89,24 @@ defmodule WhiteBreadContext do
     submit_element({:id, "registration-form"})
 
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see the login page$/, fn state, _extra ->
+  then_(~r/^I should see the login page$/, fn state, _extra ->
     # After successful registration we redirect to /users/login and flash a message
     page_text = visible_page_text()
     assert String.contains?(page_text, "Log in")
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see a registration error$/, fn state, _extra ->
+  then_(~r/^I should see a registration error$/, fn state, _extra ->
     page_text = visible_page_text()
     assert String.contains?(page_text, "Please fix the errors below and try again.")
     {:ok, state}
-  end
+  end)
 
   # --- Login steps ---
 
-  given_ ~r/^a user exists$/, fn state, _extra ->
+  given_(~r/^a user exists$/, fn state, _extra ->
     suffix = Integer.to_string(System.unique_integer([:positive]))
     email = "login_bdd_" <> suffix <> "@example.com"
     password = "Password123!"
@@ -126,151 +126,213 @@ defmodule WhiteBreadContext do
       })
 
     {:ok, Map.merge(state, %{email: email, password: password})}
-  end
+  end)
 
-  given_ ~r/^I am on the login page$/, fn state, _extra ->
+  given_(~r/^I am on the login page$/, fn state, _extra ->
     navigate_to("http://localhost:4002/users/login")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit correct login credentials$/, fn state, _extra ->
+  when_(~r/^I submit correct login credentials$/, fn state, _extra ->
     fill_field({:css, "input[name='session[email]']"}, state.email)
     fill_field({:css, "input[name='session[password]']"}, state.password)
     submit_element({:id, "login-form"})
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit a wrong password$/, fn state, _extra ->
+  when_(~r/^I submit a wrong password$/, fn state, _extra ->
     fill_field({:css, "input[name='session[email]']"}, state.email)
     fill_field({:css, "input[name='session[password]']"}, "Wrong123!")
     submit_element({:id, "login-form"})
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I attempt login with unknown email$/, fn state, _extra ->
-    fill_field({:css, "input[name='session[email]']"}, "unknown_" <> Integer.to_string(System.unique_integer([:positive])) <> "@example.com")
+  when_(~r/^I attempt login with unknown email$/, fn state, _extra ->
+    fill_field(
+      {:css, "input[name='session[email]']"},
+      "unknown_" <> Integer.to_string(System.unique_integer([:positive])) <> "@example.com"
+    )
+
     fill_field({:css, "input[name='session[password]']"}, "Whatever123!")
     submit_element({:id, "login-form"})
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I click log out$/, fn state, _extra ->
+  when_(~r/^I click log out$/, fn state, _extra ->
     # Submit the logout form present in the layout
     submit_element({:css, "form[action='/users/logout']"})
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see the home page$/, fn state, _extra ->
+  then_(~r/^I should see the home page$/, fn state, _extra ->
     page_text = visible_page_text()
     assert String.contains?(page_text, "Phoenix Framework")
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see a login error$/, fn state, _extra ->
+  then_(~r/^I should see a login error$/, fn state, _extra ->
     page_text = visible_page_text()
     assert String.contains?(page_text, "Invalid email or password")
     {:ok, state}
-  end
+  end)
 
-  given_ ~r/^I navigate to the delete account page$/, fn state, _ ->
+  # --- Edit profile (FR-04) ---
+
+  given_(~r/^I am logged in as a user$/, fn state, _ ->
+    {user, password} = register_and_login_user()
+    {:ok, Map.merge(state, %{user: user, email: user.email, password: password})}
+  end)
+
+  given_(~r/^I am on the edit profile page$/, fn state, _ ->
+    navigate_to("http://localhost:4002/profile/edit")
+    {:ok, state}
+  end)
+
+  when_(~r/^I change my username to "([^"]+)"$/, fn state, arg ->
+    username =
+      case arg do
+        %{matches: [u]} ->
+          u
+
+        [u] ->
+          u
+
+        _ ->
+          raise "Could not extract username from step matches: #{inspect(arg)}"
+      end
+
+    # Prefer id selector when available, fall back to name
+    try do
+      fill_field({:id, "user_username"}, username)
+    rescue
+      _ -> fill_field({:css, "input[name='user[username]']"}, username)
+    end
+
+    {:ok, Map.put(state, :updated_username, username)}
+  end)
+
+  when_(~r/^I leave the username blank$/, fn state, _ ->
+    fill_field({:css, "input[name='user[username]']"}, "")
+    {:ok, Map.put(state, :updated_username, "")}
+  end)
+
+  when_(~r/^I submit the profile form$/, fn state, _ ->
+    submit_element({:id, "profile-form"})
+    {:ok, state}
+  end)
+
+  then_(~r/^I should see a success message$/, fn state, _ ->
+    text = visible_page_text()
+    assert String.contains?(text, "Profile updated successfully")
+    {:ok, state}
+  end)
+
+  then_(~r/^my username should be updated$/, fn state, _ ->
+    updated_username = Map.get(state, :updated_username)
+    text = visible_page_text()
+    assert updated_username not in [nil, ""]
+    assert String.contains?(text, updated_username)
+    {:ok, state}
+  end)
+
+  then_(~r/^I should see an error message$/, fn state, _ ->
+    text = visible_page_text()
+    assert String.contains?(text, "Please fix the highlighted fields.")
+    {:ok, state}
+  end)
+
+  given_(~r/^a user exists and I am logged in$/, fn state, _ ->
+    {user, password} = register_and_login_user()
+    {:ok, Map.merge(state, %{user: user, email: user.email, password: password})}
+  end)
+
+  given_(~r/^I navigate to the delete account page$/, fn state, _ ->
     navigate_to("http://localhost:4002/users/delete")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit deletion with a wrong password$/, fn state, _ ->
+  when_(~r/^I submit deletion with a wrong password$/, fn state, _ ->
     fill_field({:css, "input[name='delete[password]']"}, "Wrong123!")
     click({:css, "input[name='delete[confirm]']"})
     submit_element({:id, "delete-account-form"})
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see a delete error$/, fn state, _ ->
+  then_(~r/^I should see a delete error$/, fn state, _ ->
     text = visible_page_text()
     assert String.contains?(text, "Invalid password") or String.contains?(text, "Please confirm")
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see an irreversible warning$/, fn state, _ ->
+  then_(~r/^I should see an irreversible warning$/, fn state, _ ->
     text = visible_page_text()
     # check for a short substring to be resilient to wording
     assert String.contains?(String.downcase(text), "irreversible")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit deletion with the correct password$/, fn state, _ ->
+  when_(~r/^I submit deletion with the correct password$/, fn state, _ ->
     # state.password is set in the login step
     fill_field({:css, "input[name='delete[password]']"}, state.password)
     click({:css, "input[name='delete[confirm]']"})
     submit_element({:id, "delete-account-form"})
     {:ok, state}
-  end
+  end)
+
+  then_(~r/^I should be redirected to the homepage$/, fn state, _ ->
+    assert String.ends_with?(current_url(), "/")
+    text = visible_page_text()
+    assert String.contains?(text, "Phoenix Framework")
+    {:ok, state}
+  end)
+
   # --- ADMIN CREATION (FR-02) ---
 
-  given_ ~r/^I am logged in as an admin$/, fn state, _ ->
-    {:ok, admin} =
-      EarthScanner.Accounts.register_user(%{
-        "username" => "bdd_admin",
-        "password" => "Password123!",
-        "password_confirmation" => "Password123!",
-        "name" => "Admin",
-        "last_name" => "BDD",
-        "email" => "bdd_admin@example.com",
-        "birthdate" => "1990-01-01",
-        "nationality" => "ID",
-        "residence_address" => "Admin Street 1",
-        "phone_number" => "+628111111111",
-        "role" => "admin"
-      })
+  given_(~r/^I am logged in as an admin$/, fn state, _ ->
+    {admin, password} = register_and_login_user(%{"role" => "admin"})
+    {:ok, Map.merge(state, %{admin: admin, password: password})}
+  end)
 
-    navigate_to("http://localhost:4002/users/login")
-
-    fill_field({:css, "input[name='session[email]']"}, admin.email)
-    fill_field({:css, "input[name='session[password]']"}, "Password123!")
-    submit_element({:id, "login-form"})
-
-    {:ok, Map.put(state, :admin, admin)}
-  end
-
-  when_ ~r/^I visit the admin creation page$/, fn state, _ ->
+  when_(~r/^I visit the admin creation page$/, fn state, _ ->
     navigate_to("http://localhost:4002/admin/users/new")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I fill the admin creation form with valid data$/, fn state, _ ->
+  when_(~r/^I fill the admin creation form with valid data$/, fn state, _ ->
     fill_field({:css, "input[name='user[username]']"}, "new_admin_bdd")
     fill_field({:css, "input[name='user[email]']"}, "new_admin_bdd@example.com")
     fill_field({:css, "input[name='user[phone_number]']"}, "+628222222222")
     fill_field({:css, "input[name='user[password]']"}, "Password123!")
     fill_field({:css, "input[name='user[password_confirmation]']"}, "Password123!")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit the admin creation form$/, fn state, _ ->
+  when_(~r/^I submit the admin creation form$/, fn state, _ ->
     submit_element({:css, "form"})
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit the admin creation form with incomplete data$/, fn state, _ ->
+  when_(~r/^I submit the admin creation form with incomplete data$/, fn state, _ ->
     fill_field({:css, "input[name='user[email]']"}, "")
     submit_element({:css, "form"})
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see an admin creation error$/, fn state, _ ->
+  then_(~r/^I should see an admin creation error$/, fn state, _ ->
     text = visible_page_text()
     assert String.contains?(text, "error") or String.contains?(text, "can't be blank")
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see a success message "([^"]+)"$/, fn state, %{matches: [message]} ->
+  then_(~r/^I should see a success message "([^"]+)"$/, fn state, %{matches: [message]} ->
     text = visible_page_text()
     assert String.contains?(text, message)
     {:ok, state}
-  end
+  end)
 
   # --- CHANGE PASSWORD (FR-05) ---
 
-  given_ ~r/^I am logged in as a normal user$/, fn state, _ ->
+  given_(~r/^I am logged in as a normal user$/, fn state, _ ->
     {:ok, user} =
       EarthScanner.Accounts.register_user(%{
         "username" => "bdd_user_pw",
@@ -292,32 +354,71 @@ defmodule WhiteBreadContext do
     submit_element({:id, "login-form"})
 
     {:ok, Map.put(state, :user, user)}
-  end
+  end)
 
-  when_ ~r/^I visit the change password page$/, fn state, _ ->
+  when_(~r/^I visit the change password page$/, fn state, _ ->
     navigate_to("http://localhost:4002/users/change-password")
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit valid password change information$/, fn state, _ ->
+  when_(~r/^I submit valid password change information$/, fn state, _ ->
     fill_field({:css, "input[name='current_password']"}, "Password123!")
     fill_field({:css, "input[name='new_password']"}, "NewPassword456!")
     fill_field({:css, "input[name='new_password_confirmation']"}, "NewPassword456!")
     submit_element({:css, "form"})
     {:ok, state}
-  end
+  end)
 
-  when_ ~r/^I submit an invalid current password$/, fn state, _ ->
+  when_(~r/^I submit an invalid current password$/, fn state, _ ->
     fill_field({:css, "input[name='current_password']"}, "Wrong123!")
     fill_field({:css, "input[name='new_password']"}, "NewPassword456!")
     fill_field({:css, "input[name='new_password_confirmation']"}, "NewPassword456!")
     submit_element({:css, "form"})
     {:ok, state}
-  end
+  end)
 
-  then_ ~r/^I should see "([^"]+)"$/, fn state, %{matches: [expected]} ->
+  then_(~r/^I should see "([^"]+)"$/, fn state, %{matches: [expected]} ->
     text = visible_page_text()
     assert String.contains?(text, expected)
     {:ok, state}
+  end)
+
+  defp register_and_login_user(overrides \\ %{}) do
+    {user, password} = register_user!(overrides)
+    login_user_via_browser(user.email, password)
+    {user, password}
+  end
+
+  defp login_user_via_browser(email, password) do
+    navigate_to("http://localhost:4002/users/login")
+    fill_field({:css, "input[name='session[email]']"}, email)
+    fill_field({:css, "input[name='session[password]']"}, password)
+    submit_element({:id, "login-form"})
+  end
+
+  defp register_user!(overrides \\ %{}) do
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    password = Map.get(overrides, "password", "Password123!")
+
+    base = %{
+      "username" => "bdd_user_" <> suffix,
+      "name" => "BDD",
+      "last_name" => "User",
+      "email" => "bdd_user_" <> suffix <> "@example.com",
+      "birthdate" => "1995-05-05",
+      "nationality" => "ID",
+      "residence_address" => "Jl. BDD 1",
+      "phone_number" => "+628222222222",
+      "role" => "user"
+    }
+
+    params =
+      base
+      |> Map.merge(overrides)
+      |> Map.put("password", password)
+      |> Map.put("password_confirmation", password)
+
+    {:ok, user} = Accounts.register_user(params)
+    {user, password}
   end
 end
