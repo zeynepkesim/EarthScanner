@@ -5,9 +5,10 @@ defmodule WhiteBreadContext do
 
   # 1-arity: state
   scenario_starting_state fn state ->
-    Hound.start_session()
+    Hound.start_session(%{async: false})
     state
   end
+
 
   # 2-arity: status, state
   scenario_finalize fn _status, _state ->
@@ -204,4 +205,62 @@ defmodule WhiteBreadContext do
     submit_element({:id, "delete-account-form"})
     {:ok, state}
   end
+
+  # --- Edit Profile steps ---
+
+  given_ ~r/^I am logged in as a user$/, fn state, _extra ->
+    # Create or get a user
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    email = "bdd_user_" <> suffix <> "@example.com"
+    password = "Password123!"
+
+    {:ok, user} =
+      EarthScanner.Accounts.register_user(%{
+        "username" => "bdduser_" <> suffix,
+        "name" => "John",
+        "last_name" => "Doe",
+        "email" => email,
+        "birthdate" => "2000-01-01",
+        "nationality" => "ID",
+        "residence_address" => "Jl Example 123",
+        "phone_number" => "+628123456789",
+        "password" => password,
+        "password_confirmation" => password
+      })
+
+    # Log in user via Hound
+    navigate_to("http://localhost:4002/users/login")
+    fill_field({:css, "input[name='session[email]']"}, email)
+    fill_field({:css, "input[name='session[password]']"}, password)
+    submit_element({:id, "login-form"})
+
+    {:ok, Map.put(state, :user, user)}
+  end
+
+
+  given_ ~r/^I am on the edit profile page$/, fn state, _extra ->
+    # Step: Navigate to the edit profile page in the browser
+    navigate_to("http://localhost:4002/users/edit")
+    {:ok, state}
+  end
+
+  when_ ~r/^I change my username to "(.*)"$/, fn state, [new_username] ->
+    # Step: Fill the username input field with the new value
+    fill_field({:css, "input[name='user[username]']"}, new_username)
+    {:ok, Map.put(state, :new_username, new_username)}
+  end
+
+  when_ ~r/^I submit the profile form$/, fn state, _extra ->
+    # Step: Submit the edit profile form
+    submit_element({:id, "edit-profile-form"})
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see a success message$/, fn state, _extra ->
+    # Step: Verify that the page shows a success message confirming the update
+    text = visible_page_text()
+    assert String.contains?(text, "Profile updated successfully")
+    {:ok, state}
+  end
+
 end

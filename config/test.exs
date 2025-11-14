@@ -10,7 +10,7 @@ config :earth_scanner, EarthScanner.Repo,
   # Default to "postgres" for local devs; override with POSTGRES_PASSWORD env if needed
   password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
-  port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
+  port: String.to_integer(System.get_env("POSTGRES_PORT", "5433")),
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
@@ -42,4 +42,4 @@ config :hound,
   driver: "chrome_driver",
   browser: "chrome",
   host: "http://localhost",
-  port: 9515
+  port: 50633
