@@ -23,7 +23,17 @@ defmodule EarthScanner.Trips.Trip do
 
   def changeset(trip, attrs) do
     trip
-    |> cast(attrs, [:picture_url, :transport_mode, :source_city, :destination_city, :departure_time, :arrival_time, :price, :co2_level, :available_tickets])
+    |> cast(attrs, [
+      :picture_url,
+      :transport_mode,
+      :source_city,
+      :destination_city,
+      :departure_time,
+      :arrival_time,
+      :price,
+      :co2_level,
+      :available_tickets
+    ])
     |> validate_required(@required)
     |> compute_duration()
   end

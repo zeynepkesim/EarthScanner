@@ -4,7 +4,10 @@ defmodule EarthScanner.Repo.Migrations.CreateTrips do
   def change do
     create table(:trips) do
       add :picture_url, :string
-      add :transport_mode, :string, null: false  # plane/bus/train
+
+      # transport_mode: "plane" | "bus" | "train"
+      add :transport_mode, :string, null: false
+
       add :source_city, :string, null: false
       add :destination_city, :string, null: false
       add :departure_time, :utc_datetime, null: false
