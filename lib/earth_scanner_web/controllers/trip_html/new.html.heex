@@ -1,0 +1,76 @@
+<div class="min-h-screen bg-white px-6 py-8">
+  <div class="mx-auto max-w-3xl">
+    <h1 class="text-2xl font-semibold text-slate-900 mb-6">
+      Create new trip
+    </h1>
+
+    <.form for={@changeset} action={~p"/admin/trips"} method="post" class="space-y-4">
+      <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+
+      <.input field={@changeset[:picture_url]} label="Picture URL" />
+
+      <.input
+        field={@changeset[:transport_mode]}
+        type="select"
+        label="Transport mode"
+        options={[{"Plane", "plane"}, {"Bus", "bus"}, {"Train", "train"}]}
+        prompt="Select mode"
+      />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <.input field={@changeset[:source_city]} label="Source city" />
+        <.input field={@changeset[:destination_city]} label="Destination city" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <.input
+          field={@changeset[:departure_time]}
+          type="datetime-local"
+          label="Departure time"
+        />
+        <.input
+          field={@changeset[:arrival_time]}
+          type="datetime-local"
+          label="Arrival time"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <.input field={@changeset[:price]} type="number" step="0.01" label="Price (€)" />
+        <.input field={@changeset[:co2_level]} type="number" label="CO₂ level" />
+        <.input
+          field={@changeset[:available_tickets]}
+          type="number"
+          label="Available tickets per date"
+        />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700">
+          Trip dates (FR-36)
+        </label>
+        <p class="mt-1 text-xs text-slate-500">
+          Enter one date per line, in format YYYY-MM-DD (e.g., 2025-11-14).
+        </p>
+        <textarea
+          name="trip[dates]"
+          rows="4"
+          class="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+        ></textarea>
+      </div>
+
+      <div class="flex items-center justify-between mt-6">
+        <a href={~p"/admin/trips"} class="text-sm text-slate-600 hover:underline">
+          Cancel
+        </a>
+
+        <button
+          type="submit"
+          class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        >
+          Create trip
+        </button>
+      </div>
+    </.form>
+  </div>
+</div>
