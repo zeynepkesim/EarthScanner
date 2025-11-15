@@ -31,13 +31,11 @@ defmodule EarthScannerWeb.Router do
 
     get "/profile", ProfileController, :show
 
-    # teammate's profile edit/delete routes
     get "/profile/edit", ProfileController, :edit
     put "/profile", ProfileController, :update
     get "/users/delete", ProfileController, :confirm_delete
     post "/users/delete", ProfileController, :delete
 
-    # your change-password routes
     get "/users/change-password", ProfileController, :edit_password
     post "/users/change-password", ProfileController, :update_password
   end
@@ -47,6 +45,16 @@ defmodule EarthScannerWeb.Router do
 
     get "/users/new", AdminUserController, :new
     post "/users", AdminUserController, :create
+
+    # FR-29
+    get "/trips", TripController, :index
+    get "/trips/new", TripController, :new
+    post "/trips", TripController, :create
+
+    # FR-36
+    get "/trips/:trip_id/instances/:id/edit", TripInstanceController, :edit
+    put "/trips/:trip_id/instances/:id", TripInstanceController, :update
+    delete "/trips/:trip_id/instances/:id", TripInstanceController, :delete
   end
 
   if Application.compile_env(:earth_scanner, :dev_routes) do
