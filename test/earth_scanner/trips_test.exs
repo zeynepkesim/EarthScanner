@@ -7,16 +7,19 @@ defmodule EarthScanner.TripsTest do
   alias EarthScanner.Accounts.User
 
   defp admin_fixture(attrs \\ %{}) do
+    unique_email = "admin_#{System.unique_integer([:positive])}@example.com"
+    unique_username = "admin_user_#{System.unique_integer([:positive])}"
+
     {:ok, admin} =
       Accounts.register_user(
         Map.merge(
           %{
-            "username" => "admin_user",
+            "username" => unique_username,
             "password" => "Password123!",
             "password_confirmation" => "Password123!",
             "name" => "Admin",
             "last_name" => "User",
-            "email" => "admin@example.com",
+            "email" => unique_email,
             "birthdate" => "1990-01-01",
             "nationality" => "TR",
             "residence_address" => "Admin Street",

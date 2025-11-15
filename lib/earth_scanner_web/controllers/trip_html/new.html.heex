@@ -1,74 +1,132 @@
-<div class="min-h-screen bg-white px-6 py-8">
-  <div class="mx-auto max-w-3xl">
-    <h1 class="text-2xl font-semibold text-slate-900 mb-6">
-      Create new trip
+<div class="min-h-screen bg-gray-50 px-6 py-8">
+  <div class="mx-auto max-w-3xl bg-white rounded-lg shadow-sm p-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">
+      Create New Trip
     </h1>
 
-    <.form for={@changeset} action={~p"/admin/trips"} method="post" class="space-y-4">
+    <.form for={@form} action={~p"/admin/trips"} method="post" class="space-y-6">
       <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
 
-      <.input field={@changeset[:picture_url]} label="Picture URL" />
-
-      <.input
-        field={@changeset[:transport_mode]}
-        type="select"
-        label="Transport mode"
-        options={[{"Plane", "plane"}, {"Bus", "bus"}, {"Train", "train"}]}
-        prompt="Select mode"
-      />
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <.input field={@changeset[:source_city]} label="Source city" />
-        <.input field={@changeset[:destination_city]} label="Destination city" />
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <.input
-          field={@changeset[:departure_time]}
-          type="datetime-local"
-          label="Departure time"
-        />
-        <.input
-          field={@changeset[:arrival_time]}
-          type="datetime-local"
-          label="Arrival time"
-        />
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <.input field={@changeset[:price]} type="number" step="0.01" label="Price (€)" />
-        <.input field={@changeset[:co2_level]} type="number" label="CO₂ level" />
-        <.input
-          field={@changeset[:available_tickets]}
-          type="number"
-          label="Available tickets per date"
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Picture URL</label>
+        <input
+          type="text"
+          name="trip[picture_url]"
+          value={@form[:picture_url].value}
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-slate-700">
-          Trip dates (FR-36)
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Transport Mode</label>
+        <select
+          name="trip[transport_mode]"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+        >
+          <option value="">Select mode</option>
+          <option value="plane">Plane</option>
+          <option value="bus">Bus</option>
+          <option value="train">Train</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Source City</label>
+          <input
+            type="text"
+            name="trip[source_city]"
+            value={@form[:source_city].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Destination City</label>
+          <input
+            type="text"
+            name="trip[destination_city]"
+            value={@form[:destination_city].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Departure Time</label>
+          <input
+            type="datetime-local"
+            name="trip[departure_time]"
+            value={@form[:departure_time].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Arrival Time</label>
+          <input
+            type="datetime-local"
+            name="trip[arrival_time]"
+            value={@form[:arrival_time].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Price (€)</label>
+          <input
+            type="number"
+            step="0.01"
+            name="trip[price]"
+            value={@form[:price].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">CO₂ Level (kg)</label>
+          <input
+            type="number"
+            name="trip[co2_level]"
+            value={@form[:co2_level].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Available Tickets</label>
+          <input
+            type="number"
+            name="trip[available_tickets]"
+            value={@form[:available_tickets].value}
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+          Trip Dates (FR-36)
         </label>
-        <p class="mt-1 text-xs text-slate-500">
-          Enter one date per line, in format YYYY-MM-DD (e.g., 2025-11-14).
+        <p class="text-sm text-gray-500 mb-2">
+          Enter one date per line, in format YYYY-MM-DD (e.g., 2025-12-20)
         </p>
         <textarea
           name="trip[dates]"
           rows="4"
-          class="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900"
         ></textarea>
       </div>
 
-      <div class="flex items-center justify-between mt-6">
-        <a href={~p"/admin/trips"} class="text-sm text-slate-600 hover:underline">
-          Cancel
+      <div class="flex items-center justify-between pt-4 border-t">
+        <a href={~p"/admin/trips"} class="text-sm text-gray-600 hover:text-gray-900 hover:underline">
+          ← Cancel
         </a>
 
         <button
           type="submit"
-          class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+          class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-colors"
         >
-          Create trip
+          Create Trip
         </button>
       </div>
     </.form>
