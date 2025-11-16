@@ -44,8 +44,8 @@ defmodule EarthScannerWeb.Admin.PastTripsControllerTest do
     }
   end
 
-  test "GET /admin/past-trips shows only admin's past trips", %{conn: conn} do
-    admin = admin_fixture(%{"username" => "adminX", "email" => "adminx@example.com"})
+  test "FR-30: GET /admin/past-trips shows only admin's past trips", %{conn: conn} do
+    admin = admin_fixture(%{"username" => "admin1", "email" => "admin1@example.com"})
     other = admin_fixture(%{"username" => "adminY", "email" => "adminy@example.com"})
 
     {:ok, _} =
@@ -66,5 +66,74 @@ defmodule EarthScannerWeb.Admin.PastTripsControllerTest do
     assert body =~ "PastA" or body =~ "DestA"
     assert body =~ "PastB" or body =~ "DestB"
     refute body =~ "OtherPast" or body =~ "DestOther"
+  end
+
+  test "FR-30: GET /admin/past-trips shows empty state when no past trips", %{conn: conn} do
+    admin = admin_fixture(%{"username" => "adminEmpty", "email" => "adminempty@example.com"})
+    conn = init_test_session(conn, user_id: admin.id)
+
+    conn = get(conn, "/admin/past-trips")
+    body = html_response(conn, 200)
+
+    assert body =~ "No past trips yet"
+  end
+
+  test "FR-30: GET /admin/past-trips/:id shows trip details", %{conn: conn} do
+    admin = admin_fixture(%{"username" => "adminShow", "email" => "adminshow@example.com"})
+
+    {:ok, trip} =
+      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2020-01-01T10:00:00Z", "source_city" => "ShowCity", "destination_city" => "ShowDest", "dates" => "2020-01-01"}))
+
+    conn = init_test_session(conn, user_id: admin.id)
+    conn = get(conn, "/admin/past-trips/#{trip.id}")
+    body = html_response(conn, 200)
+
+    assert body =~ "ShowCity"
+    assert body =~ "ShowDest"
+    assert body =~ "Trip Details"
+    assert body =~ "$150.0"
+  end
+
+  test "FR-30: GET /admin/past-trips requires admin role", %{conn: conn} do
+    # Create regular user (non-admin)
+    {:ok, user} =
+      Accounts.register_user(%{
+        "username" => "regular_user",
+        "password" => "Password123!",
+        "password_confirmation" => "Password123!",
+        "name" => "Regular",
+        "last_name" => "User",
+        "email" => "regular@example.com",
+        "birthdate" => "1990-01-01",
+        "nationality" => "TR",
+        "residence_address" => "Regular Street",
+        "phone_number" => "+905551111112"
+      })
+
+    conn = init_test_session(conn, user_id: user.id)
+    conn = get(conn, "/admin/past-trips")
+
+    # Should redirect or return 403/401
+    assert conn.status in [302, 401, 403]
+  end
+
+  test "FR-30: GET /admin/past-trips orders trips by departure time DESC", %{conn: conn} do
+    admin = admin_fixture(%{"username" => "adminOrder", "email" => "adminorder@example.com"})
+
+    {:ok, trip1} =
+      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2018-01-01T10:00:00Z", "source_city" => "OldCity", "destination_city" => "DestOld", "dates" => "2018-01-01"}))
+
+    {:ok, trip2} =
+      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2022-01-01T10:00:00Z", "source_city" => "NewCity", "destination_city" => "DestNew", "dates" => "2022-01-01"}))
+
+    conn = init_test_session(conn, user_id: admin.id)
+    conn = get(conn, "/admin/past-trips")
+    body = html_response(conn, 200)
+
+    # NewCity should appear before OldCity (DESC order)
+    new_pos = :binary.match(body, "NewCity") |> elem(0)
+    old_pos = :binary.match(body, "OldCity") |> elem(0)
+
+    assert new_pos < old_pos
   end
 end
