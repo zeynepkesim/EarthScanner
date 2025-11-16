@@ -27,6 +27,9 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
         )
       )
 
+    alias EarthScanner.Repo
+    admin = Ecto.Changeset.change(admin, role: "admin") |> Repo.update!()
+
     admin
   end
 
@@ -46,13 +49,13 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
     other = admin_fixture(%{"username" => "adminG", "email" => "adming@example.com"})
 
     {:ok, _} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "source_city" => "FutureA", "destination_city" => "DestA", "dates" => "2030-01-01"}))
+      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "arrival_time" => "2030-01-01T13:00:00Z", "source_city" => "FutureA", "destination_city" => "DestA", "dates" => "2030-01-01"}))
 
     {:ok, _} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2031-06-01T10:00:00Z", "source_city" => "FutureB", "destination_city" => "DestB", "dates" => "2031-06-01"}))
+      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2031-06-01T10:00:00Z", "arrival_time" => "2031-06-01T13:00:00Z", "source_city" => "FutureB", "destination_city" => "DestB", "dates" => "2031-06-01"}))
 
     {:ok, _} =
-      Trips.create_trip(other, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-05-01T10:00:00Z", "source_city" => "OtherFuture", "destination_city" => "DestOther", "dates" => "2030-05-01"}))
+      Trips.create_trip(other, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-05-01T10:00:00Z", "arrival_time" => "2030-05-01T13:00:00Z", "source_city" => "OtherFuture", "destination_city" => "DestOther", "dates" => "2030-05-01"}))
 
     # simulate logged-in admin by setting session user_id
     conn = init_test_session(conn, user_id: admin.id)

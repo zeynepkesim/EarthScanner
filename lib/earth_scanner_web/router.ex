@@ -55,6 +55,13 @@ defmodule EarthScannerWeb.Router do
     get "/trips/:trip_id/instances/:id/edit", TripInstanceController, :edit
     put "/trips/:trip_id/instances/:id", TripInstanceController, :update
     delete "/trips/:trip_id/instances/:id", TripInstanceController, :delete
+
+    # Past / Future trips admin views
+    get "/past-trips", Admin.PastTripsController, :index
+    get "/past-trips/:id", Admin.PastTripsController, :show
+
+    get "/future-trips", Admin.FutureTripsController, :index
+    get "/future-trips/:id", Admin.FutureTripsController, :show
   end
 
   if Application.compile_env(:earth_scanner, :dev_routes) do

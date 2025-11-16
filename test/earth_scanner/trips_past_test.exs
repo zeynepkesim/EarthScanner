@@ -28,6 +28,10 @@ defmodule EarthScanner.TripsPastTest do
         )
       )
 
+    # tests need an admin role; registration_changeset won't set role, so force it here
+    alias EarthScanner.Repo
+    admin = Ecto.Changeset.change(admin, role: "admin") |> Repo.update!()
+
     admin
   end
 

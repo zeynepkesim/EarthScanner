@@ -126,6 +126,26 @@ defmodule EarthScanner.Trips do
     Repo.all(query)
   end
 
+  @doc """
+  Lists trips created by the given admin that only have past instances.
+
+  Trips are preloaded with their past instances only and ordered by departure_time descending.
+  """
+  def list_past_trips_by_admin(%User{id: admin_id}) do
+    today = Date.utc_today()
+
+    query =
+      from t in Trip,
+        where: t.admin_id == ^admin_id,
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date < ^today,
+        preload: [instances: i],
+        distinct: true,
+        order_by: [desc: t.departure_time]
+
+    Repo.all(query)
+  end
+
   def get_trip!(id), do: Repo.get!(Trip, id)
 
   # ---------- FR-36: manage instances (edit/delete) ----------

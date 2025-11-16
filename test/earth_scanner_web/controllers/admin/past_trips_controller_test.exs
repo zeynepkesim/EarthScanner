@@ -27,6 +27,9 @@ defmodule EarthScannerWeb.Admin.PastTripsControllerTest do
         )
       )
 
+    alias EarthScanner.Repo
+    admin = Ecto.Changeset.change(admin, role: "admin") |> Repo.update!()
+
     admin
   end
 

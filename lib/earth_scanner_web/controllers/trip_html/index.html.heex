@@ -5,12 +5,26 @@
         Your future trips
       </h1>
 
-      <a
-        href={~p"/admin/trips/new"}
-        class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
-      >
-        New trip
-      </a>
+      <div class="flex gap-2">
+        <a
+          href={~p"/admin/past-trips"}
+          class="inline-flex items-center rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+        >
+          Past Trips
+        </a>
+        <a
+          href={~p"/admin/future-trips"}
+          class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Future Trips
+        </a>
+        <a
+          href={~p"/admin/trips/new"}
+          class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        >
+          New trip
+        </a>
+      </div>
     </div>
 
     <div :if={@trips == []} class="text-sm text-slate-500">
