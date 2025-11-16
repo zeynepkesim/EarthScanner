@@ -44,18 +44,47 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
     }
   end
 
-  test "FR-31: GET /admin/future-trips shows only admin's future trips and provides actions", %{conn: conn} do
+  test "FR-31: GET /admin/future-trips shows only admin's future trips and provides actions", %{
+    conn: conn
+  } do
     admin = admin_fixture(%{"username" => "admin1", "email" => "admin1@example.com"})
     other = admin_fixture(%{"username" => "adminG", "email" => "adming@example.com"})
 
     {:ok, _} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "arrival_time" => "2030-01-01T13:00:00Z", "source_city" => "FutureA", "destination_city" => "DestA", "dates" => "2030-01-01"}))
+      Trips.create_trip(
+        admin,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-01-01T10:00:00Z",
+          "arrival_time" => "2030-01-01T13:00:00Z",
+          "source_city" => "FutureA",
+          "destination_city" => "DestA",
+          "dates" => "2030-01-01"
+        })
+      )
 
     {:ok, _} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2031-06-01T10:00:00Z", "arrival_time" => "2031-06-01T13:00:00Z", "source_city" => "FutureB", "destination_city" => "DestB", "dates" => "2031-06-01"}))
+      Trips.create_trip(
+        admin,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2031-06-01T10:00:00Z",
+          "arrival_time" => "2031-06-01T13:00:00Z",
+          "source_city" => "FutureB",
+          "destination_city" => "DestB",
+          "dates" => "2031-06-01"
+        })
+      )
 
     {:ok, _} =
-      Trips.create_trip(other, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-05-01T10:00:00Z", "arrival_time" => "2030-05-01T13:00:00Z", "source_city" => "OtherFuture", "destination_city" => "DestOther", "dates" => "2030-05-01"}))
+      Trips.create_trip(
+        other,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-05-01T10:00:00Z",
+          "arrival_time" => "2030-05-01T13:00:00Z",
+          "source_city" => "OtherFuture",
+          "destination_city" => "DestOther",
+          "dates" => "2030-05-01"
+        })
+      )
 
     # simulate logged-in admin by setting session user_id
     conn = init_test_session(conn, user_id: admin.id)
@@ -74,7 +103,12 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
   end
 
   test "FR-31: GET /admin/future-trips shows empty state when no future trips", %{conn: conn} do
-    admin = admin_fixture(%{"username" => "adminEmptyFuture", "email" => "adminemptyfuture@example.com"})
+    admin =
+      admin_fixture(%{
+        "username" => "adminEmptyFuture",
+        "email" => "adminemptyfuture@example.com"
+      })
+
     conn = init_test_session(conn, user_id: admin.id)
 
     conn = get(conn, "/admin/future-trips")
@@ -84,10 +118,20 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
   end
 
   test "FR-31: GET /admin/future-trips/:id shows trip details", %{conn: conn} do
-    admin = admin_fixture(%{"username" => "adminShowFuture", "email" => "adminshowfuture@example.com"})
+    admin =
+      admin_fixture(%{"username" => "adminShowFuture", "email" => "adminshowfuture@example.com"})
 
     {:ok, trip} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "arrival_time" => "2030-01-01T13:00:00Z", "source_city" => "FutureShowCity", "destination_city" => "FutureShowDest", "dates" => "2030-01-01"}))
+      Trips.create_trip(
+        admin,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-01-01T10:00:00Z",
+          "arrival_time" => "2030-01-01T13:00:00Z",
+          "source_city" => "FutureShowCity",
+          "destination_city" => "FutureShowDest",
+          "dates" => "2030-01-01"
+        })
+      )
 
     conn = init_test_session(conn, user_id: admin.id)
     conn = get(conn, "/admin/future-trips/#{trip.id}")
@@ -125,13 +169,35 @@ defmodule EarthScannerWeb.Admin.FutureTripsControllerTest do
   end
 
   test "FR-31: GET /admin/future-trips orders trips by departure time ASC", %{conn: conn} do
-    admin = admin_fixture(%{"username" => "adminOrderFuture", "email" => "adminorderfuture@example.com"})
+    admin =
+      admin_fixture(%{
+        "username" => "adminOrderFuture",
+        "email" => "adminorderfuture@example.com"
+      })
 
     {:ok, trip1} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2035-01-01T10:00:00Z", "arrival_time" => "2035-01-01T13:00:00Z", "source_city" => "FarCity", "destination_city" => "DestFar", "dates" => "2035-01-01"}))
+      Trips.create_trip(
+        admin,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2035-01-01T10:00:00Z",
+          "arrival_time" => "2035-01-01T13:00:00Z",
+          "source_city" => "FarCity",
+          "destination_city" => "DestFar",
+          "dates" => "2035-01-01"
+        })
+      )
 
     {:ok, trip2} =
-      Trips.create_trip(admin, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "arrival_time" => "2030-01-01T13:00:00Z", "source_city" => "SoonCity", "destination_city" => "DestSoon", "dates" => "2030-01-01"}))
+      Trips.create_trip(
+        admin,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-01-01T10:00:00Z",
+          "arrival_time" => "2030-01-01T13:00:00Z",
+          "source_city" => "SoonCity",
+          "destination_city" => "DestSoon",
+          "dates" => "2030-01-01"
+        })
+      )
 
     conn = init_test_session(conn, user_id: admin.id)
     conn = get(conn, "/admin/future-trips")

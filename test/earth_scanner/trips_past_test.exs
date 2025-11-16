@@ -51,20 +51,46 @@ defmodule EarthScanner.TripsPastTest do
     admin2 = admin_fixture(%{"username" => "admin2", "email" => "admin2@example.com"})
 
     {:ok, trip_old} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{"departure_time" => "2020-01-01T10:00:00Z", "source_city" => "OldTown", "destination_city" => "DestOld", "transport_mode" => "plane", "dates" => "2020-01-01"}))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2020-01-01T10:00:00Z",
+          "source_city" => "OldTown",
+          "destination_city" => "DestOld",
+          "transport_mode" => "plane",
+          "dates" => "2020-01-01"
+        })
+      )
 
     {:ok, trip_newer} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{"departure_time" => "2021-06-01T10:00:00Z", "source_city" => "NewTown", "destination_city" => "DestNew", "transport_mode" => "plane", "dates" => "2021-06-01"}))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2021-06-01T10:00:00Z",
+          "source_city" => "NewTown",
+          "destination_city" => "DestNew",
+          "transport_mode" => "plane",
+          "dates" => "2021-06-01"
+        })
+      )
 
     {:ok, _other} =
-      Trips.create_trip(admin2, Map.merge(base_trip_attrs(), %{"departure_time" => "2020-05-01T10:00:00Z", "source_city" => "OtherTown", "destination_city" => "DestOther", "transport_mode" => "plane", "dates" => "2020-05-01"}))
+      Trips.create_trip(
+        admin2,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2020-05-01T10:00:00Z",
+          "source_city" => "OtherTown",
+          "destination_city" => "DestOther",
+          "transport_mode" => "plane",
+          "dates" => "2020-05-01"
+        })
+      )
 
     result = Trips.list_past_trips_by_admin(admin1)
 
     assert Enum.any?(result, &(&1.id == trip_old.id))
     assert Enum.any?(result, &(&1.id == trip_newer.id))
-    refute Enum.any?(result, &(&1.admin_id != admin1.id)
-  )
+    refute Enum.any?(result, &(&1.admin_id != admin1.id))
 
     # Ensure order: most recent first
     ids = Enum.map(result, & &1.id)

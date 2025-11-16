@@ -49,13 +49,40 @@ defmodule EarthScanner.TripsFutureTest do
     admin2 = admin_fixture(%{"username" => "admin2", "email" => "future_admin2@example.com"})
 
     {:ok, trip1} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-01-01T10:00:00Z", "arrival_time" => "2030-01-01T13:00:00Z", "source_city" => "FutureA", "destination_city" => "DestA", "dates" => "2030-01-01"}))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-01-01T10:00:00Z",
+          "arrival_time" => "2030-01-01T13:00:00Z",
+          "source_city" => "FutureA",
+          "destination_city" => "DestA",
+          "dates" => "2030-01-01"
+        })
+      )
 
     {:ok, trip2} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{"departure_time" => "2031-06-01T10:00:00Z", "arrival_time" => "2031-06-01T13:00:00Z", "source_city" => "FutureB", "destination_city" => "DestB", "dates" => "2031-06-01"}))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2031-06-01T10:00:00Z",
+          "arrival_time" => "2031-06-01T13:00:00Z",
+          "source_city" => "FutureB",
+          "destination_city" => "DestB",
+          "dates" => "2031-06-01"
+        })
+      )
 
     {:ok, _other} =
-      Trips.create_trip(admin2, Map.merge(base_trip_attrs(), %{"departure_time" => "2030-05-01T10:00:00Z", "arrival_time" => "2030-05-01T13:00:00Z", "source_city" => "OtherFuture", "destination_city" => "DestOther", "dates" => "2030-05-01"}))
+      Trips.create_trip(
+        admin2,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => "2030-05-01T10:00:00Z",
+          "arrival_time" => "2030-05-01T13:00:00Z",
+          "source_city" => "OtherFuture",
+          "destination_city" => "DestOther",
+          "dates" => "2030-05-01"
+        })
+      )
 
     result = Trips.list_future_trips_for_admin(admin1)
 

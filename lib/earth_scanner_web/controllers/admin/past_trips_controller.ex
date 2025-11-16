@@ -2,6 +2,7 @@ defmodule EarthScannerWeb.Admin.PastTripsController do
   use EarthScannerWeb, :controller
 
   alias EarthScanner.Trips
+
   def index(conn, _params) do
     admin = conn.assigns.current_user
     excursions = Trips.list_past_trips_by_admin(admin)

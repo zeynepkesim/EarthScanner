@@ -44,7 +44,7 @@
                 ({assigns.current_user.role})
               <% end %>
             </span>
-            <a href={~p"/profile"} class="text-sm font-medium">Profile</a>
+             <a href={~p"/profile"} class="text-sm font-medium">Profile</a>
             <form action={~p"/users/logout"} method="post">
               <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
               <input type="hidden" name="_method" value="delete" />
