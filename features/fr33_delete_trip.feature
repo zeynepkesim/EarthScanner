@@ -1,0 +1,46 @@
+Feature: Delete Trip (FR-33)
+  As an Admin
+  I want to delete a future trip I created
+  So that I can eliminate cancelled or incorrect travels.
+
+  Background:
+    Given an admin user exists and is logged in
+
+  @future_trip_no_tickets
+  Scenario: Admin deletes a future trip with NO sold tickets
+    Given a future trip exists owned by the admin
+    And the trip has 0 sold tickets
+    When the admin visits the trip details page
+    And the admin clicks the Delete Trip button
+    Then the admin should see a success message "Trip deleted successfully."
+    And the trip should no longer appear in the admin trip list
+
+  @future_trip_with_tickets
+  Scenario: Admin tries to delete a future trip WITH sold tickets
+    Given a future trip exists owned by the admin
+    And the trip has sold tickets
+    When the admin tries to delete the trip
+    Then the admin should see a warning message "This trip has sold tickets."
+    And the admin should be redirected to the delete confirmation page
+
+  @future_trip_force_delete
+  Scenario: Admin force deletes a trip with sold tickets
+    Given a future trip exists owned by the admin
+    And the trip has sold tickets
+    And the admin is on the delete confirmation page
+    When the admin confirms force delete
+    Then the admin should see "Trip deleted successfully (including all sold tickets)."
+    And the trip and its purchases should be removed
+
+  @past_trip
+  Scenario: Admin cannot delete a past trip
+    Given a past trip exists owned by the admin
+    When the admin tries to delete the trip
+    Then the admin should see an error message "Cannot delete past trips."
+
+  @unauthorized
+  Scenario: Unauthorized user cannot delete the trip
+    Given a future trip exists owned by another admin
+    And a normal user is logged in
+    When the user tries to delete the trip
+    Then the user should see "You are not authorized to delete this trip."

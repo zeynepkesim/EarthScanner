@@ -1,0 +1,39 @@
+<div class="min-h-screen bg-white px-6 py-8">
+  <div class="mx-auto max-w-xl">
+    <h1 class="text-2xl font-semibold text-slate-900 mb-6">Edit trip date</h1>
+
+    <p class="text-sm text-slate-600 mb-4">
+      Trip date for {@instance.trip.source_city} → {@instance.trip.destination_city}.
+    </p>
+
+    <.form
+      for={@changeset}
+      action={~p"/admin/trips/#{@instance.trip_id}/instances/#{@instance.id}"}
+      method="post"
+      class="space-y-4"
+    >
+      <input type="hidden" name="_method" value="put" />
+      <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+      <.input field={@changeset[:date]} type="date" label="Date" />
+      <.input
+        field={@changeset[:available_tickets]}
+        type="number"
+        label="Available tickets"
+      />
+      <div class="flex items-center justify-between mt-6">
+        <a
+          href={~p"/admin/trips"}
+          class="text-sm text-slate-600 hover:underline"
+        >
+          Cancel
+        </a>
+        <button
+          type="submit"
+          class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+        >
+          Save
+        </button>
+      </div>
+    </.form>
+  </div>
+</div>

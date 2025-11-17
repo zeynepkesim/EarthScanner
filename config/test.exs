@@ -39,6 +39,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 config :hound,
-  driver: "chrome",
+  driver: "chrome_driver",
   browser: "chrome",
+  host: "localhost",
   port: 9515
