@@ -1,10 +1,5 @@
-# FR-29, FR-36
+#FR-29 - Create Trip ,FR-36 - Recurring Trip Dates 
 Feature: Admin creates a trip with recurring dates
-
-  As an admin
-  I want to create a new trip with all relevant details
-  And specify several dates for it
-  So that users can book tickets for each departure date
 
   Background:
     Given an admin user "admin@example.com" with password "Password123!" exists
