@@ -40,14 +40,14 @@
           </div>
         </div>
       </div>
-      
-<!-- Trip Details Summary -->
+      <!-- Trip Details Summary -->
       <div class="bg-gray-50 rounded-lg p-4 mb-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-3">Trip Details</h2>
 
         <dl class="space-y-2">
           <div class="flex justify-between">
             <dt class="text-gray-600">Route:</dt>
+
             <dd class="font-medium text-gray-900">
               {@trip.source_city} → {@trip.destination_city}
             </dd>
@@ -55,28 +55,24 @@
 
           <div class="flex justify-between">
             <dt class="text-gray-600">Transportation:</dt>
-            <dd class="font-medium text-gray-900 capitalize">
-              {@trip.transport_mode}
-            </dd>
+
+            <dd class="font-medium text-gray-900 capitalize">{@trip.transport_mode}</dd>
           </div>
 
           <div class="flex justify-between">
             <dt class="text-gray-600">Price:</dt>
-            <dd class="font-medium text-gray-900">
-              ${@trip.price}
-            </dd>
+
+            <dd class="font-medium text-gray-900">${@trip.price}</dd>
           </div>
 
           <div class="flex justify-between">
             <dt class="text-gray-600">Scheduled Dates:</dt>
-            <dd class="font-medium text-gray-900">
-              {length(@trip.instances)} date(s)
-            </dd>
+
+            <dd class="font-medium text-gray-900">{length(@trip.instances)} date(s)</dd>
           </div>
         </dl>
       </div>
-      
-<!-- Action Buttons -->
+      <!-- Action Buttons -->
       <div class="flex gap-4">
         <.link
           navigate={~p"/admin/trips/#{@trip.id}"}
@@ -84,7 +80,6 @@
         >
           Cancel
         </.link>
-
         <.link
           href={~p"/admin/trips/#{@trip.id}/force-delete"}
           method="post"
