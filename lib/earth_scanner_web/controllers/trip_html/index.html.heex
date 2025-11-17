@@ -5,12 +5,12 @@
         Your future trips
       </h1>
 
-      <a
-        href={~p"/admin/trips/new"}
+      <.link
+        navigate={~p"/admin/trips/new"}
         class="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
       >
         New trip
-      </a>
+      </.link>
     </div>
 
     <div :if={@trips == []} class="text-sm text-slate-500">
@@ -19,7 +19,7 @@
 
     <div :for={trip <- @trips} class="mb-6 rounded-xl border border-slate-200 p-4">
       <div class="flex justify-between items-start gap-4">
-        <div>
+        <div class="flex-1">
           <p class="text-sm font-semibold text-slate-700">
             {trip.source_city} → {trip.destination_city}
           </p>
@@ -32,6 +32,16 @@
           <p class="mt-1 text-xs text-slate-500">
             Duration: {trip.duration_minutes} minutes
           </p>
+          
+          <!-- FR-35: View Details Link -->
+          <div class="mt-3">
+            <.link
+              navigate={~p"/admin/trips/#{trip.id}"}
+              class="inline-flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 hover:underline"
+            >
+              View Full Details →
+            </.link>
+          </div>
         </div>
 
         <img
@@ -61,12 +71,12 @@
             </span>
 
             <span class="space-x-2 text-xs">
-              <a
-                href={~p"/admin/trips/#{trip.id}/instances/#{instance.id}/edit"}
+              <.link
+                navigate={~p"/admin/trips/#{trip.id}/instances/#{instance.id}/edit"}
                 class="text-sky-600 hover:underline"
               >
                 Edit
-              </a>
+              </.link>
 
               <form
                 method="post"

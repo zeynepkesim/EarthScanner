@@ -9,6 +9,7 @@ defmodule EarthScanner.Trips.TripInstance do
     field :available_tickets, :integer
 
     belongs_to :trip, Trip
+    has_many :purchases, EarthScanner.Purchases.Purchase
 
     timestamps()
   end

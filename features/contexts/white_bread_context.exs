@@ -3,6 +3,8 @@ defmodule WhiteBreadContext do
   use Hound.Helpers
   alias EarthScanner.Accounts
 
+  @base "http://localhost:4002"
+
   # 1-arity: state
   scenario_starting_state fn state ->
     Hound.start_session()
@@ -480,4 +482,176 @@ defmodule WhiteBreadContext do
            String.contains?(String.downcase(text), "blank")
     {:ok, state}
   end
+
+  given_ ~r/^an admin user exists and is logged in$/, fn state, _extra ->
+    # Generate unique admin each scenario
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    email = "bdd_admin_auto_" <> suffix <> "@example.com"
+    username = "bdd_admin_auto_" <> suffix
+
+    {:ok, admin} =
+      EarthScanner.Accounts.register_user(%{
+        "username" => username,
+        "password" => "Password123!",
+        "password_confirmation" => "Password123!",
+        "name" => "Admin",
+        "last_name" => "BDD",
+        "email" => email,
+        "birthdate" => "1990-01-01",
+        "nationality" => "ID",
+        "residence_address" => "Admin Road",
+        "phone_number" => "+628111111111",
+        "role" => "admin"
+      })
+
+    # Login
+    navigate_to("#{@base}/users/login")
+    fill_field({:css, "input[name='session[email]']"}, admin.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+    :timer.sleep(800)
+
+    {:ok, %{state | admin: admin}}
+  end
+
+
+  # ============================================================
+  # FR-33 — DELETE TRIP (Admin)
+  # ============================================================
+
+  given_ ~r/^I am logged in as an admin for trip management$/, fn state, _ ->
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    email = "bdd_trip_admin_" <> suffix <> "@example.com"
+    username = "bdd_trip_admin_" <> suffix
+
+    {:ok, admin} =
+      Accounts.register_user(%{
+        "username" => username,
+        "password" => "Password123!",
+        "password_confirmation" => "Password123!",
+        "name" => "Admin",
+        "last_name" => "BDD",
+        "email" => email,
+        "birthdate" => "1990-01-01",
+        "nationality" => "ID",
+        "residence_address" => "Admin Street 1",
+        "phone_number" => "+628111111111",
+        "role" => "admin"
+      })
+
+    navigate_to("#{@base}/users/login")
+    fill_field({:css, "input[name='session[email]']"}, admin.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+    :timer.sleep(800)
+
+    {:ok, %{state | admin: admin}}
+  end
+
+
+  given_ ~r/^a future trip exists owned by the admin$/, fn state, _ ->
+    admin = state.admin
+
+    {:ok, trip} =
+      Trips.create_trip(admin, %{
+        "transport_mode" => "plane",
+        "source_city" => "Tallinn",
+        "destination_city" => "Paris",
+        "price" => "100",
+        "co2_level" => "150",
+        "available_tickets" => "50",
+        "departure_time" => "2026-12-22T10:00",
+        "arrival_time" => "2026-12-22T13:00",
+        "dates" => ["2026-12-22"]
+      })
+
+    {:ok, %{state | trip: trip}}
+  end
+
+  given_ ~r/^the trip has 0 sold tickets$/, fn state, _ ->
+    {:ok, state}
+  end
+
+  # When admin visits trip details
+  when_ ~r/^the admin visits the trip details page$/, fn state, _ ->
+    trip = state.trip
+    navigate_to("#{@base}/admin/trips/#{trip.id}")
+    {:ok, state}
+  end
+
+  when_ ~r/^the admin clicks the Delete Trip button$/, fn state, _ ->
+    click({:css, "a[data-role='delete-trip']"})
+    {:ok, state}
+  end
+
+  when_ ~r/^the admin confirms force delete$/, fn state, _ ->
+    click({:css, "button[data-role='force-delete']"})
+    {:ok, state}
+  end
+
+  then_ ~r/^the trip should no longer appear in the admin trip list$/, fn state, _ ->
+    navigate_to("#{@base}/admin/trips")
+    text = visible_page_text()
+    refute String.contains?(text, state.trip.source_city)
+    {:ok, state}
+  end
+
+  then_ ~r/^the admin should see a success message "([^"]+)"$/, fn state, %{matches: [msg]} ->
+    page_text = visible_page_text()
+    assert String.contains?(page_text, msg)
+    {:ok, state}
+  end
+
+  # ============================================================
+  # FR-35 — VIEW TRIP DETAILS
+  # ============================================================
+
+  given_ ~r/^a trip exists owned by the admin$/, fn state, _ ->
+    admin = state.admin
+
+    {:ok, trip} =
+      Trips.create_trip(admin, %{
+        "transport_mode" => "plane",
+        "source_city" => "Tallinn",
+        "destination_city" => "Paris",
+        "price" => "150",
+        "co2_level" => "120",
+        "available_tickets" => "20",
+        "departure_time" => "2026-10-05T09:00",
+        "arrival_time" => "2026-10-05T12:00",
+        "dates" => ["2026-10-05"]
+      })
+
+    {:ok, %{state | trip: trip}}
+  end
+
+  when_ ~r/^I open the trip details page$/, fn state, _ ->
+    navigate_to("#{@base}/admin/trips/#{state.trip.id}")
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see all trip attributes displayed$/, fn state, _ ->
+    text = visible_page_text()
+    assert String.contains?(text, state.trip.source_city)
+    assert String.contains?(text, state.trip.destination_city)
+    assert String.contains?(text, Integer.to_string(state.trip.available_tickets))
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see the Edit button$/, fn state, _ ->
+    assert element_displayed?({:css, "a[data-role='edit-trip']"})
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see the Delete button$/, fn state, _ ->
+    assert element_displayed?({:css, "a[data-role='delete-trip']"})
+    {:ok, state}
+  end
+
+  then_ ~r/^the admin should see read-only booking statistics$/, fn state, _ ->
+    text = visible_page_text()
+    assert String.contains?(text, "Total Bookings")
+    {:ok, state}
+  end
+
 end
