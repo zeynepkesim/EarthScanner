@@ -4,6 +4,9 @@ defmodule WhiteBreadContext do
   alias EarthScanner.Accounts
 
   # Start/end session for each scenario
+  @base "http://localhost:4002"
+
+  # 1-arity: state
   scenario_starting_state fn state ->
     Hound.start_session()
     state
