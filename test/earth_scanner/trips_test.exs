@@ -5,6 +5,7 @@ defmodule EarthScanner.TripsTest do
   alias EarthScanner.Trips.{Trip, TripInstance}
   alias EarthScanner.Accounts
   alias EarthScanner.Accounts.User
+  alias EarthScanner.Purchases.Purchase
 
   defp admin_fixture(attrs \\ %{}) do
     unique_email = "admin_#{System.unique_integer([:positive])}@example.com"
@@ -135,6 +136,275 @@ defmodule EarthScanner.TripsTest do
 
       assert Enum.any?(result, &(&1.id == trip1.id))
       refute Enum.any?(result, &(&1.admin_id == admin2.id))
+    end
+  end
+
+  describe "get_trip_for_admin/2 (FR-35)" do
+    setup do
+      # AC-FR35-01: Admin can view details of trips they created
+      {:ok, admin} = create_admin()
+      {:ok, other_admin} = create_admin(%{username: "other_admin", email: "other@test.com"})
+
+      {:ok, trip} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "plane",
+          "source_city" => "New York",
+          "destination_city" => "London",
+          "departure_time" => "2025-12-01T10:00:00Z",
+          "arrival_time" => "2025-12-01T22:00:00Z",
+          "price" => "500.00",
+          "co2_level" => "250",
+          "available_tickets" => "100",
+          "dates" => "2025-12-01"
+        })
+
+      %{admin: admin, other_admin: other_admin, trip: trip}
+    end
+
+    test "returns trip with all details for authorized admin", %{admin: admin, trip: trip} do
+      # AC-FR35-02: Displays all trip attributes
+      assert {:ok, fetched_trip} = Trips.get_trip_for_admin(trip.id, admin)
+      assert fetched_trip.id == trip.id
+      assert fetched_trip.source_city == "New York"
+      assert fetched_trip.destination_city == "London"
+      assert fetched_trip.transport_mode == "plane"
+      assert Decimal.eq?(fetched_trip.price, Decimal.new("500.00"))
+      assert fetched_trip.co2_level == 250
+      assert fetched_trip.duration_minutes == 720
+      assert length(fetched_trip.instances) == 1
+    end
+
+    test "returns error for non-existent trip", %{admin: admin} do
+      # AC-FR35-04: Returns error if trip doesn't exist
+      assert {:error, :not_found} = Trips.get_trip_for_admin(99999, admin)
+    end
+
+    test "returns error when admin tries to view another admin's trip", %{
+      other_admin: other_admin,
+      trip: trip
+    } do
+      # AC-FR35-03: Only creator can view trip details
+      assert {:error, :unauthorized} = Trips.get_trip_for_admin(trip.id, other_admin)
+    end
+  end
+
+  describe "delete_trip/2 (FR-33)" do
+    setup do
+      {:ok, admin} = create_admin()
+
+      {:ok, future_trip} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "bus",
+          "source_city" => "Paris",
+          "destination_city" => "Berlin",
+          "departure_time" => "2025-12-15T08:00:00Z",
+          "arrival_time" => "2025-12-15T18:00:00Z",
+          "price" => "100.00",
+          "co2_level" => "50",
+          "available_tickets" => "40",
+          "dates" => "2025-12-15"
+        })
+
+      {:ok, past_trip} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "train",
+          "source_city" => "Madrid",
+          "destination_city" => "Barcelona",
+          "departure_time" => "2024-01-01T09:00:00Z",
+          "arrival_time" => "2024-01-01T12:00:00Z",
+          "price" => "50.00",
+          "co2_level" => "20",
+          "available_tickets" => "60",
+          "dates" => "2024-01-01"
+        })
+
+      %{admin: admin, future_trip: future_trip, past_trip: past_trip}
+    end
+
+    test "successfully deletes future trip without sold tickets", %{
+      admin: admin,
+      future_trip: trip
+    } do
+      # AC-FR33-01: Only future trips can be deleted
+      # AC-FR33-02: Confirmation prompt required (handled in controller)
+      assert {:ok, deleted_trip} = Trips.delete_trip(trip.id, admin)
+      assert deleted_trip.id == trip.id
+      assert_raise Ecto.NoResultsError, fn -> Trips.get_trip!(trip.id) end
+    end
+
+    test "returns error when trying to delete past trip", %{admin: admin, past_trip: trip} do
+      # AC-FR33-01: Only future trips can be deleted
+      assert {:error, :past_trip} = Trips.delete_trip(trip.id, admin)
+      # Trip should still exist
+      assert Trips.get_trip!(trip.id)
+    end
+
+    test "returns error when trip has sold tickets", %{admin: admin, future_trip: trip} do
+      # AC-FR33-03: Warning if tickets have been sold
+      {:ok, regular_user} = create_regular_user()
+
+      # Create a purchase
+      instance = hd(trip.instances)
+
+      Repo.insert!(%Purchase{
+        user_id: regular_user.id,
+        trip_instance_id: instance.id
+      })
+
+      assert {:error, :has_sold_tickets} = Trips.delete_trip(trip.id, admin)
+      # Trip should still exist
+      assert Trips.get_trip!(trip.id)
+    end
+
+    test "returns error for non-existent trip", %{admin: admin} do
+      assert {:error, :not_found} = Trips.delete_trip(99999, admin)
+    end
+
+    test "returns error when admin tries to delete another admin's trip", %{future_trip: trip} do
+      {:ok, other_admin} = create_admin(%{username: "other", email: "other@test.com"})
+      assert {:error, :unauthorized} = Trips.delete_trip(trip.id, other_admin)
+    end
+  end
+
+  describe "force_delete_trip/2 (FR-33)" do
+    setup do
+      {:ok, admin} = create_admin()
+
+      {:ok, trip_with_tickets} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "plane",
+          "source_city" => "Tokyo",
+          "destination_city" => "Seoul",
+          "departure_time" => "2025-12-20T14:00:00Z",
+          "arrival_time" => "2025-12-20T17:00:00Z",
+          "price" => "300.00",
+          "co2_level" => "150",
+          "available_tickets" => "200",
+          "dates" => "2025-12-20"
+        })
+
+      {:ok, regular_user} = create_regular_user()
+      instance = hd(trip_with_tickets.instances)
+
+      Repo.insert!(%Purchase{
+        user_id: regular_user.id,
+        trip_instance_id: instance.id
+      })
+
+      %{admin: admin, trip: trip_with_tickets}
+    end
+
+    test "force deletes trip with sold tickets after explicit confirmation", %{
+      admin: admin,
+      trip: trip
+    } do
+      # AC-FR33-04: Admin must confirm explicitly if tickets sold
+      # AC-FR33-05: Associated purchased tickets are handled (deleted via cascade)
+      assert {:ok, deleted_trip} = Trips.force_delete_trip(trip.id, admin)
+      assert deleted_trip.id == trip.id
+      assert_raise Ecto.NoResultsError, fn -> Trips.get_trip!(trip.id) end
+
+      # Verify purchases are also deleted (cascade)
+      assert Repo.all(Purchase) == []
+    end
+  end
+
+  describe "trip_has_sold_tickets?/1" do
+    test "returns true when trip has sold tickets" do
+      {:ok, admin} = create_admin()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "bus",
+          "source_city" => "A",
+          "destination_city" => "B",
+          "departure_time" => "2025-12-25T10:00:00Z",
+          "arrival_time" => "2025-12-25T15:00:00Z",
+          "price" => "75.00",
+          "co2_level" => "30",
+          "available_tickets" => "50",
+          "dates" => "2025-12-25"
+        })
+
+      {:ok, user} = create_regular_user()
+      instance = hd(trip.instances)
+
+      Repo.insert!(%Purchase{
+        user_id: user.id,
+        trip_instance_id: instance.id
+      })
+
+      assert Trips.trip_has_sold_tickets?(trip.id) == true
+    end
+
+    test "returns false when trip has no sold tickets" do
+      {:ok, admin} = create_admin()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, %{
+          "transport_mode" => "train",
+          "source_city" => "C",
+          "destination_city" => "D",
+          "departure_time" => "2025-12-30T08:00:00Z",
+          "arrival_time" => "2025-12-30T11:00:00Z",
+          "price" => "60.00",
+          "co2_level" => "25",
+          "available_tickets" => "80",
+          "dates" => "2025-12-30"
+        })
+
+      assert Trips.trip_has_sold_tickets?(trip.id) == false
+    end
+  end
+
+  # Helper functions
+  defp create_admin(attrs \\ %{}) do
+    default_attrs = %{
+      username: "admin_user",
+      password: "password123",
+      password_confirmation: "password123",
+      email: "admin@test.com",
+      phone_number: "1234567890",
+      role: "admin"
+    }
+
+    merged_attrs = Map.merge(default_attrs, attrs)
+
+    # Insert directly into database with role already set
+    changeset =
+      EarthScanner.Accounts.User.admin_changeset(%EarthScanner.Accounts.User{}, merged_attrs)
+
+    case Repo.insert(changeset) do
+      {:ok, user} -> {:ok, user}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp create_regular_user(attrs \\ %{}) do
+    default_attrs = %{
+      username: "regular_user",
+      password: "password123",
+      password_confirmation: "password123",
+      name: "John",
+      last_name: "Doe",
+      email: "user@test.com",
+      birthdate: ~D[1990-01-01],
+      nationality: "US",
+      residence_address: "123 Main St",
+      phone_number: "0987654321"
+    }
+
+    merged_attrs = Map.merge(default_attrs, attrs)
+
+    changeset =
+      EarthScanner.Accounts.User.registration_changeset(
+        %EarthScanner.Accounts.User{},
+        merged_attrs
+      )
+
+    case Repo.insert(changeset) do
+      {:ok, user} -> {:ok, user}
+      {:error, changeset} -> {:error, changeset}
     end
   end
 end

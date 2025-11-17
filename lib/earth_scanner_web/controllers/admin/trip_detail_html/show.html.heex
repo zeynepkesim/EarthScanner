@@ -1,0 +1,211 @@
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <!-- Header with Back Button -->
+  <div class="mb-6">
+    <.link
+      navigate={~p"/admin/trips"}
+      class="text-blue-600 hover:text-blue-800 flex items-center gap-2"
+    >
+      <span>←</span> Back to Trips
+    </.link>
+  </div>
+  
+<!-- Trip Title -->
+  <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4">
+      <h1 class="text-3xl font-bold">
+        {@trip.source_city} → {@trip.destination_city}
+      </h1>
+
+      <p class="text-blue-100 mt-1">
+        {String.capitalize(@trip.transport_mode)} Trip
+      </p>
+    </div>
+    
+<!-- Trip Image -->
+    <%= if @trip.picture_url do %>
+      <div class="w-full h-64 bg-gray-200">
+        <img src={@trip.picture_url} alt="Trip picture" class="w-full h-full object-cover" />
+      </div>
+    <% end %>
+    
+<!-- Trip Details Grid -->
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Transportation</h3>
+            <p class="text-lg font-medium text-gray-900 capitalize">
+              {@trip.transport_mode}
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Route</h3>
+            <p class="text-lg text-gray-900">
+              <span class="font-medium">{@trip.source_city}</span>
+              <span class="text-gray-400 mx-2">→</span>
+              <span class="font-medium">{@trip.destination_city}</span>
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Schedule</h3>
+            <div class="text-gray-900">
+              <p>
+                <span class="font-medium">Departure:</span>
+                {Calendar.strftime(@trip.departure_time, "%B %d, %Y at %I:%M %p UTC")}
+              </p>
+
+              <p class="mt-1">
+                <span class="font-medium">Arrival:</span>
+                {Calendar.strftime(@trip.arrival_time, "%B %d, %Y at %I:%M %p UTC")}
+              </p>
+            </div>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Duration</h3>
+            <p class="text-lg text-gray-900">
+              {format_duration(@trip.duration_minutes)}
+            </p>
+          </div>
+        </div>
+        
+<!-- Right Column -->
+        <div class="space-y-4">
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Price</h3>
+            <p class="text-2xl font-bold text-green-600">
+              ${@trip.price}
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">CO₂ Pollution Level</h3>
+            <p class="text-lg text-gray-900">
+              {@trip.co2_level} <span class="text-sm text-gray-500">kg CO₂</span>
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">
+              Available Tickets (Base)
+            </h3>
+            <p class="text-lg text-gray-900">
+              {@trip.available_tickets} tickets per instance
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Created</h3>
+            <p class="text-sm text-gray-600">
+              {Calendar.strftime(@trip.inserted_at, "%B %d, %Y at %I:%M %p")}
+            </p>
+          </div>
+
+          <div class="border-b pb-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase">Last Updated</h3>
+            <p class="text-sm text-gray-600">
+              {Calendar.strftime(@trip.updated_at, "%B %d, %Y at %I:%M %p")}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+<!-- Trip Instances -->
+      <div class="mt-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Trip Dates & Availability</h2>
+
+        <%= if Enum.empty?(@trip.instances) do %>
+          <p class="text-gray-500 italic">No scheduled dates for this trip.</p>
+        <% else %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <%= for instance <- @trip.instances do %>
+              <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <p class="font-semibold text-gray-900">
+                      {Calendar.strftime(instance.date, "%B %d, %Y")}
+                    </p>
+                    <p class="text-sm text-gray-600 mt-1">
+                      {instance.available_tickets} tickets available
+                    </p>
+                  </div>
+
+                  <%= if Date.compare(instance.date, Date.utc_today()) == :lt do %>
+                    <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded">Past</span>
+                  <% else %>
+                    <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                      Upcoming
+                    </span>
+                  <% end %>
+                </div>
+
+                <%= if @is_future and Date.compare(instance.date, Date.utc_today()) != :lt do %>
+                  <div class="flex gap-2 mt-3">
+                    <.link
+                      navigate={~p"/admin/trips/#{@trip.id}/instances/#{instance.id}/edit"}
+                      class="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </.link>
+
+                    <.link
+                      href={~p"/admin/trips/#{@trip.id}/instances/#{instance.id}"}
+                      method="delete"
+                      data-confirm="Are you sure you want to delete this date instance?"
+                      class="text-xs text-red-600 hover:text-red-800"
+                    >
+                      Delete
+                    </.link>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      
+<!-- Action Buttons -->
+      <%= if @is_future do %>
+        <div class="mt-8 pt-6 border-t flex gap-4">
+          <.link
+            navigate={~p"/admin/trips/#{@trip.id}/edit"}
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          >
+            Edit Trip
+          </.link>
+
+          <.link
+            href={~p"/admin/trips/#{@trip.id}"}
+            method="delete"
+            data-confirm={delete_confirmation_message(@has_sold_tickets)}
+            class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          >
+            Delete Trip
+          </.link>
+
+          <%= if @has_sold_tickets do %>
+            <div class="flex items-center text-amber-600 text-sm">
+              <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Warning: This trip has sold tickets
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="mt-8 pt-6 border-t">
+          <p class="text-gray-500 italic">
+            This trip is in the past and cannot be edited or deleted.
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

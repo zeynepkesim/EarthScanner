@@ -19,6 +19,7 @@ defmodule EarthScanner.Trips.Trip do
 
     belongs_to :admin, User, foreign_key: :admin_id
     has_many :instances, TripInstance
+    has_many :purchases, through: [:instances, :purchases]
 
     timestamps()
   end
