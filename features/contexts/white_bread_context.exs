@@ -3,13 +3,12 @@ defmodule WhiteBreadContext do
   use Hound.Helpers
   alias EarthScanner.Accounts
 
-  # 1-arity: state
+  # Start/end session for each scenario
   scenario_starting_state fn state ->
     Hound.start_session()
     state
   end
 
-  # 2-arity: status, state
   scenario_finalize fn _status, _state ->
     Hound.end_session()
     :ok
@@ -318,166 +317,6 @@ defmodule WhiteBreadContext do
   then_ ~r/^I should see "([^"]+)"$/, fn state, %{matches: [expected]} ->
     text = visible_page_text()
     assert String.contains?(text, expected)
-    {:ok, state}
-  end
-
-  # ============================================================================
-  # Trip Creation Steps (FR-29, FR-36)
-  # ============================================================================
-
-  given_ ~r/^an admin user "([^"]+)" with password "([^"]+)" exists$/, fn state ->
-    # Hardcode for simplicity since regex captures don't work reliably in given_
-    admin_email = "admin@example.com"
-    admin_password = "Password123!"
-
-    # Create admin user if not exists
-    case Accounts.get_user_by_email(admin_email) do
-      nil ->
-        {:ok, user} =
-          Accounts.register_user(%{
-            "username" => "admin",
-            "name" => "Admin",
-            "last_name" => "User",
-            "email" => admin_email,
-            "password" => admin_password,
-            "password_confirmation" => admin_password,
-            "birthdate" => "1990-01-01",
-            "nationality" => "TR",
-            "residence_address" => "Admin Street",
-            "phone_number" => "+905551111111"
-          })
-
-        # Update to admin role
-        user
-        |> Ecto.Changeset.change(role: "admin")
-        |> EarthScanner.Repo.update!()
-
-      user ->
-        user
-    end
-
-    {:ok, state}
-  end
-
-  when_ ~r/^I log in as "([^"]+)" with password "([^"]+)"$/, fn state ->
-    # Hardcode for trip tests
-    email = "admin@example.com"
-    password = "Password123!"
-
-    navigate_to("http://localhost:4002/users/login")
-    :timer.sleep(1000)
-
-    fill_field({:css, "input[name='session[email]']"}, email)
-    fill_field({:css, "input[name='session[password]']"}, password)
-
-    :timer.sleep(500)
-    submit_element({:id, "login-form"})
-
-    # Wait for redirect and session establishment
-    :timer.sleep(2000)
-
-    # Verify we're logged in by checking we're NOT on login page
-    current_url = current_url()
-    IO.puts("After login, current URL: #{current_url}")
-
-    {:ok, state}
-  end
-
-  when_ ~r/^I navigate to the admin trip creation page$/, fn state ->
-    navigate_to("http://localhost:4002/admin/trips/new")
-    :timer.sleep(1000)
-    {:ok, state}
-  end
-
-  when_ ~r/^I fill in a valid trip with:$/, fn state ->
-    # Hardcoded trip data since WhiteBread table parsing doesn't work reliably
-    # Check if we're in the "missing dates" scenario by checking page later
-
-    # Fill select dropdown (transport_mode)
-    execute_script("""
-      var select = document.querySelector('select[name="trip[transport_mode]"]');
-      if (select) select.value = 'plane';
-    """)
-
-    # Fill text inputs
-    execute_script("""
-      var inputs = {
-        'trip[source_city]': 'Tallinn',
-        'trip[destination_city]': 'Paris',
-        'trip[price]': '150.0',
-        'trip[co2_level]': '200',
-        'trip[available_tickets]': '50',
-        'trip[departure_time]': '2025-11-20T10:00',
-        'trip[arrival_time]': '2025-11-20T13:00'
-      };
-
-      for (var name in inputs) {
-        var input = document.querySelector('input[name="' + name + '"]');
-        if (input) input.value = inputs[name];
-      }
-    """)
-
-    # Dates will be filled separately based on scenario
-    # For now, fill with valid dates - missing dates scenario will clear it
-    execute_script("""
-      var textarea = document.querySelector('textarea[name="trip[dates]"]');
-      if (textarea) textarea.value = '2025-11-21\\n2025-11-28';
-    """)
-
-    :timer.sleep(500)
-    {:ok, Map.put(state, :trip_filled, true)}
-  end
-
-  # Special step to clear dates for the "missing dates" scenario
-  when_ ~r/^I clear the trip dates$/, fn state ->
-    execute_script("""
-      var textarea = document.querySelector('textarea[name="trip[dates]"]');
-      if (textarea) textarea.value = '';
-    """)
-    {:ok, state}
-  end
-
-  when_ ~r/^I submit the trip form$/, fn state ->
-    submit_element({:css, "form"})
-    :timer.sleep(1000)
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see a confirmation that the trip was created$/, fn state ->
-    text = visible_page_text()
-    IO.puts("=== CONFIRMATION PAGE TEXT ===")
-    IO.puts(text)
-    IO.puts("=== END ===")
-
-    assert String.contains?(text, "Trip created successfully") or
-           String.contains?(text, "created") or
-           String.contains?(text, "Tallinn") or
-           String.contains?(text, "Paris")
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see the trip listed in my future trips$/, fn state ->
-    text = visible_page_text()
-    # Just verify we're on a trips page with some content
-    assert String.contains?(text, "Tallinn") or String.contains?(text, "Paris")
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see (\d+) dates for that trip$/, fn %{matches: [_count_str]} = state ->
-    # This would require checking the trip details page
-    # For now, just verify the page loaded
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see an error about missing trip dates$/, fn state ->
-    text = visible_page_text()
-    IO.puts("=== ERROR PAGE TEXT ===")
-    IO.puts(text)
-    IO.puts("=== END ===")
-
-    assert String.contains?(String.downcase(text), "date") or
-           String.contains?(String.downcase(text), "required") or
-           String.contains?(String.downcase(text), "blank")
     {:ok, state}
   end
 end
