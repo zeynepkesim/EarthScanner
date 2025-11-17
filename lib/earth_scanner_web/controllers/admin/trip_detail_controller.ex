@@ -7,7 +7,9 @@ defmodule EarthScannerWeb.Admin.TripDetailController do
 
   defp require_admin(conn, _opts) do
     case conn.assigns[:current_user] do
-      %{role: "admin"} -> conn
+      %{role: "admin"} ->
+        conn
+
       _ ->
         conn
         |> put_flash(:error, "You must be an admin to access this page.")
@@ -88,8 +90,8 @@ defmodule EarthScannerWeb.Admin.TripDetailController do
           render(conn, :confirm_delete, trip: trip)
         else
           conn
-            |> put_flash(:info, "No sold tickets. You can delete this trip normally.")
-            |> redirect(to: ~p"/admin/trips/#{id}")
+          |> put_flash(:info, "No sold tickets. You can delete this trip normally.")
+          |> redirect(to: ~p"/admin/trips/#{id}")
         end
 
       {:error, _} ->
