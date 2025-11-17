@@ -10,16 +10,50 @@
       </div>
     <% end %>
 
-    <.form for={@form} action={~p"/profile"} method="post" class="space-y-4">
+    <.form for={@form} action={~p"/profile"} method="post" class="space-y-4"
+       phx-change="validate" phx-submit="save">
       <input type="hidden" name="_method" value="put" />
+
       <.input field={@form[:username]} label="Username" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :username) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:name]} label="Name" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :name) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:last_name]} label="Last Name" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :last_name) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:email]} type="email" label="Email" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :email) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:birthdate]} type="date" label="Birthdate" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :birthdate) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:nationality]} label="Nationality" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :nationality) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:residence_address]} label="Address" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :residence_address) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <.input field={@form[:phone_number]} label="Phone" class="w-full text-black" />
+      <%= for {message, _} <- Keyword.get_values(@form.errors, :phone_number) do %>
+        <p class="text-red-600 text-sm mt-1"><%= message %></p>
+      <% end %>
+
       <button
         type="submit"
         class="w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition-colors"

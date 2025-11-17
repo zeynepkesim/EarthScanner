@@ -59,22 +59,26 @@ defmodule EarthScanner.Accounts.User do
   defp maybe_put_password_hash(changeset), do: changeset
 
   def profile_changeset(user, attrs) do
-    user
-    |> cast(attrs, [
-      :username,
-      :name,
-      :last_name,
-      :email,
-      :birthdate,
-      :nationality,
-      :residence_address,
-      :phone_number
-    ])
-    |> validate_required([:username, :email, :name, :last_name])
-    |> validate_format(:email, ~r/^\S+@\S+$/)
-    |> unique_constraint(:email)
-    |> unique_constraint(:username)
-  end
+  user
+  |> cast(attrs, [
+    :username,
+    :name,
+    :last_name,
+    :email,
+    :birthdate,
+    :nationality,
+    :residence_address,
+    :phone_number
+  ])
+  |> validate_required([:username, :email, :name, :last_name])
+  |> validate_format(:email, ~r/^[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}$/, message: "Invalid email")
+  |> validate_format(:phone_number, ~r/^\+?\d{7,15}$/, message: "Phone must contain only digits and optional +")
+  |> validate_format(:name, ~r/^[A-Za-z]+$/, message: "Name must contain only letters")
+  |> validate_format(:last_name, ~r/^[A-Za-z]+$/, message: "Last name must contain only letters")
+  |> unique_constraint(:email)
+  |> unique_constraint(:username)
+end
+
 
   # Changeset for admin creation (simpler than regular user registration)
   def admin_changeset(user, attrs) do

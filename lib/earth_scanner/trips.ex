@@ -146,7 +146,44 @@ defmodule EarthScanner.Trips do
     Repo.all(query)
   end
 
+  @doc """
+  Lists all trips created by the given admin with all their instances (past and future).
+
+  Trips are ordered by departure_time ascending.
+  """
+  def list_all_trips_for_admin(%User{id: admin_id}) do
+    query =
+      from t in Trip,
+        where: t.admin_id == ^admin_id,
+        preload: :instances,
+        order_by: [asc: t.departure_time]
+
+    Repo.all(query)
+  end
+
   def get_trip!(id), do: Repo.get!(Trip, id)
+
+  @doc """
+  Updates a trip with new attributes.
+
+  ## Examples
+
+      update_trip(trip, %{price: 50, available_tickets: 25})
+
+  """
+  def update_trip(%Trip{} = trip, attrs) do
+    trip
+    |> Trip.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a trip and all its instances.
+
+  """
+  def delete_trip(%Trip{} = trip) do
+    Repo.delete(trip)
+  end
 
   # ---------- FR-36: manage instances (edit/delete) ----------
 

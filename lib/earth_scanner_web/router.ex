@@ -50,6 +50,9 @@ defmodule EarthScannerWeb.Router do
     get "/trips", TripController, :index
     get "/trips/new", TripController, :new
     post "/trips", TripController, :create
+    get "/trips/:id/edit", TripController, :edit
+    put "/trips/:id", TripController, :update
+    delete "/trips/:id", TripController, :delete
 
     # FR-36
     get "/trips/:trip_id/instances/:id/edit", TripInstanceController, :edit

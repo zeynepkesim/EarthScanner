@@ -25,8 +25,9 @@ defmodule EarthScannerWeb.TripInstanceController do
       |> EarthScanner.Repo.preload(:trip)
 
     changeset = EarthScanner.Trips.TripInstance.changeset(instance, %{})
+    form = to_form(changeset)
 
-    render(conn, :edit_instance, instance: instance, changeset: changeset)
+    render(conn, :edit_instance, instance: instance, form: form)
   end
 
   def update(conn, %{"trip_id" => trip_id, "id" => id, "trip_instance" => params}) do
@@ -41,7 +42,8 @@ defmodule EarthScannerWeb.TripInstanceController do
         |> redirect(to: ~p"/admin/trips")
 
       {:error, changeset} ->
-        render(conn, :edit_instance, instance: instance, changeset: changeset)
+        form = to_form(changeset)
+        render(conn, :edit_instance, instance: instance, form: form)
     end
   end
 
