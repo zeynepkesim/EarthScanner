@@ -13,7 +13,9 @@ config :earth_scanner, EarthScanner.Repo,
   port: String.to_integer(System.get_env("POSTGRES_PORT", "5433")),
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  pool_size: System.schedulers_online() * 2,
+  pool_size: 5,
+  ownership_timeout: 60_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
