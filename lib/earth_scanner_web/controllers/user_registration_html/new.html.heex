@@ -2,19 +2,19 @@
   <div class="mx-auto w-full max-w-3xl">
     <div class="mb-8">
       <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Register</h1>
-      
+
       <p class="mt-2 text-sm text-slate-600">
         Create your EarthScanner account to plan and book smarter trips.
       </p>
     </div>
-    
+
     <%= if assigns[:error] do %>
       <div class="mb-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
         <.icon name="hero-exclamation-triangle" class="h-5 w-5 mt-0.5" />
         <div>{@error}</div>
       </div>
     <% end %>
-    
+
     <.form
       for={@form}
       id="registration-form"
@@ -26,46 +26,46 @@
         <label class="text-sm font-medium text-slate-700">Username</label>
         <.input field={@form[:username]} type="text" placeholder="your_username" />
       </div>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="space-y-1.5">
           <label class="text-sm font-medium text-slate-700">First name</label>
           <.input field={@form[:name]} type="text" placeholder="First" />
         </div>
-        
+
         <div class="space-y-1.5">
           <label class="text-sm font-medium text-slate-700">Last name</label>
           <.input field={@form[:last_name]} type="text" placeholder="Last" />
         </div>
       </div>
-      
+
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Email</label>
         <.input field={@form[:email]} type="email" placeholder="you@example.com" />
       </div>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="space-y-1.5">
           <label class="text-sm font-medium text-slate-700">Birthdate</label>
           <.input field={@form[:birthdate]} type="date" />
         </div>
-        
+
         <div class="space-y-1.5">
           <label class="text-sm font-medium text-slate-700">Nationality</label>
           <.input field={@form[:nationality]} type="text" placeholder="Estonian" />
         </div>
       </div>
-      
+
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Residence address</label>
         <.input field={@form[:residence_address]} type="text" placeholder="Street" />
       </div>
-      
+
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Phone number</label>
         <.input field={@form[:phone_number]} type="tel" placeholder="+3725555555" />
       </div>
-      
+
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Password</label>
         <.input
@@ -74,7 +74,7 @@
           placeholder="••••••••••••"
         />
       </div>
-      
+
       <div class="space-y-1.5">
         <label class="text-sm font-medium text-slate-700">Confirm password</label>
         <.input
@@ -83,7 +83,7 @@
           placeholder="••••••••••••"
         />
       </div>
-      
+
       <div class="pt-2 flex items-center justify-between">
         <a href={~p"/users/login"} class="text-sm font-medium text-indigo-600">
           Have an account? Log in

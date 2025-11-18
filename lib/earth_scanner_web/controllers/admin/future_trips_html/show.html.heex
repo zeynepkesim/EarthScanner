@@ -11,10 +11,10 @@
       Back to Future Trips
     </.link>
     <h1 class="text-3xl font-bold text-gray-900">Trip Details</h1>
-    
+
     <p class="mt-1 text-sm text-gray-500">Upcoming excursion information and availability</p>
   </div>
-  
+
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -25,37 +25,37 @@
             class="w-full h-64 object-cover rounded-lg mb-6"
           />
         <% end %>
-        
+
         <div class="flex items-center gap-2 mb-3">
           <div class="px-3 py-1 bg-green-100 rounded-full text-xs font-medium text-green-700">
             Scheduled
           </div>
         </div>
-        
+
         <h2 class="text-2xl font-bold text-gray-900 mb-4">
           {@trip.source_city} <span class="text-blue-500">→</span> {@trip.destination_city}
         </h2>
-        
+
         <div class="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
           <div>
             <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Departure</div>
-            
+
             <div class="font-semibold text-gray-900">
               {Calendar.strftime(@trip.departure_time, "%b %d, %Y")}
             </div>
-            
+
             <div class="text-sm text-gray-600">
               {Calendar.strftime(@trip.departure_time, "%H:%M")}
             </div>
           </div>
-          
+
           <div>
             <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Arrival</div>
-            
+
             <div class="font-semibold text-gray-900">
               {Calendar.strftime(@trip.arrival_time, "%b %d, %Y")}
             </div>
-            
+
             <div class="text-sm text-gray-600">
               {Calendar.strftime(@trip.arrival_time, "%H:%M")}
             </div>
@@ -63,19 +63,19 @@
         </div>
       </div>
     </div>
-    
+
     <aside class="space-y-6">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">Pricing</div>
-        
+
         <div class="text-3xl font-bold text-gray-900 mb-6">${Decimal.to_string(@trip.price)}</div>
-        
+
         <div class="mb-6">
           <div class="text-xs text-gray-500 uppercase tracking-wide mb-2">Available Tickets</div>
-          
+
           <div class="text-2xl font-semibold text-gray-700">{@trip.available_tickets}</div>
         </div>
-        
+
         <div class="space-y-3 pt-6 border-t border-gray-200">
           <.link
             href={~p"/admin/trips/#{@trip.id}/edit"}

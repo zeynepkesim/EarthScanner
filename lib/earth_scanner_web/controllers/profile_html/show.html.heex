@@ -4,7 +4,7 @@
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Your profile</h1>
       </div>
-      
+
       <div class="flex items-center gap-3">
         <.icon name="hero-user-circle" class="h-12 w-12 text-slate-400" />
         <!-- edit -->
@@ -16,67 +16,67 @@
         </.link>
       </div>
     </div>
-    
+
     <div class="rounded-xl border border-slate-200 bg-white/60">
       <dl class="divide-y divide-slate-200">
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Username</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">{@user.username}</dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Full name</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">{@user.name} {@user.last_name}</dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Email</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">{@user.email}</dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Birthdate</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">
             {if @user.birthdate, do: @user.birthdate, else: "-"}
           </dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Nationality</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">
             {if @user.nationality, do: @user.nationality, else: "-"}
           </dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Residence address</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">
             {if @user.residence_address, do: @user.residence_address, else: "-"}
           </dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Phone number</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">
             {if @user.phone_number, do: @user.phone_number, else: "-"}
           </dd>
         </div>
-        
+
         <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3 sm:gap-6">
           <dt class="text-sm font-medium text-slate-600">Role</dt>
-          
+
           <dd class="sm:col-span-2 text-sm text-slate-900">
             {if @user.role, do: @user.role, else: "user"}
           </dd>
         </div>
-        
+
         <%= if @user.role == "admin" do %>
           <div class="mt-4">
             <a
@@ -87,7 +87,7 @@
             </a>
           </div>
         <% end %>
-        
+
         <a href={~p"/users/change-password"} class="text-sm text-indigo-600 font-medium">
           Change Password
         </a>
@@ -98,7 +98,7 @@
       <p class="mt-1 text-sm text-red-700">
         Deleting your account is <span class="font-semibold">irreversible</span>. This will permanently remove your profile and associated data.
       </p>
-      
+
       <div class="mt-4">
         <a
           href={~p"/users/delete"}
