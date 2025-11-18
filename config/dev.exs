@@ -3,9 +3,9 @@ import Config
 # Configure your database
 config :earth_scanner, EarthScanner.Repo,
   username: System.get_env("PGUSER", "postgres"),
-  password: System.get_env("PGPASSWORD", "postgres"),
+  password: System.get_env("PGPASSWORD", "12345678"),
   hostname: System.get_env("PGHOST", "localhost"),
-  port: 5433,
+  port: 5432,
   database: System.get_env("PGDATABASE_DEV", "earth_scanner_dev"),
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
