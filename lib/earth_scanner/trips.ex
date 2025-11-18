@@ -11,6 +11,7 @@ defmodule EarthScanner.Trips do
 
   alias EarthScanner.Trips.{Trip, TripInstance}
   alias EarthScanner.Accounts.User
+  alias EarthScanner.Purchases.Purchase
 
   # ---------- FR-29: create trip with all details + FR-36 dates ----------
 
@@ -211,5 +212,107 @@ defmodule EarthScanner.Trips do
   """
   def delete_trip_instance(%TripInstance{} = instance) do
     Repo.delete(instance)
+  end
+
+  # FR-35: Get trip with all details for admin
+  @doc """
+  Gets a trip by ID with all its instances and preloaded data.
+  Ensures the trip belongs to the given admin.
+
+  Returns `{:ok, trip}` or `{:error, :not_found}` or `{:error, :unauthorized}`.
+  """
+  def get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}) do
+    trip =
+      Trip
+      |> Repo.get(trip_id)
+      |> Repo.preload([
+        :admin,
+        instances: from(i in TripInstance, order_by: [asc: i.date])
+      ])
+
+    cond do
+      is_nil(trip) ->
+        {:error, :not_found}
+
+      trip.admin_id != admin_id ->
+        {:error, :unauthorized}
+
+      true ->
+        {:ok, trip}
+    end
+  end
+
+  # FR-33: Check if any tickets have been sold for this trip
+  @doc """
+  Checks if any tickets have been sold for any instance of the given trip.
+
+  Returns `true` if at least one purchase exists, `false` otherwise.
+  """
+  def trip_has_sold_tickets?(trip_id) do
+    query =
+      from p in Purchase,
+        join: i in TripInstance,
+        on: p.trip_instance_id == i.id,
+        where: i.trip_id == ^trip_id,
+        limit: 1
+
+    Repo.exists?(query)
+  end
+
+  # FR-33: Delete trip with validation
+  @doc """
+  Deletes a trip if it belongs to the admin and meets deletion criteria.
+
+  Returns:
+    - `{:ok, trip}` on successful deletion
+    - `{:error, :not_found}` if trip doesn't exist
+    - `{:error, :unauthorized}` if trip doesn't belong to admin
+    - `{:error, :past_trip}` if trip is in the past
+    - `{:error, :has_sold_tickets}` if tickets have been sold (needs confirmation)
+  """
+  def delete_trip(trip_id, %User{id: admin_id, role: "admin"}) do
+    with {:ok, trip} <- get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}),
+         :ok <- validate_trip_is_future(trip),
+         :ok <- validate_no_sold_tickets(trip_id) do
+      Repo.delete(trip)
+    end
+  end
+
+  # FR-33: Force delete trip (when admin confirms despite sold tickets)
+  @doc """
+  Force deletes a trip even if tickets have been sold.
+  Use this when admin explicitly confirms deletion.
+
+  Returns `{:ok, trip}` or error tuple.
+  """
+  def force_delete_trip(trip_id, %User{id: admin_id, role: "admin"}) do
+    with {:ok, trip} <- get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}),
+         :ok <- validate_trip_is_future(trip) do
+      # Delete all purchases first (cascade will handle this, but explicit is better)
+      Repo.delete(trip)
+    end
+  end
+
+  defp validate_trip_is_future(trip) do
+    today = Date.utc_today()
+
+    has_future_instance =
+      Enum.any?(trip.instances, fn instance ->
+        Date.compare(instance.date, today) in [:gt, :eq]
+      end)
+
+    if has_future_instance do
+      :ok
+    else
+      {:error, :past_trip}
+    end
+  end
+
+  defp validate_no_sold_tickets(trip_id) do
+    if trip_has_sold_tickets?(trip_id) do
+      {:error, :has_sold_tickets}
+    else
+      :ok
+    end
   end
 end

@@ -54,6 +54,14 @@ defmodule EarthScannerWeb.Router do
     put "/trips/:id", TripController, :update
     delete "/trips/:id", TripController, :delete
 
+    # FR-35: View Trip Details
+    get "/trips/:id", Admin.TripDetailController, :show
+
+    # FR-33: Delete Trip
+    delete "/trips/:id", Admin.TripDetailController, :delete
+    get "/trips/:id/confirm-delete", Admin.TripDetailController, :confirm_delete
+    post "/trips/:id/force-delete", Admin.TripDetailController, :force_delete
+
     # FR-36
     get "/trips/:trip_id/instances/:id/edit", TripInstanceController, :edit
     put "/trips/:trip_id/instances/:id", TripInstanceController, :update
