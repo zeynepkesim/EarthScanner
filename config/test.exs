@@ -41,4 +41,4 @@ config :phoenix_live_view,
 config :hound,
   driver: "chrome_driver",
   browser: "chrome",
-  port: 9515
+  port: 60038

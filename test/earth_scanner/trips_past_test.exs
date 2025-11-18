@@ -2,9 +2,10 @@ defmodule EarthScanner.TripsPastTest do
   use EarthScanner.DataCase
 
   alias EarthScanner.Trips
-  alias EarthScanner.Trips.Trip
   alias EarthScanner.Accounts
+  alias EarthScanner.Repo
 
+  # Fixture to create an admin user
   defp admin_fixture(attrs \\ %{}) do
     unique_email = "admin_#{System.unique_integer([:positive])}@example.com"
     unique_username = "admin_user_#{System.unique_integer([:positive])}"
@@ -28,13 +29,12 @@ defmodule EarthScanner.TripsPastTest do
         )
       )
 
-    # tests need an admin role; registration_changeset won't set role, so force it here
-    alias EarthScanner.Repo
+    # Force role to "admin" for tests
     admin = Ecto.Changeset.change(admin, role: "admin") |> Repo.update!()
-
     admin
   end
 
+  # Base attributes for trips
   defp base_trip_attrs do
     %{
       "picture_url" => "https://example.com/pic.jpg",
@@ -46,10 +46,12 @@ defmodule EarthScanner.TripsPastTest do
     }
   end
 
+  # Test: list past trips returns only past trips for admin and sorted descending
   test "list_past_trips_by_admin/1 returns only past trips for the admin and sorted desc" do
     admin1 = admin_fixture(%{"username" => "admin1", "email" => "admin1@example.com"})
     admin2 = admin_fixture(%{"username" => "admin2", "email" => "admin2@example.com"})
 
+    # Past trips for admin1
     {:ok, trip_old} =
       Trips.create_trip(
         admin1,
@@ -74,6 +76,7 @@ defmodule EarthScanner.TripsPastTest do
         })
       )
 
+    # Trip for another admin (should not appear)
     {:ok, _other} =
       Trips.create_trip(
         admin2,
@@ -88,12 +91,21 @@ defmodule EarthScanner.TripsPastTest do
 
     result = Trips.list_past_trips_by_admin(admin1)
 
+    # Positive assertions: trips exist
     assert Enum.any?(result, &(&1.id == trip_old.id))
     assert Enum.any?(result, &(&1.id == trip_newer.id))
+
+    # Negative assertions: no trips from other admins
     refute Enum.any?(result, &(&1.admin_id != admin1.id))
 
-    # Ensure order: most recent first
-    ids = Enum.map(result, & &1.id)
-    assert ids == Enum.sort(ids, &>=/2)
+    # Ensure order: newest first
+    departure_times = Enum.map(result, & &1.departure_time)
+
+    # Using NaiveDateTime.compare because trips may be NaiveDateTime
+    sorted_times = Enum.sort(departure_times, fn a, b ->
+      NaiveDateTime.compare(a, b) != :lt
+    end)
+
+    assert departure_times == sorted_times
   end
 end
