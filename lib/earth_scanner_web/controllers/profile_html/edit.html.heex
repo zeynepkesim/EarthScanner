@@ -3,60 +3,74 @@
     <h2 class="text-2xl font-semibold mb-6 text-gray-500 dark:text-gray-200 text-center">
       Edit Profile
     </h2>
-
-    <%= if @form.errors != [] do %>
+    
+    <%= if Enum.any?(@form.errors) do %>
       <div class="mb-4 rounded bg-red-100 px-4 py-2 text-red-700 text-center">
         Please fix the highlighted fields.
       </div>
     <% end %>
-
-    <.form for={@form} action={~p"/profile"} method="post" class="space-y-4"
-       phx-change="validate" phx-submit="save">
-      <input type="hidden" name="_method" value="put" />
-
-      <.input field={@form[:username]} label="Username" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :username) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:name]} label="Name" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :name) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:last_name]} label="Last Name" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :last_name) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:email]} type="email" label="Email" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :email) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:birthdate]} type="date" label="Birthdate" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :birthdate) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:nationality]} label="Nationality" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :nationality) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:residence_address]} label="Address" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :residence_address) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
-      <.input field={@form[:phone_number]} label="Phone" class="w-full text-black" />
-      <%= for {message, _} <- Keyword.get_values(@form.errors, :phone_number) do %>
-        <p class="text-red-600 text-sm mt-1"><%= message %></p>
-      <% end %>
-
+    
+    <.form
+      for={@form}
+      action={~p"/profile"}
+      method="put"
+      class="space-y-4"
+      phx-change="validate"
+      phx-submit="save"
+    >
+      <.input
+        field={@form[:username]}
+        label="Username"
+        class="w-full text-black"
+        error={@form.errors[:username]}
+      />
+      <.input
+        field={@form[:name]}
+        label="Name"
+        class="w-full text-black"
+        error={@form.errors[:name]}
+      />
+      <.input
+        field={@form[:last_name]}
+        label="Last Name"
+        class="w-full text-black"
+        error={@form.errors[:last_name]}
+      />
+      <.input
+        field={@form[:email]}
+        type="email"
+        label="Email"
+        class="w-full text-black"
+        error={@form.errors[:email]}
+      />
+      <.input
+        field={@form[:birthdate]}
+        type="date"
+        label="Birthdate"
+        class="w-full text-black"
+        error={@form.errors[:birthdate]}
+      />
+      <.input
+        field={@form[:nationality]}
+        label="Nationality"
+        class="w-full text-black"
+        error={@form.errors[:nationality]}
+      />
+      <.input
+        field={@form[:residence_address]}
+        label="Address"
+        class="w-full text-black"
+        error={@form.errors[:residence_address]}
+      />
+      <.input
+        field={@form[:phone_number]}
+        label="Phone"
+        class="w-full text-black"
+        error={@form.errors[:phone_number]}
+      />
       <button
         type="submit"
-        class="w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition-colors"
+        class="w-full rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         Save Changes
       </button>

@@ -119,116 +119,121 @@ defmodule EarthScannerWeb.ProfileControllerTest do
   end
 
   describe "PUT /profile" do
-  test "updates user profile successfully", %{conn: conn} do
-    uniq = Integer.to_string(System.unique_integer([:positive]))
-    email = "update" <> uniq <> "@example.com"
+    test "updates user profile successfully", %{conn: conn} do
+      uniq = Integer.to_string(System.unique_integer([:positive]))
+      email = "update" <> uniq <> "@example.com"
 
-    # Register a user
-    {:ok, user} =
-      Accounts.register_user(%{
-        "username" => "update_user_" <> uniq,
-        "password" => "verylongpassword",
-        "password_confirmation" => "verylongpassword",
-        "name" => "Old",
-        "last_name" => "Name",
-        "email" => email,
-        "birthdate" => "1990-01-01",
-        "nationality" => "AZ",
-        "residence_address" => "Baku city",
-        "phone_number" => "+994500000000"
-      })
+      # Register a user
+      {:ok, user} =
+        Accounts.register_user(%{
+          "username" => "update_user_" <> uniq,
+          "password" => "verylongpassword",
+          "password_confirmation" => "verylongpassword",
+          "name" => "Old",
+          "last_name" => "Name",
+          "email" => email,
+          "birthdate" => "1990-01-01",
+          "nationality" => "AZ",
+          "residence_address" => "Baku city",
+          "phone_number" => "+994500000000"
+        })
 
-    # Log in as the user
-    conn =
-      conn
-      |> post(~p"/users/login", %{
-        "session" => %{"email" => email, "password" => "verylongpassword"}
-      })
+      # Log in as the user
+      conn =
+        conn
+        |> post(~p"/users/login", %{
+          "session" => %{"email" => email, "password" => "verylongpassword"}
+        })
 
-    # Define valid update params
-    update_params = %{
-      "user" => %{
-        "username" => "new_username_" <> uniq,
-        "name" => "New",
-        "last_name" => "Name",
-        "email" => email,
-        "birthdate" => "1990-01-01",
-        "nationality" => "AZ",
-        "residence_address" => "Baku city",
-        "phone_number" => "+994500000000"
+      # Define valid update params
+      update_params = %{
+        "user" => %{
+          "username" => "new_username_" <> uniq,
+          "name" => "New",
+          "last_name" => "Name",
+          "email" => email,
+          "birthdate" => "1990-01-01",
+          "nationality" => "AZ",
+          "residence_address" => "Baku city",
+          "phone_number" => "+994500000000"
+        }
       }
-    }
 
-    # Attempt update
-    conn = put(recycle(conn), ~p"/profile", update_params)
+      # Attempt update
+      conn = put(recycle(conn), ~p"/profile", update_params)
 
-    # Assert redirect to profile page
-    assert redirected_to(conn) == ~p"/profile"
+      # Assert redirect to profile page
+      assert redirected_to(conn) == ~p"/profile"
 
-    # Verify user has been updated in database
-    updated_user = Accounts.get_user_by_id(user.id)
-    assert updated_user.username == "new_username_" <> uniq
-    assert updated_user.name == "New"
-  end
+      # Verify user has been updated in database
+      updated_user = Accounts.get_user_by_id(user.id)
+      assert updated_user.username == "new_username_" <> uniq
+      assert updated_user.name == "New"
+    end
 
-  test "does not update when input is invalid", %{conn: conn} do
-    uniq = Integer.to_string(System.unique_integer([:positive]))
-    email = "invalid" <> uniq <> "@example.com"
+    test "does not update when input is invalid", %{conn: conn} do
+      uniq = Integer.to_string(System.unique_integer([:positive]))
+      email = "invalid" <> uniq <> "@example.com"
 
-    # Register a user
-    {:ok, user} =
-      Accounts.register_user(%{
-        "username" => "invalid_user_" <> uniq,
-        "password" => "verylongpassword",
-        "password_confirmation" => "verylongpassword",
-        "name" => "Valid",
-        "last_name" => "User",
-        "email" => email,
-        "birthdate" => "1990-01-01",
-        "nationality" => "AZ",
-        "residence_address" => "Baku city",
-        "phone_number" => "+994500000000"
-      })
+      # Register a user
+      {:ok, user} =
+        Accounts.register_user(%{
+          "username" => "invalid_user_" <> uniq,
+          "password" => "verylongpassword",
+          "password_confirmation" => "verylongpassword",
+          "name" => "Valid",
+          "last_name" => "User",
+          "email" => email,
+          "birthdate" => "1990-01-01",
+          "nationality" => "AZ",
+          "residence_address" => "Baku city",
+          "phone_number" => "+994500000000"
+        })
 
-    # Log in as the user
-    conn =
-      conn
-      |> post(~p"/users/login", %{
-        "session" => %{"email" => email, "password" => "verylongpassword"}
-      })
+      # Log in as the user
+      conn =
+        conn
+        |> post(~p"/users/login", %{
+          "session" => %{"email" => email, "password" => "verylongpassword"}
+        })
 
-    # Define invalid update params
-    invalid_params = %{
-      "user" => %{
-        "username" => "invalid_user_" <> uniq,
-        "name" => "123Name",          # invalid: contains digits
-        "last_name" => "User",
-        "email" => "not-an-email",    # invalid email format
-        "birthdate" => "1990-01-01",
-        "nationality" => "AZ",
-        "residence_address" => "Baku city",
-        "phone_number" => "phone123"  # invalid: contains letters
+      # Define invalid update params
+      invalid_params = %{
+        "user" => %{
+          "username" => "invalid_user_" <> uniq,
+          # invalid: contains digits
+          "name" => "123Name",
+          "last_name" => "User",
+          # invalid email format
+          "email" => "not-an-email",
+          "birthdate" => "1990-01-01",
+          "nationality" => "AZ",
+          "residence_address" => "Baku city",
+          # invalid: contains letters
+          "phone_number" => "phone123"
+        }
       }
-    }
 
-    # Attempt update
-    conn = put(recycle(conn), ~p"/profile", invalid_params)
+      # Attempt update
+      conn = put(recycle(conn), ~p"/profile", invalid_params)
 
-    # Assert edit page is re-rendered with errors
-    html = html_response(conn, 200)
-    assert html =~ "Edit Profile"
+      # Assert edit page is re-rendered with errors
+      html = html_response(conn, 200)
+      assert html =~ "Edit Profile"
 
-    # Assert errors are shown for invalid fields
-    assert html =~ "must contain only letters"       # name validation message
-    assert html =~ "has invalid format"              # email validation message
-    assert html =~ "Phone must contain only digits"  # phone validation message
+      # Assert errors are shown for invalid fields
+      # name validation message
+      assert html =~ "must contain only letters"
+      # email validation message
+      assert html =~ "has invalid format"
+      # phone validation message
+      assert html =~ "Phone must contain only digits"
 
-    # Verify that user in database remains unchanged
-    unchanged_user = Accounts.get_user_by_id(user.id)
-    assert unchanged_user.name == "Valid"
-    assert unchanged_user.email == email
-    assert unchanged_user.phone_number == "+994500000000"
+      # Verify that user in database remains unchanged
+      unchanged_user = Accounts.get_user_by_id(user.id)
+      assert unchanged_user.name == "Valid"
+      assert unchanged_user.email == email
+      assert unchanged_user.phone_number == "+994500000000"
+    end
   end
-end
-
 end

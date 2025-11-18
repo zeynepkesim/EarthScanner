@@ -28,8 +28,6 @@ defmodule EarthScannerWeb.TripController do
     render(conn, :index, trips: trips)
   end
 
-  
-
   def new(conn, _params) do
     changeset = Trip.changeset(%Trip{}, %{})
     render(conn, :new, form: to_form(changeset))

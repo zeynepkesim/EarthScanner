@@ -51,42 +51,54 @@ defmodule EarthScanner.TripsFutureTest do
 
     # Create future trips for admin1
     {:ok, trip1} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{
-        "departure_time" => ~N[2030-01-01 10:00:00],
-        "arrival_time" => ~N[2030-01-01 13:00:00],
-        "source_city" => "FutureA",
-        "destination_city" => "DestA",
-        "dates" => "2030-01-01"
-      }))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => ~N[2030-01-01 10:00:00],
+          "arrival_time" => ~N[2030-01-01 13:00:00],
+          "source_city" => "FutureA",
+          "destination_city" => "DestA",
+          "dates" => "2030-01-01"
+        })
+      )
 
     {:ok, trip2} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{
-        "departure_time" => ~N[2031-06-01 10:00:00],
-        "arrival_time" => ~N[2031-06-01 13:00:00],
-        "source_city" => "FutureB",
-        "destination_city" => "DestB",
-        "dates" => "2031-06-01"
-      }))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => ~N[2031-06-01 10:00:00],
+          "arrival_time" => ~N[2031-06-01 13:00:00],
+          "source_city" => "FutureB",
+          "destination_city" => "DestB",
+          "dates" => "2031-06-01"
+        })
+      )
 
     # Create a trip for another admin (should not appear)
     {:ok, _other} =
-      Trips.create_trip(admin2, Map.merge(base_trip_attrs(), %{
-        "departure_time" => ~N[2030-05-01 10:00:00],
-        "arrival_time" => ~N[2030-05-01 13:00:00],
-        "source_city" => "OtherFuture",
-        "destination_city" => "DestOther",
-        "dates" => "2030-05-01"
-      }))
+      Trips.create_trip(
+        admin2,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => ~N[2030-05-01 10:00:00],
+          "arrival_time" => ~N[2030-05-01 13:00:00],
+          "source_city" => "OtherFuture",
+          "destination_city" => "DestOther",
+          "dates" => "2030-05-01"
+        })
+      )
 
     # Create a past trip (should not appear)
     {:ok, past_trip} =
-      Trips.create_trip(admin1, Map.merge(base_trip_attrs(), %{
-        "departure_time" => ~N[2020-01-01 10:00:00],
-        "arrival_time" => ~N[2020-01-01 13:00:00],
-        "source_city" => "PastCity",
-        "destination_city" => "PastDest",
-        "dates" => "2020-01-01"
-      }))
+      Trips.create_trip(
+        admin1,
+        Map.merge(base_trip_attrs(), %{
+          "departure_time" => ~N[2020-01-01 10:00:00],
+          "arrival_time" => ~N[2020-01-01 13:00:00],
+          "source_city" => "PastCity",
+          "destination_city" => "PastDest",
+          "dates" => "2020-01-01"
+        })
+      )
 
     # Get future trips for admin1
     result = Trips.list_future_trips_for_admin(admin1)

@@ -102,9 +102,10 @@ defmodule EarthScanner.TripsPastTest do
     departure_times = Enum.map(result, & &1.departure_time)
 
     # Using NaiveDateTime.compare because trips may be NaiveDateTime
-    sorted_times = Enum.sort(departure_times, fn a, b ->
-      NaiveDateTime.compare(a, b) != :lt
-    end)
+    sorted_times =
+      Enum.sort(departure_times, fn a, b ->
+        NaiveDateTime.compare(a, b) != :lt
+      end)
 
     assert departure_times == sorted_times
   end
