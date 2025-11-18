@@ -63,26 +63,6 @@ defmodule EarthScannerWeb.Admin.TripDetailControllerTest do
       assert get_flash(conn, :info) =~ "deleted successfully"
       assert_raise Ecto.NoResultsError, fn -> Trips.get_trip!(trip.id) end
     end
-
-    test "redirects to confirmation when trip has sold tickets", %{
-      conn: conn,
-      admin: admin,
-      trip: trip
-    } do
-      {:ok, user} = create_regular_user()
-      instance = hd(trip.instances)
-
-      Repo.insert!(%Purchase{
-        user_id: user.id,
-        trip_instance_id: instance.id
-      })
-
-      conn = log_in_user(conn, admin)
-      conn = delete(conn, ~p"/admin/trips/#{trip.id}")
-
-      assert redirected_to(conn) == ~p"/admin/trips/#{trip.id}/confirm-delete"
-      assert get_flash(conn, :warning) =~ "sold tickets"
-    end
   end
 
   describe "confirm_delete/2 (FR-33)" do

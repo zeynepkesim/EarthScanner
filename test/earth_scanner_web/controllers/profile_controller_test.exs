@@ -163,7 +163,7 @@ defmodule EarthScannerWeb.ProfileControllerTest do
       html = html_response(conn, 200)
       assert html =~ "Edit Profile"
       assert html =~ "must contain only letters"
-      assert html =~ "has invalid format"
+      assert html =~ "Invalid email"
       assert html =~ "Phone must contain only digits"
 
       unchanged_user = Accounts.get_user_by_id(user.id)
