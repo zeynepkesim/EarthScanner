@@ -63,7 +63,7 @@ defmodule EarthScannerWeb.ProfileControllerTest do
       conn =
         conn
         |> post(~p"/users/login", %{
-          "session" => %{"email" => email, "password" => "verylongpassword"}
+          "session" => %{"email" => email, password: "verylongpassword"}
         })
 
       conn = get(recycle(conn), ~p"/profile/edit")
@@ -71,6 +71,10 @@ defmodule EarthScannerWeb.ProfileControllerTest do
     end
   end
 
+  #
+  # ✅ ОДИН describe "PUT /profile"
+  # — здесь теперь оба теста: успешный и неуспешный.
+  #
   describe "PUT /profile" do
     test "updates user profile successfully", %{conn: conn} do
       uniq = Integer.to_string(System.unique_integer([:positive]))
@@ -112,60 +116,6 @@ defmodule EarthScannerWeb.ProfileControllerTest do
       conn = put(recycle(conn), ~p"/profile", update_params)
       assert redirected_to(conn) == ~p"/profile"
 
-      updated_user = Accounts.get_user_by_id(user.id)
-      assert updated_user.username == "new_username_" <> uniq
-      assert updated_user.name == "New"
-    end
-  end
-
-  describe "PUT /profile" do
-    test "updates user profile successfully", %{conn: conn} do
-      uniq = Integer.to_string(System.unique_integer([:positive]))
-      email = "update" <> uniq <> "@example.com"
-
-      # Register a user
-      {:ok, user} =
-        Accounts.register_user(%{
-          "username" => "update_user_" <> uniq,
-          "password" => "verylongpassword",
-          "password_confirmation" => "verylongpassword",
-          "name" => "Old",
-          "last_name" => "Name",
-          "email" => email,
-          "birthdate" => "1990-01-01",
-          "nationality" => "AZ",
-          "residence_address" => "Baku city",
-          "phone_number" => "+994500000000"
-        })
-
-      # Log in as the user
-      conn =
-        conn
-        |> post(~p"/users/login", %{
-          "session" => %{"email" => email, "password" => "verylongpassword"}
-        })
-
-      # Define valid update params
-      update_params = %{
-        "user" => %{
-          "username" => "new_username_" <> uniq,
-          "name" => "New",
-          "last_name" => "Name",
-          "email" => email,
-          "birthdate" => "1990-01-01",
-          "nationality" => "AZ",
-          "residence_address" => "Baku city",
-          "phone_number" => "+994500000000"
-        }
-      }
-
-      # Attempt update
-      conn = put(recycle(conn), ~p"/profile", update_params)
-
-      # Assert redirect to profile page
-      assert redirected_to(conn) == ~p"/profile"
-
-      # Verify user has been updated in database
       updated_user = Accounts.get_user_by_id(user.id)
       assert updated_user.username == "new_username_" <> uniq
       assert updated_user.name == "New"
@@ -175,7 +125,6 @@ defmodule EarthScannerWeb.ProfileControllerTest do
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "invalid" <> uniq <> "@example.com"
 
-      # Register a user
       {:ok, user} =
         Accounts.register_user(%{
           "username" => "invalid_user_" <> uniq,
@@ -190,46 +139,33 @@ defmodule EarthScannerWeb.ProfileControllerTest do
           "phone_number" => "+994500000000"
         })
 
-      # Log in as the user
       conn =
         conn
         |> post(~p"/users/login", %{
           "session" => %{"email" => email, "password" => "verylongpassword"}
         })
 
-      # Define invalid update params
       invalid_params = %{
         "user" => %{
           "username" => "invalid_user_" <> uniq,
-          # invalid: contains digits
           "name" => "123Name",
           "last_name" => "User",
-          # invalid email format
           "email" => "not-an-email",
           "birthdate" => "1990-01-01",
           "nationality" => "AZ",
           "residence_address" => "Baku city",
-          # invalid: contains letters
           "phone_number" => "phone123"
         }
       }
 
-      # Attempt update
       conn = put(recycle(conn), ~p"/profile", invalid_params)
 
-      # Assert edit page is re-rendered with errors
       html = html_response(conn, 200)
       assert html =~ "Edit Profile"
-
-      # Assert errors are shown for invalid fields
-      # name validation message
       assert html =~ "must contain only letters"
-      # email validation message
       assert html =~ "has invalid format"
-      # phone validation message
       assert html =~ "Phone must contain only digits"
 
-      # Verify that user in database remains unchanged
       unchanged_user = Accounts.get_user_by_id(user.id)
       assert unchanged_user.name == "Valid"
       assert unchanged_user.email == email
