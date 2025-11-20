@@ -38,6 +38,10 @@ defmodule EarthScannerWeb.Router do
 
     get "/users/change-password", ProfileController, :edit_password
     post "/users/change-password", ProfileController, :update_password
+
+    get "/search", TripSearchController, :new
+    get "/search/results", TripSearchController, :index
+
   end
 
   scope "/admin", EarthScannerWeb do

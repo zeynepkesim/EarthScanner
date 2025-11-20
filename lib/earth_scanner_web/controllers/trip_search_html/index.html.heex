@@ -1,0 +1,108 @@
+<h1>Search Results</h1>
+<form method="get" action={~p"/search/results"} class="mb-4">
+
+  <%= for {k, v} <- @filters do %>
+    <input type="hidden" name={k} value={v} />
+  <% end %>
+
+  <label class="font-medium">Sort by:</label>
+  <select name="sort" class="border rounded-md px-2 py-1 ml-2" onchange="this.form.submit()">
+    <option value="">Default (Departure time)</option>
+    <option value="price_asc"   selected={@filters["sort"] == "price_asc"}>Price ↑</option>
+    <option value="price_desc"  selected={@filters["sort"] == "price_desc"}>Price ↓</option>
+    <option value="co2_asc"     selected={@filters["sort"] == "co2_asc"}>CO₂ ↑</option>
+    <option value="co2_desc"    selected={@filters["sort"] == "co2_desc"}>CO₂ ↓</option>
+    <option value="duration_asc" selected={@filters["sort"] == "duration_asc"}>Duration ↑</option>
+    <option value="duration_desc" selected={@filters["sort"] == "duration_desc"}>Duration ↓</option>
+  </select>
+
+</form>
+
+<% filter_labels = %{
+  "min_price" => "Min Price",
+  "max_price" => "Max Price",
+  "min_duration" => "Min Duration",
+  "max_duration" => "Max Duration",
+  "min_co2" => "Min CO₂",
+  "max_co2" => "Max CO₂",
+  "min_departure" => "Min Departure",
+  "max_departure" => "Max Departure",
+  "min_arrival" => "Min Arrival",
+  "max_arrival" => "Max Arrival"
+} %>
+
+<% active_filters =
+  @filters
+  |> Enum.filter(fn {k, v} -> k in Map.keys(filter_labels) and v not in [nil, ""] end)
+%>
+
+<%= if active_filters != [] do %>
+  <div class="my-4 flex flex-wrap gap-2">
+    <%= for {key, value} <- active_filters do %>
+      <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+        <%= filter_labels[key] %>: <%= value %>
+
+        <% new_filters = Map.put(@filters, key, nil) |> Enum.reject(fn {_, v} -> v in [nil, ""] end) %>
+
+        <a href={~p"/search/results?#{URI.encode_query(new_filters)}"}
+           class="ml-2 text-blue-600 hover:text-blue-800 font-bold">
+          ×
+        </a>
+      </span>
+    <% end %>
+  </div>
+<% end %>
+
+<%= if @trips == [] do %>
+  <p>No trips found yet (we will implement filtering & DB next).</p>
+<% else %>
+    <ul>
+        <%= for trip <- @trips do %>
+            <li>
+                <strong><%= trip.source_city %> → <%= trip.destination_city %></strong><br/>
+                Mode: <%= trip.transport_mode %><br/>
+                Price: <%= trip.price %><br/>
+                CO₂: <%= trip.co2_level %> g/km<br/>
+                Departs: <%= trip.departure_time %><br/>
+                Arrives: <%= trip.arrival_time %>
+            </li>
+        <% end %>
+    </ul>
+
+<% end %>
+<hr class="my-4"/>
+
+<div class="flex justify-between items-center">
+
+  <%= if @page > 1 do %>
+    <a
+      class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"
+      href={~p"/search/results?#{URI.encode_query(Map.put(@filters, "page", Integer.to_string(@page - 1)))}"}
+    >
+      ← Previous
+    </a>
+  <% else %>
+    <span></span>
+  <% end %>
+
+  <%= if @page * @per_page < @total do %>
+    <a
+      class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"
+      href={~p"/search/results?#{URI.encode_query(Map.put(@filters, 'page', Integer.to_string(@page + 1)))}"}
+    >
+      Next →
+    </a>
+  <% else %>
+    <span></span>
+  <% end %>
+
+</div>
+
+<p>
+  <button
+    type="submit"
+    class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
+    >
+    <a href={~p"/search"}>New Search</a>
+  </button>
+</p>

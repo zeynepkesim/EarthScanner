@@ -315,4 +315,162 @@ defmodule EarthScanner.Trips do
       :ok
     end
   end
+
+  # ---------- FR-07: User Search by Source + Destination ----------
+
+  @doc """
+  Searches trips by source and destination, returning only future trips
+  (departure_time > now()).
+
+  params = %{"source" => "...", "destination" => "..."} plus extra filters later.
+  """
+  def search_future_trips(source, destination, _params \\ %{}) do
+    now = DateTime.utc_now()
+
+    query =
+      from t in Trip,
+        where:
+          ilike(t.source_city, ^source) and
+            ilike(t.destination_city, ^destination) and
+            t.departure_time > ^now,
+        order_by: [asc: t.departure_time]
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Searches trips by source & destination, returning future trips only,
+  with simple limit/offset pagination.
+
+  params must contain:
+    - "page" (optional)
+    - "per_page" (optional)
+  """
+  def search_future_trips_paginated(source, destination, params) do
+    now = DateTime.utc_now()
+
+    # Default page params
+    page =
+      params
+      |> Map.get("page", "1")
+      |> String.to_integer()
+
+    per_page =
+      params
+      |> Map.get("per_page", "5")
+      |> String.to_integer()
+
+    offset = (page - 1) * per_page
+
+    base_query =
+      Trip
+      |> where([t],
+          ilike(t.source_city, ^source) and
+          ilike(t.destination_city, ^destination) and
+          t.departure_time > ^now
+        )
+      |> maybe_filter_min(:price, params["min_price"])
+      |> maybe_filter_max(:price, params["max_price"])
+      |> maybe_filter_min(:duration_minutes, params["min_duration"])
+      |> maybe_filter_max(:duration_minutes, params["max_duration"])
+      |> maybe_filter_min(:co2_level, params["min_co2"])
+      |> maybe_filter_max(:co2_level, params["max_co2"])
+      |> maybe_filter_datetime_min(:departure_time, params["min_departure"])
+      |> maybe_filter_datetime_max(:departure_time, params["max_departure"])
+      |> maybe_filter_datetime_min(:arrival_time, params["min_arrival"])
+      |> maybe_filter_datetime_max(:arrival_time, params["max_arrival"])
+
+
+    # total count (for next/prev buttons)
+    total =
+      base_query
+      |> select([t], count(t.id))
+      |> Repo.one()
+
+    # paginated result
+    sort_param = params["sort"]
+
+    trips =
+      base_query
+      |> apply_sort(sort_param)
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{
+      trips: trips,
+      total: total,
+      page: page,
+      per_page: per_page
+    }
+  end
+
+  # --- Numeric min ---
+  defp maybe_filter_min(query, _field, nil), do: query
+  defp maybe_filter_min(query, _field, ""), do: query
+  defp maybe_filter_min(query, field, value) do
+    case Integer.parse(value) do
+      {int, _} ->
+        where(query, [t], field(t, ^field) >= ^int)
+
+      :error ->
+        query
+    end
+  end
+
+  # --- Numeric max ---
+  defp maybe_filter_max(query, _field, nil), do: query
+  defp maybe_filter_max(query, _field, ""), do: query
+  defp maybe_filter_max(query, field, value) do
+    case Integer.parse(value) do
+      {int, _} ->
+        where(query, [t], field(t, ^field) <= ^int)
+
+      :error ->
+        query
+    end
+  end
+
+  # --- Datetime min ---
+  defp maybe_filter_datetime_min(query, _field, nil), do: query
+  defp maybe_filter_datetime_min(query, _field, ""), do: query
+  defp maybe_filter_datetime_min(query, field, value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, dt, _} ->
+        where(query, [t], field(t, ^field) >= ^dt)
+
+      _ ->
+        query
+    end
+  end
+
+  # --- Datetime max ---
+  defp maybe_filter_datetime_max(query, _field, nil), do: query
+  defp maybe_filter_datetime_max(query, _field, ""), do: query
+  defp maybe_filter_datetime_max(query, field, value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, dt, _} ->
+        where(query, [t], field(t, ^field) <= ^dt)
+
+      _ ->
+        query
+    end
+  end
+
+  # --- Sorting helper ---
+  defp apply_sort(query, nil), do: query
+  defp apply_sort(query, ""),  do: query
+
+  defp apply_sort(query, "price_asc"), do: order_by(query, [t], asc: t.price)
+  defp apply_sort(query, "price_desc"), do: order_by(query, [t], desc: t.price)
+
+  defp apply_sort(query, "co2_asc"), do: order_by(query, [t], asc: t.co2_level)
+  defp apply_sort(query, "co2_desc"), do: order_by(query, [t], desc: t.co2_level)
+
+  defp apply_sort(query, "duration_asc"), do: order_by(query, [t], asc: t.duration_minutes)
+  defp apply_sort(query, "duration_desc"), do: order_by(query, [t], desc: t.duration_minutes)
+
+  # default fallback: order by soonest departure
+  defp apply_sort(query, _), do: order_by(query, [t], asc: t.departure_time)
+
 end
