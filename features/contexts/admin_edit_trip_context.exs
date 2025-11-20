@@ -5,6 +5,11 @@ defmodule AdminEditTripsContext do
 
   alias EarthScanner.Accounts
   alias EarthScanner.Trips
+  alias EarthScanner.Repo
+  alias EarthScanner.Trips.Trip
+  alias EarthScanner.Trips.TripInstance
+  alias EarthScanner.Purchases.Purchase
+  import Ecto.Changeset
 
   @base "http://localhost:4002"
 
@@ -24,29 +29,35 @@ defmodule AdminEditTripsContext do
   #
   # BACKGROUND
   #
-  given_ ~r/^an admin user "([^"]+)" with password "([^"]+)" exists$/, fn state, %{matches: [email, password]} ->
-    case Accounts.get_user_by_email(email) do
-      nil ->
-        {:ok, _user} =
-          Accounts.register_user(%{
-            "username" => String.split(email, "@") |> Enum.at(0),
-            "email" => email,
-            "password" => password,
-            "password_confirmation" => password,
-            "name" => "Admin",
-            "last_name" => "User",
-            "birthdate" => "1990-01-01",
-            "nationality" => "TR",
-            "residence_address" => "Admin Street",
-            "phone_number" => "+905551111111",
-            "role" => "admin"
-          })
+  given_ ~r/^an admin user "([^"]+)" with password "([^"]+)" exists$/, fn state, _step_data ->
+    email = "admin@example.com"
+    password = "Password123!"
 
-        {:ok, state}
+    admin =
+      case Accounts.get_user_by_email(email) do
+        nil ->
+          {:ok, user} =
+            Accounts.register_user(%{
+              "username" => "admin_bdd_edit",
+              "password" => password,
+              "password_confirmation" => password,
+              "name" => "Admin",
+              "last_name" => "Edit",
+              "email" => email,
+              "birthdate" => "1990-01-01",
+              "nationality" => "ID",
+              "residence_address" => "Admin Street 1",
+              "phone_number" => "+628111111111",
+              "role" => "admin"
+            })
 
-      _user ->
-        {:ok, state}
-    end
+          user
+
+        user ->
+          user
+      end
+
+    {:ok, Map.put(state, :admin, admin)}
   end
 
   #
