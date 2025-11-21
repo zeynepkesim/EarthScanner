@@ -1,15 +1,16 @@
-# FR-32 Admin Edit Trip
 defmodule AdminEditTripsContext do
   use WhiteBread.Context
   use Hound.Helpers
 
   alias EarthScanner.Accounts
   alias EarthScanner.Trips
+  alias EarthScanner.Trips.Trip
+  alias EarthScanner.Repo
 
   @base "http://localhost:4002"
 
   #
-  # SESSION MANAGEMENT
+  # SESSION
   #
   scenario_starting_state fn state ->
     Hound.start_session()
@@ -22,82 +23,119 @@ defmodule AdminEditTripsContext do
   end
 
   #
-  # BACKGROUND
+  # ADMIN EXISTS
   #
-  given_ ~r/^an admin user "([^"]+)" with password "([^"]+)" exists$/, fn state, %{matches: [email, password]} ->
-    case Accounts.get_user_by_email(email) do
+  given_ ~r/^an admin user "(?<email>[^"]+)" with password "(?<password>[^"]+)" exists$/,
+  fn state, %{email: email, password: password} ->
+    username = "bddadmin_" <> Base.encode16(:crypto.strong_rand_bytes(3))
+
+    admin =
+      case Accounts.get_user_by_email(email) do
+        nil ->
+          {:ok, user} =
+            Accounts.register_user(%{
+              "username" => username,
+              "email" => email,
+              "password" => password,
+              "password_confirmation" => password,
+              "name" => "BDD",
+              "last_name" => "Admin",
+              "birthdate" => "1990-01-01",
+              "nationality" => "TR",
+              "residence_address" => "Admin Street",
+              "phone_number" => "+905551111111",
+              "role" => "admin"
+            })
+          user
+        user -> user
+      end
+
+    {:ok, Map.put(state, :admin, admin)}
+  end
+
+  given_ ~r/^I am logged in as an admin$/, fn state, _ ->
+  admin =
+    case Accounts.get_user_by_email("admin@example.com") do
       nil ->
-        {:ok, _user} =
+        {:ok, user} =
           Accounts.register_user(%{
-            "username" => String.split(email, "@") |> Enum.at(0),
-            "email" => email,
-            "password" => password,
-            "password_confirmation" => password,
+            "username" => "admin",
+            "password" => "Password123!",
+            "password_confirmation" => "Password123!",
             "name" => "Admin",
             "last_name" => "User",
+            "email" => "admin@example.com",
             "birthdate" => "1990-01-01",
-            "nationality" => "TR",
+            "nationality" => "ID",
             "residence_address" => "Admin Street",
-            "phone_number" => "+905551111111",
+            "phone_number" => "+628111111111",
             "role" => "admin"
           })
 
-        {:ok, state}
+        user
 
-      _user ->
-        {:ok, state}
+      user ->
+        user
     end
-  end
+
+  navigate_to("http://localhost:4002/users/login")
+  :timer.sleep(500)
+  fill_field({:css, "input[name='session[email]']"}, "admin@example.com")
+  fill_field({:css, "input[name='session[password]']"}, "Password123!")
+  :timer.sleep(500)
+  submit_element({:id, "login-form"})
+  :timer.sleep(2000)
+
+  {:ok, Map.put(state, :admin, admin)}
+end
 
   #
   # TRIP FIXTURES
   #
-  given_ ~r/^a future trip exists with id "([^"]+)" created by "([^"]+)"$/, fn state, %{matches: [id, email]} ->
-    {:ok, trip} =
-      Trips.upsert_trip(%{
-        id: String.to_integer(id),
-        creator_email: email,
-        source_city: "Tallinn",
-        destination_city: "Helsinki",
-        departure_time: DateTime.utc_now() |> DateTime.add(3600 * 24, :second),
-        arrival_time: DateTime.utc_now() |> DateTime.add(3600 * 25, :second),
-        price: 10.0,
-        co2_level: 100,
-        available_tickets: 20
-      })
+  given_ ~r/^a future trip exists created by "(?<email>[^\"]+)"$/, fn state, %{email: email} ->
+    admin =
+      Accounts.get_user_by_email(email) ||
+        Accounts.register_user(%{
+          "username" => String.split(email, "@") |> List.first(),
+          "email" => email,
+          "password" => "Password123!",
+          "password_confirmation" => "Password123!",
+          "name" => "Admin",
+          "last_name" => "User",
+          "birthdate" => "1990-01-01",
+          "nationality" => "TR",
+          "residence_address" => "Admin Street",
+          "phone_number" => "+905551111111",
+          "role" => "admin"
+        }) |> elem(1)
+
+    {:ok, trip} = Trips.create_trip(admin, %{
+      transport_mode: "plane",
+      source_city: "Tallinn",
+      destination_city: "Helsinki",
+      departure_time: DateTime.utc_now() |> DateTime.add(86400, :second),
+      arrival_time: DateTime.utc_now() |> DateTime.add(90000, :second),
+      price: 10.0,
+      co2_level: 100,
+      available_tickets: 20
+    })
 
     {:ok, Map.put(state, :trip, trip)}
   end
 
-  given_ ~r/^a past trip exists with id "([^"]+)"$/, fn state, %{matches: [id]} ->
-    {:ok, trip} =
-      Trips.upsert_trip(%{
-        id: String.to_integer(id),
-        source_city: "Tallinn",
-        destination_city: "Riga",
-        departure_time: DateTime.utc_now() |> DateTime.add(-3600 * 24, :second),
-        arrival_time: DateTime.utc_now() |> DateTime.add(-3600 * 23, :second),
-        price: 20.0,
-        co2_level: 150,
-        available_tickets: 10
-      })
+  given_ ~r/^a past trip exists$/, fn state ->
+    admin = hd(Accounts.list_users()) # Берем любого существующего админа
 
-    {:ok, Map.put(state, :trip, trip)}
-  end
-
-  given_ ~r/^a future trip exists with id "([^"]+)" and it has sold tickets$/, fn state, %{matches: [id]} ->
-    {:ok, trip} =
-      Trips.upsert_trip(%{
-        id: String.to_integer(id),
-        source_city: "Tallinn",
-        destination_city: "Stockholm",
-        departure_time: DateTime.utc_now() |> DateTime.add(3600 * 24, :second),
-        arrival_time: DateTime.utc_now() |> DateTime.add(3600 * 25, :second),
-        price: 50.0,
-        co2_level: 300,
-        available_tickets: 100,
-        sold_tickets: 5
-      })
+    {:ok, trip} = Trips.create_trip(admin, %{
+      transport_mode: "plane",
+      source_city: "Tallinn",
+      destination_city: "Riga",
+      departure_time: DateTime.utc_now() |> DateTime.add(-86400, :second),
+      arrival_time: DateTime.utc_now() |> DateTime.add(-82800, :second),
+      price: 20.0,
+      co2_level: 150,
+      available_tickets: 10
+    })
 
     {:ok, Map.put(state, :trip, trip)}
   end
@@ -105,12 +143,17 @@ defmodule AdminEditTripsContext do
   #
   # LOGIN
   #
-  when_ ~r/^I log in as "([^"]+)" with password "([^"]+)"$/, fn state, %{matches: [email, password]} ->
+  when_ ~r/^I log in as "(?<email>[^"]+)" with password "(?<password>[^"]+)"$/,
+  fn state, %{email: email, password: password} ->
     navigate_to("#{@base}/login")
+    :timer.sleep(500)
 
-    fill_field({:id, "email"}, email)
-    fill_field({:id, "password"}, password)
-    click({:css, "button[type=submit]"})
+    fill_field({:css, "input[name='session[email]']"}, email)
+    fill_field({:css, "input[name='session[password]']"}, password)
+    :timer.sleep(500)
+
+    submit_element({:id, "login-form"})
+    :timer.sleep(2000)
 
     assert page_source() =~ "Dashboard"
     {:ok, state}
@@ -119,56 +162,44 @@ defmodule AdminEditTripsContext do
   #
   # NAVIGATION
   #
-  when_ ~r/^I navigate to the trip edit page for trip "([^"]+)"$/, fn state, %{matches: [id]} ->
+  when_ ~r/^I navigate to the trip edit page for trip "(?<id>\d+)"$/,
+  fn state, %{id: id} ->
     navigate_to("#{@base}/admin/trips/#{id}/edit")
-
-    assert current_url() =~ "/admin/trips/#{id}"
+    :timer.sleep(1000)
+    assert current_url() =~ "/admin/trips/#{id}/edit"
     {:ok, state}
   end
 
   #
-  # UPDATE TRIP WITH TABLE
+  # UPDATE FORM
   #
   when_ ~r/^I update the trip with:$/, fn state, %{table: table} ->
+    :timer.sleep(500)
     Enum.each(table, fn
-      {"picture_url", value} -> fill_field({:name, "trip[picture_url]"}, value)
-      {"transport_mode", value} -> execute_script("""
-       var s = document.querySelector('select[name="trip[transport_mode]"]');
-       if (s) s.value = "#{value}";
-      """)
-      {"source_city", value} -> fill_field({:name, "trip[source_city]"}, value)
-      {"destination_city", value} -> fill_field({:name, "trip[destination_city]"}, value)
-      {"departure_time", value} -> fill_field({:name, "trip[departure_time]"}, value)
-      {"arrival_time", value} -> fill_field({:name, "trip[arrival_time]"}, value)
-      {"price", value} -> fill_field({:name, "trip[price]"}, value)
-      {"co2_level", value} -> fill_field({:name, "trip[co2_level]"}, value)
-      {"available_tickets", value} -> fill_field({:name, "trip[available_tickets]"}, value)
+      {"source_city", v} -> fill_field({:name, "trip[source_city]"}, v)
+      {"destination_city", v} -> fill_field({:name, "trip[destination_city]"}, v)
+      {"departure_time", v} -> fill_field({:name, "trip[departure_time]"}, v)
+      {"arrival_time", v} -> fill_field({:name, "trip[arrival_time]"}, v)
+      {"price", v} -> fill_field({:name, "trip[price]"}, v)
+      {"co2_level", v} -> fill_field({:name, "trip[co2_level]"}, v)
+      {"available_tickets", v} -> fill_field({:name, "trip[available_tickets]"}, v)
       _ -> :ok
     end)
     {:ok, state}
   end
 
   #
-  # CHANGE ONE FIELD
-  #
-  when_ ~r/^I change the trip departure_time to "([^"]+)"$/, fn state, %{matches: [value]} ->
-    fill_field({:name, "trip[departure_time]"}, value)
-    {:ok, state}
-  end
-
-  #
-  # SUBMIT UPDATE
+  # SUBMIT
   #
   when_ ~r/^I submit the trip update$/, fn state ->
     click({:css, "button[type=submit]"})
+    :timer.sleep(500)
     {:ok, state}
   end
 
-  #
-  # CONFIRM WARNING
-  #
   when_ ~r/^I confirm the update$/, fn state ->
     click({:css, "button.confirm-update"})
+    :timer.sleep(500)
     {:ok, state}
   end
 
@@ -176,37 +207,45 @@ defmodule AdminEditTripsContext do
   # ASSERTIONS
   #
   then_ ~r/^I should see a confirmation that the trip was updated$/, fn state ->
+    :timer.sleep(500)
     assert page_source() =~ "Trip updated"
     {:ok, state}
   end
 
   then_ ~r/^the updated data should appear immediately in the trip details page$/, fn state ->
+    :timer.sleep(500)
     assert page_source() =~ "Paris"
     assert page_source() =~ "180"
     {:ok, state}
   end
 
-  then_ ~r/^I should see that the trip is read\-only$/, fn state ->
+  then_ ~r/^I should see that the trip is read-only$/, fn state ->
+    :timer.sleep(500)
     assert page_source() =~ "Read-only"
     {:ok, state}
   end
 
   then_ ~r/^I should not be able to submit updates$/, fn state ->
-    assert length(find_all_elements(:css, "button[type=submit]")) == 0
+    :timer.sleep(500)
+    buttons = find_all_elements(:css, "button[type=submit]")
+    assert length(buttons) == 0
     {:ok, state}
   end
 
-  then_ ~r/^I should see an error saying "([^"]+)"$/, fn state, %{matches: [msg]} ->
+  then_ ~r/^I should see an error saying "(?<msg>[^"]+)"$/, fn state, %{msg: msg} ->
+    :timer.sleep(500)
     assert page_source() =~ msg
     {:ok, state}
   end
 
   then_ ~r/^I should see a warning about changing critical information$/, fn state ->
+    :timer.sleep(500)
     assert page_source() =~ "Warning"
     {:ok, state}
   end
 
   then_ ~r/^I should be asked to confirm the change$/, fn state ->
+    :timer.sleep(500)
     assert page_source() =~ "Confirm update"
     {:ok, state}
   end

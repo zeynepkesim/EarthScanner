@@ -5,13 +5,12 @@ Feature: Admin updates a future trip
   So that I can correct errors or alter travel details
 
   Background:
-    Given an admin user "admin@example.com" with password "Password123!" exists
+    Given I am logged in as an admin
 
   @happy_path
   Scenario: Successful update of a future trip
-    Given a future trip exists with id "42" created by "admin@example.com"
-    When I log in as "admin@example.com" with password "Password123!"
-    And I navigate to the trip edit page for trip "42"
+    Given a future trip exists
+    When I navigate to the trip edit page for the future trip
     And I update the trip with:
       | picture_url        | https://example.com/trip-new.jpg |
       | transport_mode     | plane                            |
@@ -28,18 +27,16 @@ Feature: Admin updates a future trip
 
   @read_only_past_trip
   Scenario: Failing to edit a past trip
-    Given a past trip exists with id "99"
-    When I log in as "admin@example.com" with password "Password123!"
-    And I navigate to the trip edit page for trip "99"
+    Given a past trip exists
+    When I navigate to the trip edit page for the past trip
     Then I should see that the trip is read-only
     And I should not be able to submit updates
     And I should see an error saying "Past trips cannot be modified"
 
   @warning_on_critical_change
   Scenario: Warning when modifying critical data of a trip with sold tickets
-    Given a future trip exists with id "55" and it has sold tickets
-    When I log in as "admin@example.com" with password "Password123!"
-    And I navigate to the trip edit page for trip "55"
+    Given a future trip exists with sold tickets
+    When I navigate to the trip edit page for that trip
     And I change the trip departure_time to "2025-12-10T09:00:00Z"
     And I submit the trip update
     Then I should see a warning about changing critical information
