@@ -43,7 +43,7 @@ defmodule FilterResultsTest do
       })
 
     assert Enum.all?(results, fn t ->
-      t.price >= 10 and t.co2_level <= 150
-    end)
+             t.price >= 10 and t.co2_level <= 150
+           end)
   end
 end

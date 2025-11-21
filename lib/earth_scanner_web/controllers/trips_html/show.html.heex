@@ -19,9 +19,15 @@
     </div>
 
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p class="text-xs font-semibold uppercase text-slate-500">{String.capitalize(@trip.transport_mode)} trip</p>
-      <h1 class="mt-2 text-3xl font-bold text-slate-900">{@trip.source_city} → {@trip.destination_city}</h1>
-      <p class="mt-1 text-sm text-slate-600">Departure {@trip.departure_time} • Arrival {@trip.arrival_time}</p>
+      <p class="text-xs font-semibold uppercase text-slate-500">
+        {String.capitalize(@trip.transport_mode)} trip
+      </p>
+      <h1 class="mt-2 text-3xl font-bold text-slate-900">
+        {@trip.source_city} → {@trip.destination_city}
+      </h1>
+      <p class="mt-1 text-sm text-slate-600">
+        Departure {@trip.departure_time} • Arrival {@trip.arrival_time}
+      </p>
 
       <dl class="mt-4 grid gap-4 md:grid-cols-3">
         <div class="rounded-lg border border-slate-100 p-3">
@@ -43,7 +49,10 @@
       <h2 class="text-xl font-semibold text-slate-900">Available dates</h2>
       <p class="text-sm text-slate-600">Pick a date to reserve your seat.</p>
 
-      <div :if={@trip.instances == []} class="mt-4 rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500">
+      <div
+        :if={@trip.instances == []}
+        class="mt-4 rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500"
+      >
         This trip does not have future dates yet.
       </div>
 
@@ -54,7 +63,9 @@
         >
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <p class="text-lg font-semibold text-slate-900">{Calendar.strftime(instance.date, "%A, %b %d")}</p>
+              <p class="text-lg font-semibold text-slate-900">
+                {Calendar.strftime(instance.date, "%A, %b %d")}
+              </p>
               <p class="text-sm text-slate-500">{instance.available_tickets} tickets left</p>
             </div>
 

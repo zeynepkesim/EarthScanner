@@ -30,6 +30,7 @@ defmodule EarthScannerWeb.TripSearchController do
           purchase_summary: purchase_summary,
           return_path: current_path(conn, conn.params)
         )
+
         # render(conn, :index, trips: trips, filters: params)
     end
   end

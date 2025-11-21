@@ -36,7 +36,12 @@ defmodule EarthScannerWeb.TripsControllerTest do
     assert body =~ "Available dates"
   end
 
-  test "FR-12: marks purchased instances in the detail view", %{conn: conn, trip: trip, instance: instance, user: user} do
+  test "FR-12: marks purchased instances in the detail view", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
     Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
 
     conn = log_in_user(conn, user)

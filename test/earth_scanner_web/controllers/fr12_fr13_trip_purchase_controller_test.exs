@@ -32,7 +32,12 @@ defmodule EarthScannerWeb.TripPurchaseControllerTest do
     {:ok, conn: conn, trip: trip, instance: hd(trip.instances), user: user}
   end
 
-  test "FR-12: creates a purchase when tickets are available", %{conn: conn, trip: trip, instance: instance, user: user} do
+  test "FR-12: creates a purchase when tickets are available", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
     conn = log_in_user(conn, user)
 
     conn =
@@ -48,9 +53,15 @@ defmodule EarthScannerWeb.TripPurchaseControllerTest do
     assert reloaded.available_tickets == instance.available_tickets - 1
   end
 
-  test "FR-12: returns an error flash when tickets are sold out", %{conn: conn, trip: trip, instance: instance} do
+  test "FR-12: returns an error flash when tickets are sold out", %{
+    conn: conn,
+    trip: trip,
+    instance: instance
+  } do
     {:ok, first_user} = create_regular_user(%{username: "soldout_a", email: "soldout_a@test.com"})
-    {:ok, second_user} = create_regular_user(%{username: "soldout_b", email: "soldout_b@test.com"})
+
+    {:ok, second_user} =
+      create_regular_user(%{username: "soldout_b", email: "soldout_b@test.com"})
 
     assert {:ok, _purchase} = Trips.purchase_trip_instance(first_user, instance.id)
 
@@ -76,7 +87,12 @@ defmodule EarthScannerWeb.TripPurchaseControllerTest do
     assert redirected_to(conn) == ~p"/users/login"
   end
 
-  test "FR-13: returns and refunds a future purchase", %{conn: conn, trip: trip, instance: instance, user: user} do
+  test "FR-13: returns and refunds a future purchase", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
     conn = log_in_user(conn, user)
 
     conn =
@@ -100,7 +116,12 @@ defmodule EarthScannerWeb.TripPurchaseControllerTest do
     assert reloaded.available_tickets == instance.available_tickets
   end
 
-  test "FR-13: prevents returning past purchases", %{conn: conn, trip: trip, instance: instance, user: user} do
+  test "FR-13: prevents returning past purchases", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
     conn = log_in_user(conn, user)
 
     conn =

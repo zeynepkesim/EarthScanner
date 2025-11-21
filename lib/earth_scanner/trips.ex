@@ -364,11 +364,12 @@ defmodule EarthScanner.Trips do
 
     base_query =
       Trip
-      |> where([t],
-          ilike(t.source_city, ^source) and
+      |> where(
+        [t],
+        ilike(t.source_city, ^source) and
           ilike(t.destination_city, ^destination) and
           t.departure_time > ^now
-        )
+      )
       |> maybe_filter_min(:price, params["min_price"])
       |> maybe_filter_max(:price, params["max_price"])
       |> maybe_filter_min(:duration_minutes, params["min_duration"])
@@ -379,7 +380,6 @@ defmodule EarthScanner.Trips do
       |> maybe_filter_datetime_max(:departure_time, params["max_departure"])
       |> maybe_filter_datetime_min(:arrival_time, params["min_arrival"])
       |> maybe_filter_datetime_max(:arrival_time, params["max_arrival"])
-
 
     # total count (for next/prev buttons)
     total =
@@ -408,6 +408,7 @@ defmodule EarthScanner.Trips do
   # --- Numeric min ---
   defp maybe_filter_min(query, _field, nil), do: query
   defp maybe_filter_min(query, _field, ""), do: query
+
   defp maybe_filter_min(query, field, value) do
     case Integer.parse(value) do
       {int, _} ->
@@ -421,6 +422,7 @@ defmodule EarthScanner.Trips do
   # --- Numeric max ---
   defp maybe_filter_max(query, _field, nil), do: query
   defp maybe_filter_max(query, _field, ""), do: query
+
   defp maybe_filter_max(query, field, value) do
     case Integer.parse(value) do
       {int, _} ->
@@ -434,6 +436,7 @@ defmodule EarthScanner.Trips do
   # --- Datetime min ---
   defp maybe_filter_datetime_min(query, _field, nil), do: query
   defp maybe_filter_datetime_min(query, _field, ""), do: query
+
   defp maybe_filter_datetime_min(query, field, value) do
     case DateTime.from_iso8601(value) do
       {:ok, dt, _} ->
@@ -447,6 +450,7 @@ defmodule EarthScanner.Trips do
   # --- Datetime max ---
   defp maybe_filter_datetime_max(query, _field, nil), do: query
   defp maybe_filter_datetime_max(query, _field, ""), do: query
+
   defp maybe_filter_datetime_max(query, field, value) do
     case DateTime.from_iso8601(value) do
       {:ok, dt, _} ->
@@ -459,7 +463,7 @@ defmodule EarthScanner.Trips do
 
   # --- Sorting helper ---
   defp apply_sort(query, nil), do: query
-  defp apply_sort(query, ""),  do: query
+  defp apply_sort(query, ""), do: query
 
   defp apply_sort(query, "price_asc"), do: order_by(query, [t], asc: t.price)
   defp apply_sort(query, "price_desc"), do: order_by(query, [t], desc: t.price)
@@ -483,7 +487,9 @@ defmodule EarthScanner.Trips do
 
     Trip
     |> Repo.get!(trip_id)
-    |> Repo.preload(instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date]))
+    |> Repo.preload(
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
   end
 
   @doc """
@@ -528,8 +534,14 @@ defmodule EarthScanner.Trips do
     with {:ok, instance} <- fetch_instance(trip_instance_id),
          :ok <- validate_instance_for_purchase(instance) do
       Multi.new()
-      |> Multi.insert(:purchase, Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id}))
-      |> Multi.update(:instance, Changeset.change(instance, %{available_tickets: instance.available_tickets - 1}))
+      |> Multi.insert(
+        :purchase,
+        Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
+      )
+      |> Multi.update(
+        :instance,
+        Changeset.change(instance, %{available_tickets: instance.available_tickets - 1})
+      )
       |> Repo.transaction()
       |> case do
         {:ok, %{purchase: purchase}} ->
@@ -615,5 +627,4 @@ defmodule EarthScanner.Trips do
       true -> {:error, :unknown}
     end
   end
-
 end

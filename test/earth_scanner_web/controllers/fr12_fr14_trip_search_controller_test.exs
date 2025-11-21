@@ -27,12 +27,21 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
     {:ok, conn: conn, trip: trip, instance: hd(trip.instances), user: user}
   end
 
-  test "FR-12: marks previously purchased trips in the search results", %{conn: conn, trip: trip, instance: instance, user: user} do
+  test "FR-12: marks previously purchased trips in the search results", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
     Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
 
     conn = log_in_user(conn, user)
+
     conn =
-      get(conn, ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+      get(
+        conn,
+        ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}"
+      )
 
     html = html_response(conn, 200)
     assert html =~ "Purchased"
@@ -47,8 +56,12 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
     Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
 
     conn = log_in_user(conn, user)
+
     conn =
-      get(conn, ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+      get(
+        conn,
+        ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}"
+      )
 
     html = html_response(conn, 200)
     assert html =~ ~s(data-role="purchased-badge")
@@ -67,14 +80,21 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
       create_regular_user(%{username: "other_search_user", email: "other_search@test.com"})
 
     conn = log_in_user(conn, other_user)
+
     conn =
-      get(conn, ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+      get(
+        conn,
+        ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}"
+      )
 
     html = html_response(conn, 200)
     refute html =~ ~s(data-role="purchased-badge")
 
     guest_conn =
-      get(build_conn(), ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+      get(
+        build_conn(),
+        ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}"
+      )
 
     guest_html = html_response(guest_conn, 200)
     refute guest_html =~ ~s(data-role="purchased-badge")

@@ -39,6 +39,7 @@ defmodule TripTestHelper do
   def create_future_trips_with_varying_durations do
     Enum.map([30, 60, 90], fn min ->
       base_time = DateTime.add(DateTime.utc_now(), 3600, :second)
+
       create_trip(%{
         departure_time: base_time,
         arrival_time: DateTime.add(base_time, min * 60, :second),

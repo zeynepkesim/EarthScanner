@@ -26,7 +26,7 @@ defmodule SearchByRouteTest do
     results = Trips.search(%{"source" => "Tartu", "destination" => "Tallinn"})
 
     assert Enum.all?(results, fn trip ->
-      DateTime.compare(trip.departure_time, DateTime.utc_now()) == :gt
-    end)
+             DateTime.compare(trip.departure_time, DateTime.utc_now()) == :gt
+           end)
   end
 end
