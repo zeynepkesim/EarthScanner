@@ -1,4 +1,4 @@
-# FR-12
+# FR-12, FR-13
 defmodule EarthScannerWeb.TripPurchaseControllerTest do
   use EarthScannerWeb.ConnCase
 
@@ -74,6 +74,54 @@ defmodule EarthScannerWeb.TripPurchaseControllerTest do
       })
 
     assert redirected_to(conn) == ~p"/users/login"
+  end
+
+  test "FR-13: returns and refunds a future purchase", %{conn: conn, trip: trip, instance: instance, user: user} do
+    conn = log_in_user(conn, user)
+
+    conn =
+      post(conn, ~p"/trips/#{trip.id}/purchase", %{
+        "trip_instance_id" => instance.id,
+        "redirect_to" => "/search"
+      })
+
+    assert get_flash(conn, :info) =~ "Trip purchased"
+
+    refund_conn =
+      delete(conn, ~p"/trips/#{trip.id}/purchase", %{
+        "trip_instance_id" => instance.id,
+        "redirect_to" => "/search"
+      })
+
+    assert redirected_to(refund_conn) == "/search"
+    assert get_flash(refund_conn, :info) =~ "Purchase returned"
+
+    reloaded = Repo.get!(TripInstance, instance.id)
+    assert reloaded.available_tickets == instance.available_tickets
+  end
+
+  test "FR-13: prevents returning past purchases", %{conn: conn, trip: trip, instance: instance, user: user} do
+    conn = log_in_user(conn, user)
+
+    conn =
+      post(conn, ~p"/trips/#{trip.id}/purchase", %{
+        "trip_instance_id" => instance.id,
+        "redirect_to" => "/search"
+      })
+
+    assert get_flash(conn, :info) =~ "Trip purchased"
+
+    instance
+    |> TripInstance.changeset(%{date: Date.utc_today() |> Date.add(-2)})
+    |> Repo.update!()
+
+    refund_conn =
+      delete(conn, ~p"/trips/#{trip.id}/purchase", %{
+        "trip_instance_id" => instance.id,
+        "redirect_to" => "/search"
+      })
+
+    assert get_flash(refund_conn, :error) =~ "cannot be refunded"
   end
 
   defp create_admin(attrs \\ %{}) do

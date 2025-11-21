@@ -50,6 +50,43 @@ defmodule EarthScannerWeb.TripPurchaseController do
     end
   end
 
+  def delete(conn, %{"trip_id" => trip_id} = params) do
+    redirect_to = Map.get(params, "redirect_to", ~p"/trips/#{trip_id}")
+
+    with %{} = user <- conn.assigns[:current_user],
+         {:ok, instance_id} <- parse_instance_id(params["trip_instance_id"]),
+         {:ok, _} <- Trips.return_trip_instance_purchase(user, instance_id) do
+      conn
+      |> put_flash(:info, "Purchase returned.")
+      |> redirect(to: redirect_to)
+    else
+      nil ->
+        conn
+        |> put_flash(:error, "Please log in to manage purchases.")
+        |> redirect(to: ~p"/users/login")
+
+      {:error, :invalid_instance} ->
+        conn
+        |> put_flash(:error, "Invalid trip selection.")
+        |> redirect(to: redirect_to)
+
+      {:error, :past_instance} ->
+        conn
+        |> put_flash(:error, "This trip date has passed and cannot be refunded.")
+        |> redirect(to: redirect_to)
+
+      {:error, :not_found} ->
+        conn
+        |> put_flash(:error, "Purchase not found.")
+        |> redirect(to: redirect_to)
+
+      {:error, _other} ->
+        conn
+        |> put_flash(:error, "We couldn't process your refund. Please try again.")
+        |> redirect(to: redirect_to)
+    end
+  end
+
   defp parse_instance_id(value) when is_integer(value), do: {:ok, value}
 
   defp parse_instance_id(value) when is_binary(value) do

@@ -88,6 +88,7 @@
               <button
                 type="submit"
                 class="inline-flex flex-1 items-center justify-center rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+                data-confirm="Confirm purchase?"
               >
                 Purchase ticket
               </button>
@@ -96,6 +97,25 @@
             <p :if={instance.available_tickets == 0} class="text-sm text-slate-500">
               Try another date if you still need a seat.
             </p>
+            <.form
+              :if={MapSet.member?(@purchase_summary.instance_ids, instance.id)}
+              for={%{}}
+              method="post"
+              action={~p"/trips/#{@trip.id}/purchase"}
+              class="mt-3 flex flex-col sm:flex-row"
+            >
+              <input type="hidden" name="_method" value="delete" />
+              <input type="hidden" name="trip_instance_id" value={instance.id} />
+              <input type="hidden" name="redirect_to" value={@return_path} />
+
+              <button
+                type="submit"
+                class="inline-flex flex-1 items-center justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                data-confirm="Refund this purchase?"
+              >
+                Refund purchase
+              </button>
+            </.form>
           </div>
         </div>
       </div>

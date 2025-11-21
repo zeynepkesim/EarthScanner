@@ -45,6 +45,7 @@ defmodule EarthScannerWeb.Router do
     get "/trips", TripsController, :index
     get "/trips/:id", TripsController, :show
     post "/trips/:trip_id/purchase", TripPurchaseController, :create
+    delete "/trips/:trip_id/purchase", TripPurchaseController, :delete
   end
 
   scope "/admin", EarthScannerWeb do

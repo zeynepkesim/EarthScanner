@@ -546,10 +546,41 @@ defmodule EarthScanner.Trips do
 
   def purchase_trip_instance(_, _), do: {:error, :invalid_user}
 
+  @doc """
+  Returns (refunds) a previously purchased trip instance ticket for the given user.
+  Increases the available ticket count when the trip instance is still in the future.
+  """
+  def return_trip_instance_purchase(%User{id: user_id}, trip_instance_id) do
+    with {:ok, instance} <- fetch_instance(trip_instance_id),
+         {:ok, purchase} <- fetch_purchase(user_id, instance.id),
+         :ok <- ensure_future_instance(instance) do
+      Multi.new()
+      |> Multi.delete(:purchase, purchase)
+      |> Multi.update(
+        :instance,
+        Changeset.change(instance, %{available_tickets: instance.available_tickets + 1})
+      )
+      |> Repo.transaction()
+      |> case do
+        {:ok, _} -> {:ok, :refunded}
+        {:error, _step, reason, _} -> {:error, reason}
+      end
+    end
+  end
+
+  def return_trip_instance_purchase(_, _), do: {:error, :invalid_user}
+
   defp fetch_instance(instance_id) do
     case Repo.get(TripInstance, instance_id) do
       nil -> {:error, :not_found}
       %TripInstance{} = instance -> {:ok, instance}
+    end
+  end
+
+  defp fetch_purchase(user_id, instance_id) do
+    case Repo.get_by(Purchase, user_id: user_id, trip_instance_id: instance_id) do
+      nil -> {:error, :not_found}
+      %Purchase{} = purchase -> {:ok, purchase}
     end
   end
 
@@ -565,6 +596,16 @@ defmodule EarthScanner.Trips do
 
       true ->
         :ok
+    end
+  end
+
+  defp ensure_future_instance(%TripInstance{} = instance) do
+    today = Date.utc_today()
+
+    if Date.compare(instance.date, today) in [:gt, :eq] do
+      :ok
+    else
+      {:error, :past_instance}
     end
   end
 
