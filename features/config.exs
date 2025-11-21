@@ -12,6 +12,11 @@ defmodule WhiteBreadConfig do
   suite name:          "AdminRecurringTrips",
         context:       AdminRecurringTripsContext,
         feature_paths: ["features/admin_creates_recurring_trip.feature"]
+
+  suite name:          "AdminEditTrips",
+        context:       AdminEditTripsContext,
+        feature_paths: ["features/admin_edit_trip.feature"]
+
   suite name:          "TripSearch",
         context:       TripSearchContext,
         feature_paths: [
