@@ -316,12 +316,11 @@ defmodule EarthScanner.Trips do
     end
   end
 
-  #fr-32
+  # fr-32
 
   def get_trip(id), do: Repo.get(Trip, id)
 
   def get_trip_by_id(id) do
     get_trip(id)
   end
-
 end
