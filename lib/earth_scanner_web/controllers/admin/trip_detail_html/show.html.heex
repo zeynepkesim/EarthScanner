@@ -12,7 +12,6 @@
   <div class="bg-white shadow-lg rounded-lg overflow-hidden">
     <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white px-6 py-4">
       <h1 class="text-3xl font-bold">{@trip.source_city} → {@trip.destination_city}</h1>
-      
       <p class="text-blue-100 mt-1">{String.capitalize(@trip.transport_mode)} Trip</p>
     </div>
     <!-- Trip Image -->
@@ -28,23 +27,18 @@
         <div class="space-y-4">
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Transportation</h3>
-            
             <p class="text-lg font-medium text-gray-900 capitalize">{@trip.transport_mode}</p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Route</h3>
-            
             <p class="text-lg text-gray-900">
               <span class="font-medium">{@trip.source_city}</span>
               <span class="text-gray-400 mx-2">→</span>
               <span class="font-medium">{@trip.destination_city}</span>
             </p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Schedule</h3>
-            
             <div class="text-gray-900">
               <p>
                 <span class="font-medium">Departure:</span> {Calendar.strftime(
@@ -52,7 +46,6 @@
                   "%B %d, %Y at %I:%M %p UTC"
                 )}
               </p>
-              
               <p class="mt-1">
                 <span class="font-medium">Arrival:</span> {Calendar.strftime(
                   @trip.arrival_time,
@@ -61,10 +54,8 @@
               </p>
             </div>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Duration</h3>
-            
             <p class="text-lg text-gray-900">{format_duration(@trip.duration_minutes)}</p>
           </div>
         </div>
@@ -72,37 +63,28 @@
         <div class="space-y-4">
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Price</h3>
-            
             <p class="text-2xl font-bold text-green-600">${@trip.price}</p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">CO₂ Pollution Level</h3>
-            
             <p class="text-lg text-gray-900">
               {@trip.co2_level} <span class="text-sm text-gray-500">kg CO₂</span>
             </p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">
               Available Tickets (Base)
             </h3>
-            
             <p class="text-lg text-gray-900">{@trip.available_tickets} tickets per instance</p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Created</h3>
-            
             <p class="text-sm text-gray-600">
               {Calendar.strftime(@trip.inserted_at, "%B %d, %Y at %I:%M %p")}
             </p>
           </div>
-          
           <div class="border-b pb-3">
             <h3 class="text-sm font-semibold text-gray-500 uppercase">Last Updated</h3>
-            
             <p class="text-sm text-gray-600">
               {Calendar.strftime(@trip.updated_at, "%B %d, %Y at %I:%M %p")}
             </p>
@@ -112,7 +94,6 @@
       <!-- Trip Instances -->
       <div class="mt-8">
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Trip Dates & Availability</h2>
-        
         <%= if Enum.empty?(@trip.instances) do %>
           <p class="text-gray-500 italic">No scheduled dates for this trip.</p>
         <% else %>
@@ -124,12 +105,10 @@
                     <p class="font-semibold text-gray-900">
                       {Calendar.strftime(instance.date, "%B %d, %Y")}
                     </p>
-                    
                     <p class="text-sm text-gray-600 mt-1">
                       {instance.available_tickets} tickets available
                     </p>
                   </div>
-                  
                   <%= if Date.compare(instance.date, Date.utc_today()) == :lt do %>
                     <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded">Past</span>
                   <% else %>
@@ -138,7 +117,6 @@
                     </span>
                   <% end %>
                 </div>
-                
                 <%= if @is_future and Date.compare(instance.date, Date.utc_today()) != :lt do %>
                   <div class="flex gap-2 mt-3">
                     <.link
