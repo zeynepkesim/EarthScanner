@@ -41,7 +41,8 @@ defmodule EarthScannerWeb.Router do
 
     get "/search", TripSearchController, :new
     get "/search/results", TripSearchController, :index
-
+    # Public trips listing for users
+    get "/trips", TripsController, :index
   end
 
   scope "/admin", EarthScannerWeb do
