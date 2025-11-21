@@ -357,6 +357,144 @@ defmodule EarthScanner.TripsTest do
     end
   end
 
+  # FR-12
+  describe "purchase_trip_instance/2" do
+    test "FR-12: successfully purchases a future trip instance and decrements tickets" do
+      admin = admin_fixture()
+      future_date = Date.utc_today() |> Date.add(5) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, valid_trip_attrs() |> Map.put("dates", future_date))
+
+      instance = hd(trip.instances)
+
+      {:ok, user} =
+        create_regular_user(%{
+          username: "buyer_#{System.unique_integer([:positive])}",
+          email: "buyer_#{System.unique_integer([:positive])}@test.com"
+        })
+
+      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id)
+      assert purchase.trip_instance_id == instance.id
+      assert purchase.user_id == user.id
+
+      updated_instance = Repo.get!(TripInstance, instance.id)
+      assert updated_instance.available_tickets == instance.available_tickets - 1
+    end
+
+    test "FR-12: prevents purchasing trip instances that are already in the past" do
+      admin = admin_fixture()
+      past_date = Date.utc_today() |> Date.add(-3) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, valid_trip_attrs() |> Map.put("dates", past_date))
+
+      instance = hd(trip.instances)
+
+      {:ok, user} =
+        create_regular_user(%{
+          username: "late_buyer_#{System.unique_integer([:positive])}",
+          email: "late_buyer_#{System.unique_integer([:positive])}@test.com"
+        })
+
+      assert {:error, :past_instance} = Trips.purchase_trip_instance(user, instance.id)
+    end
+
+    test "FR-12: prevents purchasing sold out instances" do
+      admin = admin_fixture()
+      future_date = Date.utc_today() |> Date.add(4) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(
+          admin,
+          valid_trip_attrs()
+          |> Map.put("dates", future_date)
+          |> Map.put("available_tickets", "1")
+        )
+
+      instance = hd(trip.instances)
+
+      {:ok, first_user} =
+        create_regular_user(%{
+          username: "solo_buyer_#{System.unique_integer([:positive])}",
+          email: "solo_buyer_#{System.unique_integer([:positive])}@test.com"
+        })
+
+      {:ok, second_user} =
+        create_regular_user(%{
+          username: "late_solo_#{System.unique_integer([:positive])}",
+          email: "late_solo_#{System.unique_integer([:positive])}@test.com"
+        })
+
+      assert {:ok, _purchase} = Trips.purchase_trip_instance(first_user, instance.id)
+
+      assert {:error, :sold_out} = Trips.purchase_trip_instance(second_user, instance.id)
+
+      reloaded = Repo.get!(TripInstance, instance.id)
+      assert reloaded.available_tickets == 0
+    end
+  end
+
+  describe "return_trip_instance_purchase/2" do
+    test "FR-13: increments available tickets and removes purchase marker for future trips" do
+      admin = admin_fixture()
+      future_date = Date.utc_today() |> Date.add(7) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, valid_trip_attrs() |> Map.put("dates", future_date))
+
+      instance = hd(trip.instances)
+
+      {:ok, user} =
+        create_regular_user(%{
+          username: "ref_under_test_#{System.unique_integer([:positive])}",
+          email: "ref_under_test_#{System.unique_integer([:positive])}@test.com"
+        })
+
+      {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
+
+      summary = Trips.purchase_summary_for_user(user)
+      assert MapSet.member?(summary.instance_ids, instance.id)
+
+      assert {:ok, _refund} = Trips.return_trip_instance_purchase(user, instance.id)
+
+      reloaded_instance = Repo.get!(TripInstance, instance.id)
+      assert reloaded_instance.available_tickets == instance.available_tickets
+
+      refreshed_summary = Trips.purchase_summary_for_user(user)
+      refute MapSet.member?(refreshed_summary.instance_ids, instance.id)
+      refute MapSet.member?(refreshed_summary.trip_ids, trip.id)
+    end
+
+    test "FR-13: only allows refunds for future trip instances" do
+      admin = admin_fixture()
+      past_date = Date.utc_today() |> Date.add(-1) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, valid_trip_attrs() |> Map.put("dates", past_date))
+
+      instance = hd(trip.instances)
+      {:ok, user} = create_regular_user(%{username: "past_ref", email: "past_ref@test.com"})
+
+      Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
+
+      assert {:error, :past_instance} = Trips.return_trip_instance_purchase(user, instance.id)
+    end
+
+    test "FR-13: returns error when user attempts to refund a trip they did not purchase" do
+      admin = admin_fixture()
+      future_date = Date.utc_today() |> Date.add(3) |> Date.to_iso8601()
+
+      {:ok, trip} =
+        Trips.create_trip(admin, valid_trip_attrs() |> Map.put("dates", future_date))
+
+      instance = hd(trip.instances)
+      {:ok, user} = create_regular_user(%{username: "no_purchase", email: "no_purchase@test.com"})
+
+      assert {:error, :not_found} = Trips.return_trip_instance_purchase(user, instance.id)
+    end
+  end
+
   # Helper functions
   defp create_admin(attrs \\ %{}) do
     default_attrs = %{
