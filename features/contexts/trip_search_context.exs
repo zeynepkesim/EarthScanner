@@ -6,14 +6,36 @@ defmodule TripSearchContext do
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
 
-  # Hound session before each scenario
-  scenario_starting_state fn _initial_state ->
-    Hound.start_session()
-    %{}
+  defp ensure_admin! do
+    case EarthScanner.Accounts.get_user_by_email("bdd_test_admin@example.com") do
+      nil ->
+        {:ok, user} =
+          EarthScanner.Accounts.register_user(%{
+            "username" => "bdd_test_admin",
+            "password" => "Password123!",
+            "password_confirmation" => "Password123!",
+            "name" => "BDD",
+            "last_name" => "Admin",
+            "email" => "bdd_test_admin@example.com",
+            "birthdate" => "1990-01-01",
+            "nationality" => "ID",
+            "residence_address" => "Test Street",
+            "phone_number" => "+620000000000"
+          })
+
+        # promote to admin
+        EarthScanner.Repo.update!(Ecto.Changeset.change(user, role: "admin"))
+      user ->
+        user
+    end
   end
 
-  # Hound session cleanup
-  scenario_finalize fn state ->
+  scenario_starting_state fn _initial_state ->
+    Hound.start_session()
+    {:ok, %{}}
+  end
+
+  scenario_finalize fn _status, state ->
     Hound.end_session()
     {:ok, state}
   end
@@ -45,6 +67,11 @@ defmodule TripSearchContext do
 
   given_ ~r/^a set of future trips with various attributes exist$/, fn state ->
     insert_mixed_trips()
+    {:ok, state}
+  end
+
+  given_ ~r/^a set of future trips with varying durations exist$/, fn state ->
+    insert_duration_variation_trips()
     {:ok, state}
   end
 
@@ -153,34 +180,34 @@ defmodule TripSearchContext do
     {:ok, state}
   end
 
-
-
   ##########################################################################
   # PRIVATE HELPERS — DB INSERTS
   ##########################################################################
 
   defp insert_future_trips do
-    now = DateTime.utc_now()
-    tomorrow = DateTime.add(now, 86_400, :second)
+    admin = ensure_admin!()
+    now = clean(DateTime.utc_now())
+    tomorrow = clean(DateTime.add(now, 86_400, :second))
 
     Repo.insert!(%Trip{
       source_city: "Tartu",
       destination_city: "Tallinn",
       transport_mode: "bus",
       departure_time: tomorrow,
-      arrival_time: DateTime.add(tomorrow, 7200, :second),
+      arrival_time: clean(DateTime.add(tomorrow, 7200, :second)),
       duration_minutes: 120,
       price: 20,
       co2_level: 100,
       available_tickets: 50,
-      admin_id: 1
+      admin_id: admin.id
     })
   end
 
   defp insert_past_and_future_trips do
-    now = DateTime.utc_now()
-    yesterday = DateTime.add(now, -86_400, :second)
-    tomorrow = DateTime.add(now, 86_400, :second)
+    admin = ensure_admin!()
+    now = clean(DateTime.utc_now())
+    yesterday = clean(DateTime.add(now, -86_400, :second))
+    tomorrow = clean(DateTime.add(now, 86_400, :second))
 
     # Past trip
     Repo.insert!(%Trip{
@@ -188,12 +215,12 @@ defmodule TripSearchContext do
       destination_city: "Parnu",
       transport_mode: "train",
       departure_time: yesterday,
-      arrival_time: DateTime.add(yesterday, 7200, :second),
+      arrival_time: clean(DateTime.add(yesterday, 7200, :second)),
       duration_minutes: 120,
       price: 15,
       co2_level: 150,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: admin.id
     })
 
     # Future trip
@@ -202,17 +229,18 @@ defmodule TripSearchContext do
       destination_city: "Parnu",
       transport_mode: "train",
       departure_time: tomorrow,
-      arrival_time: DateTime.add(tomorrow, 7200, :second),
+      arrival_time: clean(DateTime.add(tomorrow, 7200, :second)),
       duration_minutes: 120,
       price: 25,
       co2_level: 120,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: admin.id
     })
   end
 
   defp insert_price_variation_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    admin = ensure_admin!()
+    base_time = clean(DateTime.add(DateTime.utc_now(), 86_400, :second))
 
     for price <- [5, 15, 25, 40] do
       Repo.insert!(%Trip{
@@ -220,18 +248,19 @@ defmodule TripSearchContext do
         destination_city: "Tallinn",
         transport_mode: "bus",
         departure_time: base_time,
-        arrival_time: DateTime.add(base_time, 3600, :second),
+        arrival_time: clean(DateTime.add(base_time, 3600, :second)),
         duration_minutes: 60,
         price: price,
         co2_level: 100,
         available_tickets: 20,
-        admin_id: 1
+        admin_id: admin.id
       })
     end
   end
 
   defp insert_co2_variation_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    admin = ensure_admin!()
+    base_time = clean(DateTime.add(DateTime.utc_now(), 86_400, :second))
 
     for co2 <- [50, 100, 150, 250] do
       Repo.insert!(%Trip{
@@ -239,30 +268,31 @@ defmodule TripSearchContext do
         destination_city: "Tallinn",
         transport_mode: "bus",
         departure_time: base_time,
-        arrival_time: DateTime.add(base_time, 3600, :second),
+        arrival_time: clean(DateTime.add(base_time, 3600, :second)),
         duration_minutes: 60,
         price: 20,
         co2_level: co2,
         available_tickets: 20,
-        admin_id: 1
+        admin_id: admin.id
       })
     end
   end
 
   defp insert_mixed_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    admin = ensure_admin!()
+    base_time = clean(DateTime.add(DateTime.utc_now(), 86_400, :second))
 
     Repo.insert!(%Trip{
       source_city: "Tartu",
       destination_city: "Tallinn",
       transport_mode: "bus",
       departure_time: base_time,
-      arrival_time: DateTime.add(base_time, 5400, :second),
+      arrival_time: clean(DateTime.add(base_time, 5400, :second)),
       duration_minutes: 90,
       price: 15,
       co2_level: 120,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: admin.id
     })
 
     Repo.insert!(%Trip{
@@ -270,12 +300,34 @@ defmodule TripSearchContext do
       destination_city: "Tallinn",
       transport_mode: "train",
       departure_time: base_time,
-      arrival_time: DateTime.add(base_time, 7200, :second),
+      arrival_time: clean(DateTime.add(base_time, 7200, :second)),
       duration_minutes: 120,
       price: 25,
       co2_level: 150,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: admin.id
     })
   end
+
+  defp insert_duration_variation_trips do
+    admin = ensure_admin!()
+    base = clean(DateTime.add(DateTime.utc_now(), 86_400, :second))
+
+    for duration <- [30, 60, 120, 180] do
+      Repo.insert!(%Trip{
+        source_city: "Tartu",
+        destination_city: "Tallinn",
+        transport_mode: "bus",
+        departure_time: base,
+        arrival_time: clean(DateTime.add(base, duration * 60, :second)),
+        duration_minutes: duration,
+        price: 20,
+        co2_level: 100,
+        available_tickets: 20,
+        admin_id: admin.id
+      })
+    end
+  end
+
+  defp clean(dt), do: DateTime.truncate(dt, :second)
 end
