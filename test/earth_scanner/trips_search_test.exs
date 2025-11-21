@@ -97,8 +97,8 @@ defmodule EarthScanner.TripsSearchTest do
 
       # Verify all returned trips are in the future
       refute Enum.any?(results, fn trip ->
-        DateTime.compare(trip.departure_time, DateTime.utc_now()) == :lt
-      end)
+               DateTime.compare(trip.departure_time, DateTime.utc_now()) == :lt
+             end)
     end
 
     # AC: Returns empty list when no matching routes found
@@ -207,20 +207,22 @@ defmodule EarthScanner.TripsSearchTest do
     end
 
     test "handles last page with fewer items than per_page" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "page" => "3",
-        "per_page" => "5"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "page" => "3",
+          "per_page" => "5"
+        })
 
       assert length(result.trips) == 2
       assert result.total == 12
     end
 
     test "returns empty trips list for page beyond available data" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "page" => "100",
-        "per_page" => "5"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "page" => "100",
+          "per_page" => "5"
+        })
 
       assert result.trips == []
       assert result.total == 12
@@ -291,8 +293,8 @@ defmodule EarthScanner.TripsSearchTest do
 
       # Verify all returned trips meet the criteria
       assert Enum.all?(result.trips, fn trip ->
-        Decimal.compare(trip.price, Decimal.new("20")) in [:gt, :eq]
-      end)
+               Decimal.compare(trip.price, Decimal.new("20")) in [:gt, :eq]
+             end)
     end
 
     # AC: Each filter works independently - maximum price
@@ -305,16 +307,17 @@ defmodule EarthScanner.TripsSearchTest do
 
       # Verify all returned trips meet the criteria
       assert Enum.all?(result.trips, fn trip ->
-        Decimal.compare(trip.price, Decimal.new("30")) in [:lt, :eq]
-      end)
+               Decimal.compare(trip.price, Decimal.new("30")) in [:lt, :eq]
+             end)
     end
 
     # AC: Supports numeric ranges (min–max)
     test "filters by price range (min and max combined)", %{medium: medium} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "20",
-        "max_price" => "30"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "20",
+          "max_price" => "30"
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == medium.id
@@ -322,7 +325,8 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Handles invalid filter values gracefully
     test "handles invalid price filter gracefully" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{"min_price" => "invalid"})
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{"min_price" => "invalid"})
 
       # Should return all trips when filter is invalid
       assert length(result.trips) == 3
@@ -347,7 +351,8 @@ defmodule EarthScanner.TripsSearchTest do
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
           "departure_time" => DateTime.add(now, 1, :hour) |> DateTime.to_iso8601(),
-          "arrival_time" => DateTime.add(now, 2, :hour) |> DateTime.add(30, :minute) |> DateTime.to_iso8601(),
+          "arrival_time" =>
+            DateTime.add(now, 2, :hour) |> DateTime.add(30, :minute) |> DateTime.to_iso8601(),
           "price" => "15.00",
           "co2_level" => "20",
           "available_tickets" => "50",
@@ -360,7 +365,8 @@ defmodule EarthScanner.TripsSearchTest do
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
           "departure_time" => DateTime.add(now, 2, :hour) |> DateTime.to_iso8601(),
-          "arrival_time" => DateTime.add(now, 4, :hour) |> DateTime.add(30, :minute) |> DateTime.to_iso8601(),
+          "arrival_time" =>
+            DateTime.add(now, 4, :hour) |> DateTime.add(30, :minute) |> DateTime.to_iso8601(),
           "price" => "15.00",
           "co2_level" => "20",
           "available_tickets" => "50",
@@ -409,10 +415,11 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Supports numeric ranges (min–max)
     test "filters by duration range", %{medium: medium} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_duration" => "120",
-        "max_duration" => "180"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_duration" => "120",
+          "max_duration" => "180"
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == medium.id
@@ -492,10 +499,11 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Supports numeric ranges (min–max)
     test "filters by CO2 range", %{medium: medium} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_co2" => "20",
-        "max_co2" => "30"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_co2" => "20",
+          "max_co2" => "30"
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == medium.id
@@ -553,9 +561,10 @@ defmodule EarthScanner.TripsSearchTest do
     test "filters by minimum departure time", %{mid: mid, late: late} do
       min_time = DateTime.add(DateTime.utc_now(), 10, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_departure" => min_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_departure" => min_time
+        })
 
       assert length(result.trips) == 2
       assert Enum.any?(result.trips, &(&1.id == mid.id))
@@ -565,9 +574,10 @@ defmodule EarthScanner.TripsSearchTest do
     test "filters by maximum departure time", %{early: early, mid: mid} do
       max_time = DateTime.add(DateTime.utc_now(), 20, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "max_departure" => max_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "max_departure" => max_time
+        })
 
       assert length(result.trips) == 2
       assert Enum.any?(result.trips, &(&1.id == early.id))
@@ -578,19 +588,21 @@ defmodule EarthScanner.TripsSearchTest do
       min_time = DateTime.add(DateTime.utc_now(), 10, :hour) |> DateTime.to_iso8601()
       max_time = DateTime.add(DateTime.utc_now(), 20, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_departure" => min_time,
-        "max_departure" => max_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_departure" => min_time,
+          "max_departure" => max_time
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == mid.id
     end
 
     test "handles invalid datetime format gracefully" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_departure" => "invalid-date"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_departure" => "invalid-date"
+        })
 
       # Should return all trips when filter is invalid
       assert length(result.trips) == 3
@@ -648,9 +660,10 @@ defmodule EarthScanner.TripsSearchTest do
     test "filters by minimum arrival time", %{mid: mid, late: late} do
       min_time = DateTime.add(DateTime.utc_now(), 10, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_arrival" => min_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_arrival" => min_time
+        })
 
       assert length(result.trips) == 2
       assert Enum.any?(result.trips, &(&1.id == mid.id))
@@ -660,9 +673,10 @@ defmodule EarthScanner.TripsSearchTest do
     test "filters by maximum arrival time", %{early: early, mid: mid} do
       max_time = DateTime.add(DateTime.utc_now(), 20, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "max_arrival" => max_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "max_arrival" => max_time
+        })
 
       assert length(result.trips) == 2
       assert Enum.any?(result.trips, &(&1.id == early.id))
@@ -673,10 +687,11 @@ defmodule EarthScanner.TripsSearchTest do
       min_time = DateTime.add(DateTime.utc_now(), 10, :hour) |> DateTime.to_iso8601()
       max_time = DateTime.add(DateTime.utc_now(), 20, :hour) |> DateTime.to_iso8601()
 
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_arrival" => min_time,
-        "max_arrival" => max_time
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_arrival" => min_time,
+          "max_arrival" => max_time
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == mid.id
@@ -735,22 +750,24 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Each filter can be combined with others
     test "applies multiple filters correctly", %{matching: matching} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "20",
-        "max_price" => "30",
-        "max_duration" => "150",
-        "max_co2" => "25"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "20",
+          "max_price" => "30",
+          "max_duration" => "150",
+          "max_co2" => "25"
+        })
 
       assert length(result.trips) == 1
       assert hd(result.trips).id == matching.id
     end
 
     test "returns empty result when no trips match all filters" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "100",
-        "max_co2" => "5"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "100",
+          "max_co2" => "5"
+        })
 
       assert result.trips == []
       assert result.total == 0
@@ -763,16 +780,20 @@ defmodule EarthScanner.TripsSearchTest do
       assert all_results.total == 3
 
       # One filter
-      price_filtered = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "20"
-      })
+      price_filtered =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "20"
+        })
+
       assert price_filtered.total <= all_results.total
 
       # Two filters
-      price_and_duration = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "20",
-        "max_duration" => "150"
-      })
+      price_and_duration =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "20",
+          "max_duration" => "150"
+        })
+
       assert price_and_duration.total <= price_filtered.total
     end
   end
@@ -986,9 +1007,10 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Each sortable field supports ascending order
     test "sorts by duration ascending", %{short: short, medium: medium, long: long} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "sort" => "duration_asc"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "sort" => "duration_asc"
+        })
 
       assert length(result.trips) == 3
       [first, second, third] = result.trips
@@ -1003,9 +1025,10 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Each sortable field supports descending order
     test "sorts by duration descending", %{short: short, medium: medium, long: long} do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "sort" => "duration_desc"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "sort" => "duration_desc"
+        })
 
       assert length(result.trips) == 3
       [first, second, third] = result.trips
@@ -1046,20 +1069,21 @@ defmodule EarthScanner.TripsSearchTest do
     # AC: Sorting applies to the current filtered result set
     test "sorting applies to filtered results" do
       # Filter: price between 20 and 40
-      filtered_and_sorted = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "min_price" => "20",
-        "max_price" => "40",
-        "sort" => "price_desc"
-      })
+      filtered_and_sorted =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "min_price" => "20",
+          "max_price" => "40",
+          "sort" => "price_desc"
+        })
 
       # Should have 3 trips (prices: 25, 30, 35)
       assert length(filtered_and_sorted.trips) > 0
 
       # Verify all results are within filter range
       assert Enum.all?(filtered_and_sorted.trips, fn trip ->
-        Decimal.compare(trip.price, Decimal.new("20")) in [:gt, :eq] and
-          Decimal.compare(trip.price, Decimal.new("40")) in [:lt, :eq]
-      end)
+               Decimal.compare(trip.price, Decimal.new("20")) in [:gt, :eq] and
+                 Decimal.compare(trip.price, Decimal.new("40")) in [:lt, :eq]
+             end)
 
       # Verify they're sorted descending
       prices = Enum.map(filtered_and_sorted.trips, & &1.price)
@@ -1076,9 +1100,10 @@ defmodule EarthScanner.TripsSearchTest do
     end
 
     test "invalid sort parameter falls back to default sorting" do
-      result = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "sort" => "invalid_sort"
-      })
+      result =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "sort" => "invalid_sort"
+        })
 
       # Should default to sorting by departure time
       departure_times = Enum.map(result.trips, & &1.departure_time)
@@ -1112,17 +1137,19 @@ defmodule EarthScanner.TripsSearchTest do
 
     # AC: Sorting works correctly with pagination
     test "sorting maintains consistency across pages" do
-      page1 = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "page" => "1",
-        "per_page" => "3",
-        "sort" => "price_asc"
-      })
+      page1 =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "page" => "1",
+          "per_page" => "3",
+          "sort" => "price_asc"
+        })
 
-      page2 = Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
-        "page" => "2",
-        "per_page" => "3",
-        "sort" => "price_asc"
-      })
+      page2 =
+        Trips.search_future_trips_paginated("Tallinn", "Tartu", %{
+          "page" => "2",
+          "per_page" => "3",
+          "sort" => "price_asc"
+        })
 
       # Last item of page1 should have lower price than first item of page2
       last_of_page1 = List.last(page1.trips)
