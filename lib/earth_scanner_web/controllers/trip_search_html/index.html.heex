@@ -56,19 +56,65 @@
 <%= if @trips == [] do %>
   <p>No trips found yet (we will implement filtering & DB next).</p>
 <% else %>
-    <ul>
-        <%= for trip <- @trips do %>
-            <li>
-                <strong><%= trip.source_city %> → <%= trip.destination_city %></strong><br/>
-                Mode: <%= trip.transport_mode %><br/>
-                Price: <%= trip.price %><br/>
-                CO₂: <%= trip.co2_level %> g/km<br/>
-                Departs: <%= trip.departure_time %><br/>
-                Arrives: <%= trip.arrival_time %>
-            </li>
-        <% end %>
-    </ul>
+  <ul class="space-y-4">
+    <%= for trip <- @trips do %>
+      <li class="rounded-lg border border-slate-200 p-4 shadow-sm">
+        <strong><%= trip.source_city %> → <%= trip.destination_city %></strong><br />
+        Mode: <%= trip.transport_mode %><br />
+        Price: <%= trip.price %><br />
+        CO₂: <%= trip.co2_level %> g/km<br />
+        Departs: <%= trip.departure_time %><br />
+        Arrives: <%= trip.arrival_time %><br />
+        <span :if={MapSet.member?(@purchase_summary.trip_ids, trip.id)} class="text-sm font-semibold text-green-700">
+          Purchased
+        </span>
+        <span :if={!MapSet.member?(@purchase_summary.trip_ids, trip.id)} class="text-sm text-slate-500">
+          Not purchased yet
+        </span>
 
+        <% first_available_instance =
+          Enum.find(trip.instances, fn instance -> instance.available_tickets > 0 end) %>
+
+        <div class="mt-3 space-y-2 text-sm">
+          <div :if={trip.instances != []}>
+            <strong>Available dates:</strong>
+            <%= for instance <- trip.instances do %>
+              <div class="mt-1">
+                <%= Calendar.strftime(instance.date, "%b %d, %Y") %> —
+                <%= instance.available_tickets %> tickets left
+                <span :if={MapSet.member?(@purchase_summary.instance_ids, instance.id)} class="text-green-600">
+                  (Already purchased)
+                </span>
+                <span :if={instance.available_tickets == 0} class="text-slate-500">
+                  (Sold out)
+                </span>
+              </div>
+            <% end %>
+          </div>
+
+          <.form
+            :if={first_available_instance}
+            for={%{}}
+            method="post"
+            action={~p"/trips/#{trip.id}/purchase"}
+            class="mt-2"
+          >
+            <input type="hidden" name="trip_instance_id" value={first_available_instance.id} />
+            <input type="hidden" name="redirect_to" value={@return_path} />
+
+            <button
+              type="submit"
+              class="inline-flex items-center rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Purchase next available date
+            </button>
+          </.form>
+
+          <p :if={!first_available_instance} class="text-slate-500">All future dates are sold out.</p>
+        </div>
+      </li>
+    <% end %>
+  </ul>
 <% end %>
 <hr class="my-4"/>
 

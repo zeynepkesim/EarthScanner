@@ -6,7 +6,7 @@ defmodule EarthScanner.Trips do
   """
 
   import Ecto.Query, warn: false
-  alias Ecto.Multi
+  alias Ecto.{Changeset, Multi}
   alias EarthScanner.Repo
 
   alias EarthScanner.Trips.{Trip, TripInstance}
@@ -472,5 +472,107 @@ defmodule EarthScanner.Trips do
 
   # default fallback: order by soonest departure
   defp apply_sort(query, _), do: order_by(query, [t], asc: t.departure_time)
+
+  # ---------- Purchases & Public Trip Helpers ----------
+
+  @doc """
+  Returns the given trip preloaded with its upcoming instances for public pages.
+  """
+  def get_public_trip!(trip_id) do
+    today = Date.utc_today()
+
+    Trip
+    |> Repo.get!(trip_id)
+    |> Repo.preload(instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date]))
+  end
+
+  @doc """
+  Preloads future instances for the provided list of trips.
+  """
+  def preload_future_instances(trips) do
+    today = Date.utc_today()
+
+    Repo.preload(trips,
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
+  end
+
+  @doc """
+  Returns a summary of the trips/instances purchased by the given user.
+  """
+  def purchase_summary_for_user(nil) do
+    %{trip_ids: MapSet.new(), instance_ids: MapSet.new()}
+  end
+
+  def purchase_summary_for_user(%User{id: user_id}) do
+    purchases =
+      from(p in Purchase,
+        join: i in TripInstance,
+        on: i.id == p.trip_instance_id,
+        where: p.user_id == ^user_id,
+        select: %{trip_id: i.trip_id, instance_id: p.trip_instance_id}
+      )
+      |> Repo.all()
+
+    %{
+      trip_ids: purchases |> Enum.map(& &1.trip_id) |> MapSet.new(),
+      instance_ids: purchases |> Enum.map(& &1.instance_id) |> MapSet.new()
+    }
+  end
+
+  @doc """
+  Purchases a ticket for the given trip instance on behalf of the user.
+  Decrements the available ticket count if the instance is still available.
+  """
+  def purchase_trip_instance(%User{id: user_id}, trip_instance_id) do
+    with {:ok, instance} <- fetch_instance(trip_instance_id),
+         :ok <- validate_instance_for_purchase(instance) do
+      Multi.new()
+      |> Multi.insert(:purchase, Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id}))
+      |> Multi.update(:instance, Changeset.change(instance, %{available_tickets: instance.available_tickets - 1}))
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{purchase: purchase}} ->
+          {:ok, purchase}
+
+        {:error, :purchase, %Ecto.Changeset{} = changeset, _} ->
+          handle_purchase_error(changeset)
+
+        {:error, _step, reason, _} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  def purchase_trip_instance(_, _), do: {:error, :invalid_user}
+
+  defp fetch_instance(instance_id) do
+    case Repo.get(TripInstance, instance_id) do
+      nil -> {:error, :not_found}
+      %TripInstance{} = instance -> {:ok, instance}
+    end
+  end
+
+  defp validate_instance_for_purchase(%TripInstance{available_tickets: tickets} = instance) do
+    today = Date.utc_today()
+
+    cond do
+      Date.compare(instance.date, today) == :lt ->
+        {:error, :past_instance}
+
+      tickets <= 0 ->
+        {:error, :sold_out}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp handle_purchase_error(%Ecto.Changeset{errors: errors}) do
+    cond do
+      Keyword.has_key?(errors, :user_id) -> {:error, :already_purchased}
+      true -> {:error, :unknown}
+    end
+  end
 
 end

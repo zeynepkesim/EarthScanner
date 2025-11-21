@@ -18,13 +18,17 @@ defmodule EarthScannerWeb.TripSearchController do
 
       true ->
         result = Trips.search_future_trips_paginated(source, destination, params)
+        trips = Trips.preload_future_instances(result.trips)
+        purchase_summary = Trips.purchase_summary_for_user(conn.assigns[:current_user])
 
         render(conn, :index,
-          trips: result.trips,
+          trips: trips,
           total: result.total,
           page: result.page,
           per_page: result.per_page,
-          filters: params
+          filters: params,
+          purchase_summary: purchase_summary,
+          return_path: current_path(conn, conn.params)
         )
         # render(conn, :index, trips: trips, filters: params)
     end
