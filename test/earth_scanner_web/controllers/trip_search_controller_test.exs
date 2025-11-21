@@ -38,6 +38,48 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
     assert html =~ "Purchased"
   end
 
+  test "FR-14: shows purchased badge and legend for current user only", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
+    Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
+
+    conn = log_in_user(conn, user)
+    conn =
+      get(conn, ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+
+    html = html_response(conn, 200)
+    assert html =~ ~s(data-role="purchased-badge")
+    assert html =~ ~s(id="search-results-legend")
+  end
+
+  test "FR-14: hides purchased badge for other users and guests", %{
+    conn: conn,
+    trip: trip,
+    instance: instance,
+    user: user
+  } do
+    Repo.insert!(%Purchase{user_id: user.id, trip_instance_id: instance.id})
+
+    {:ok, other_user} =
+      create_regular_user(%{username: "other_search_user", email: "other_search@test.com"})
+
+    conn = log_in_user(conn, other_user)
+    conn =
+      get(conn, ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+
+    html = html_response(conn, 200)
+    refute html =~ ~s(data-role="purchased-badge")
+
+    guest_conn =
+      get(build_conn(), ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}")
+
+    guest_html = html_response(guest_conn, 200)
+    refute guest_html =~ ~s(data-role="purchased-badge")
+  end
+
   defp create_admin(attrs \\ %{}) do
     default_attrs = %{
       username: "admin_search",
