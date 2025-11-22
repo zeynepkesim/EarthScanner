@@ -13,7 +13,6 @@ defmodule SearchByRouteTest do
 
     results = Trips.search(%{"source" => "Tartu", "destination" => unique_destination})
 
-
     assert Enum.any?(results, fn r -> r.destination_city == unique_destination end)
   end
 
