@@ -322,6 +322,7 @@ defmodule EarthScanner.Trips do
 
   def get_trip_by_id(id) do
     get_trip(id)
+  end
 
   # ---------- FR-07: User Search by Source + Destination ----------
 
@@ -633,6 +634,5 @@ defmodule EarthScanner.Trips do
       Keyword.has_key?(errors, :user_id) -> {:error, :already_purchased}
       true -> {:error, :unknown}
     end
-
   end
 end
