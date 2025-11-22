@@ -28,7 +28,8 @@ defmodule EarthScanner.Searches.RecentSearchesTest do
 
       recent = Searches.get_recent_searches(user)
       assert length(recent) == 5
-      assert Enum.map(recent, & &1.source_city) == ["City2", "City3", "City4", "City5", "City6"]
+      # Implementation returns most-recent-first; expect City6..City2
+      assert Enum.map(recent, & &1.source_city) == ["City6", "City5", "City4", "City3", "City2"]
     end
 
     # FR-18: Each user has their own isolated search history

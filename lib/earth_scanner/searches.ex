@@ -43,7 +43,7 @@ defmodule EarthScanner.Searches do
   def get_recent_searches(%User{id: user_id}) do
     SearchHistory
     |> where(user_id: ^user_id)
-    |> order_by(desc: :inserted_at)
+    |> order_by([s], desc: s.inserted_at, desc: s.id)
     |> limit(@max_saved_searches)
     |> Repo.all()
   end
