@@ -57,8 +57,8 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
 
     # No results should be in the past or have departure_time exactly equal to now
     refute Enum.any?(results, fn trip ->
-      DateTime.compare(trip.departure_time, now) in [:lt, :eq]
-    end)
+             DateTime.compare(trip.departure_time, now) in [:lt, :eq]
+           end)
   end
 
   @tag :fr11
@@ -89,7 +89,7 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
 
     # the trip departing exactly at 'now' must NOT appear in results.
     refute Enum.any?(results, fn trip ->
-      DateTime.compare(trip.departure_time, now) == :eq
-    end)
+             DateTime.compare(trip.departure_time, now) == :eq
+           end)
   end
 end
