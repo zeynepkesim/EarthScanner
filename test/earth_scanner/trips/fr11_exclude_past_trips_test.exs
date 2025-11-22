@@ -1,5 +1,5 @@
 defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
-  use EarthScanner.DataCase, async: true
+  use EarthScanner.DataCase, async: false
 
   alias EarthScanner.{Trips, Repo}
   alias EarthScanner.Trips.Trip
