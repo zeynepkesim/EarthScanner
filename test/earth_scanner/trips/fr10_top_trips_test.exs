@@ -1,65 +1,63 @@
 defmodule EarthScanner.Trips.Fr10TopTripsTest do
   use EarthScanner.DataCase, async: true
 
-  alias EarthScanner.{Trips, Repo}
+  alias EarthScanner.Repo
+  alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
+  alias TripTestHelper
 
-  @tag :fr10
   test "compute_top_trips/1 returns fastest, cheapest and greenest trips with deterministic tie-breaking" do
-    # Truncate to seconds because Trip uses :utc_datetime (no microseconds allowed)
-    now =
-      DateTime.utc_now()
-      |> DateTime.truncate(:second)
+    admin = TripTestHelper.admin_fixture()
 
     # Trip A: medium price, medium duration, medium CO2
-    t1 =
+    trip1 =
       Repo.insert!(%Trip{
         source_city: "Tartu",
         destination_city: "Tallinn",
-        transport_mode: "bus",
-        departure_time: now,
-        arrival_time: DateTime.add(now, 60 * 60, :second),
-        duration_minutes: 60,
-        price: Decimal.new("20.00"),
+        departure_time: ~U[2025-11-20 10:00:00Z],
+        arrival_time: ~U[2025-11-20 13:00:00Z],
+        duration_minutes: 180,
+        price: 50.0,
         co2_level: 150,
-        available_tickets: 10,
-        admin_id: 1
+        available_tickets: 50,
+        transport_mode: "plane",
+        admin_id: admin.id
       })
 
     # Trip B: cheapest and greenest, but slower
-    t2 =
+    trip2 =
       Repo.insert!(%Trip{
         source_city: "Tartu",
         destination_city: "Tallinn",
-        transport_mode: "train",
-        departure_time: now,
-        arrival_time: DateTime.add(now, 90 * 60, :second),
+        departure_time: ~U[2025-11-20 11:00:00Z],
+        arrival_time: ~U[2025-11-20 12:30:00Z],
         duration_minutes: 90,
-        price: Decimal.new("10.00"),
-        co2_level: 80,
-        available_tickets: 10,
-        admin_id: 1
+        price: 60.0,
+        co2_level: 130,
+        available_tickets: 40,
+        transport_mode: "bus",
+        admin_id: admin.id
       })
 
     # Trip C: fastest but more expensive and more polluting
-    t3 =
+    trip3 =
       Repo.insert!(%Trip{
         source_city: "Tartu",
         destination_city: "Tallinn",
-        transport_mode: "plane",
-        departure_time: now,
-        arrival_time: DateTime.add(now, 30 * 60, :second),
-        duration_minutes: 30,
-        price: Decimal.new("40.00"),
-        co2_level: 300,
-        available_tickets: 10,
-        admin_id: 1
+        departure_time: ~U[2025-11-20 09:00:00Z],
+        arrival_time: ~U[2025-11-20 11:30:00Z],
+        duration_minutes: 150,
+        price: 40.0,
+        co2_level: 100,
+        available_tickets: 30,
+        transport_mode: "train",
+        admin_id: admin.id
       })
 
-    top = Trips.compute_top_trips([t1, t2, t3])
+    top_trips = Trips.compute_top_trips([trip1, trip2, trip3])
 
-    assert top.fastest.id == t3.id
-    assert top.cheapest.id == t2.id
-    assert top.greenest.id == t2.id
+    assert top_trips.fastest.id == trip2.id
+    assert top_trips.cheapest.id == trip3.id
+    assert top_trips.greenest.id == trip3.id
   end
 end
