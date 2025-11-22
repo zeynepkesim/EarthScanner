@@ -18,10 +18,12 @@ defmodule EarthScannerWeb.TripsController do
 
   def show(conn, %{"id" => id}) do
     trip = id |> String.to_integer() |> Trips.get_public_trip!()
+    similar_trips = Trips.find_similar_trips(trip)
     purchase_summary = Trips.purchase_summary_for_user(conn.assigns[:current_user])
 
     render(conn, :show,
       trip: trip,
+      similar_trips: similar_trips,
       purchase_summary: purchase_summary,
       return_path: ~p"/trips/#{trip.id}"
     )

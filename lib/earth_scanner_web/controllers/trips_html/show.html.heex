@@ -137,5 +137,43 @@
         </div>
       </div>
     </section>
+
+    <section
+      :if={@similar_trips != []}
+      class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+    >
+      <h2 class="text-xl font-semibold text-slate-900">Similar trips you might like</h2>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          :for={trip <- @similar_trips}
+          class="rounded-lg border border-slate-200 p-4 hover:border-sky-400 hover:shadow-md transition"
+        >
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-semibold text-slate-900 text-sm">
+              {trip.source_city} → {trip.destination_city}
+            </h3>
+            <span class="text-lg font-bold text-sky-600">€{trip.price}</span>
+          </div>
+
+          <p class="text-xs text-slate-500 mb-2">
+            {String.capitalize(trip.transport_mode)} • CO₂: {trip.co2_level}kg
+          </p>
+
+          <p class="text-xs text-slate-500 mb-3">
+            {trip.duration_minutes} min • {length(trip.instances)} date{if length(trip.instances) !=
+                                                                             1,
+                                                                           do: "s"}
+          </p>
+
+          <.link
+            navigate={~p"/trips/#{trip.id}"}
+            class="inline-flex items-center justify-center w-full rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700 transition"
+          >
+            View trip →
+          </.link>
+        </div>
+      </div>
+    </section>
   </div>
 </div>

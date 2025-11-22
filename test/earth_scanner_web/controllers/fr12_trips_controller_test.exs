@@ -1,4 +1,4 @@
-# FR-12
+# FR-12, FR-16: View Trip Details
 defmodule EarthScannerWeb.TripsControllerTest do
   use EarthScannerWeb.ConnCase
 
@@ -27,6 +27,7 @@ defmodule EarthScannerWeb.TripsControllerTest do
     {:ok, conn: conn, trip: trip, instance: hd(trip.instances), user: user}
   end
 
+  # FR-16: User can view full trip details including all instances and pricing
   test "FR-12: shows trip details", %{conn: conn, trip: trip} do
     conn = get(conn, ~p"/trips/#{trip.id}")
 
@@ -36,6 +37,7 @@ defmodule EarthScannerWeb.TripsControllerTest do
     assert body =~ "Available dates"
   end
 
+  # FR-16: User can see which instances they have already purchased
   test "FR-12: marks purchased instances in the detail view", %{
     conn: conn,
     trip: trip,

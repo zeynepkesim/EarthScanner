@@ -8,13 +8,12 @@ import Config
 config :earth_scanner, EarthScanner.Repo,
   username: System.get_env("POSTGRES_USER", "postgres"),
   # Default to "postgres" for local devs; override with POSTGRES_PASSWORD env if needed
-  password: System.get_env("POSTGRES_PASSWORD", "12345678"),
+  password: System.get_env("POSTGRES_PASSWORD", "postgres"),
   hostname: System.get_env("POSTGRES_HOST", "localhost"),
   port: String.to_integer(System.get_env("POSTGRES_PORT", "5432")),
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2,
-  pool_size: 5,
+  pool_size: 20,
   ownership_timeout: 60_000
 
 # We don't run a server during test. If one is required,
@@ -43,5 +42,5 @@ config :phoenix_live_view,
 config :hound,
   driver: "chrome_driver",
   browser: "chrome",
-  host: "localhost",
+  host: "http://localhost",
   port: 9515
