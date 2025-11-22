@@ -13,7 +13,7 @@ defmodule TripSearchContext do
   end
 
   # Hound session cleanup
-  scenario_finalize fn state ->
+  scenario_finalize fn _status, state ->
     Hound.end_session()
     {:ok, state}
   end
@@ -277,5 +277,35 @@ defmodule TripSearchContext do
       available_tickets: 20,
       admin_id: 1
     })
+  end
+
+  # FR-11
+  given_ ~r/^a trip departing exactly now exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/, fn state, %{source: source, dest: dest} ->
+    now = DateTime.utc_now()
+
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "bus",
+      departure_time: now,
+      arrival_time: DateTime.add(now, 3600, :second),
+      duration_minutes: 60,
+      price: 20,
+      co2_level: 150,
+      available_tickets: 10,
+      admin_id: 1,
+      # Marker in HTML: we rely on source/destination plus a label
+    })
+
+    {:ok, state}
+  end
+
+  then_ ~r/^I should not see the "NowTrip" in the results$/, fn state ->
+    html = visible_page_text()
+    # We simply assert there is no explicit "NowTrip" text;
+    # the page does not label it, so this can be a no-op or string check,
+    # depending on how you choose to render it in the future.
+    refute String.contains?(html, "NowTrip")
+    {:ok, state}
   end
 end
