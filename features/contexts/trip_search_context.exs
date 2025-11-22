@@ -5,6 +5,7 @@ defmodule TripSearchContext do
   alias EarthScanner.Repo
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
+  alias EarthScanner.Trips.TripInstance
 
   # Hound session before each scenario
   scenario_starting_state fn _initial_state ->
@@ -17,7 +18,6 @@ defmodule TripSearchContext do
     Hound.end_session()
     {:ok, state}
   end
-
 
   ##########################################################################
   # GIVEN STEPS — DB setup for trips
@@ -47,7 +47,6 @@ defmodule TripSearchContext do
     insert_mixed_trips()
     {:ok, state}
   end
-
 
   ##########################################################################
   # WHEN STEPS — User triggers searches
@@ -83,7 +82,6 @@ defmodule TripSearchContext do
     {:ok, state}
   end
 
-
   ##########################################################################
   # THEN STEPS — Assertions
   ##########################################################################
@@ -117,9 +115,10 @@ defmodule TripSearchContext do
     end
   end
 
-  then_ ~r/^I should only see trips priced between (?<min>\d+) and (?<max>\d+)$/, fn state, %{min: min, max: max} ->
+  then_ ~r/^I should only see trips priced between (?<min>\d+) and (?<max>\d+)$/, fn state, %{min: _min, max: _max} ->
     html = visible_page_text()
-    # simple string checks
+
+    # Simple string checks to validate that prices are rendered
     if String.contains?(html, "Price:") do
       {:ok, state}
     else
@@ -127,7 +126,7 @@ defmodule TripSearchContext do
     end
   end
 
-  then_ ~r/^I should only see trips with CO2 <= (?<max>\d+)$/, fn state, %{max: max} ->
+  then_ ~r/^I should only see trips with CO2 <= (?<max>\d+)$/, fn state, %{max: _max} ->
     html = visible_page_text()
     if String.contains?(html, "CO₂") do
       {:ok, state}
@@ -153,14 +152,15 @@ defmodule TripSearchContext do
     {:ok, state}
   end
 
-
-
   ##########################################################################
   # PRIVATE HELPERS — DB INSERTS
   ##########################################################################
 
   defp insert_future_trips do
-    now = DateTime.utc_now()
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
     tomorrow = DateTime.add(now, 86_400, :second)
 
     Repo.insert!(%Trip{
@@ -178,7 +178,10 @@ defmodule TripSearchContext do
   end
 
   defp insert_past_and_future_trips do
-    now = DateTime.utc_now()
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
     yesterday = DateTime.add(now, -86_400, :second)
     tomorrow = DateTime.add(now, 86_400, :second)
 
@@ -212,7 +215,10 @@ defmodule TripSearchContext do
   end
 
   defp insert_price_variation_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    base_time =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+      |> DateTime.add(86_400, :second)
 
     for price <- [5, 15, 25, 40] do
       Repo.insert!(%Trip{
@@ -231,7 +237,10 @@ defmodule TripSearchContext do
   end
 
   defp insert_co2_variation_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    base_time =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+      |> DateTime.add(86_400, :second)
 
     for co2 <- [50, 100, 150, 250] do
       Repo.insert!(%Trip{
@@ -250,7 +259,10 @@ defmodule TripSearchContext do
   end
 
   defp insert_mixed_trips do
-    base_time = DateTime.add(DateTime.utc_now(), 86_400, :second)
+    base_time =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+      |> DateTime.add(86_400, :second)
 
     Repo.insert!(%Trip{
       source_city: "Tartu",
@@ -279,9 +291,14 @@ defmodule TripSearchContext do
     })
   end
 
-  # FR-11
+  ##########################################################################
+  # FR-11 — Edge case: trip departing exactly now
+  ##########################################################################
+
   given_ ~r/^a trip departing exactly now exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/, fn state, %{source: source, dest: dest} ->
-    now = DateTime.utc_now()
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
 
     Repo.insert!(%Trip{
       source_city: source,
@@ -293,8 +310,8 @@ defmodule TripSearchContext do
       price: 20,
       co2_level: 150,
       available_tickets: 10,
-      admin_id: 1,
-      # Marker in HTML: we rely on source/destination plus a label
+      admin_id: 1
+      # We rely on source/destination + time to identify this in tests if needed
     })
 
     {:ok, state}
@@ -302,10 +319,65 @@ defmodule TripSearchContext do
 
   then_ ~r/^I should not see the "NowTrip" in the results$/, fn state ->
     html = visible_page_text()
-    # We simply assert there is no explicit "NowTrip" text;
-    # the page does not label it, so this can be a no-op or string check,
-    # depending on how you choose to render it in the future.
+    # This step is a placeholder: UI does not label "NowTrip" explicitly yet.
     refute String.contains?(html, "NowTrip")
     {:ok, state}
+  end
+
+  ##########################################################################
+  # FR-15 — Sold-out trips highlighted and purchase disabled
+  ##########################################################################
+
+  given_ ~r/a sold-out future trip exists from "(?<source>[^"]+)" to "(?<dest>[^"]+)"/,
+         fn state, %{source: source, dest: dest} ->
+    base_time =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+      |> DateTime.add(86_400, :second)
+
+    trip =
+      Repo.insert!(%Trip{
+        source_city: source,
+        destination_city: dest,
+        transport_mode: "bus",
+        departure_time: base_time,
+        arrival_time: DateTime.add(base_time, 3600, :second),
+        duration_minutes: 60,
+        price: 30,
+        co2_level: 200,
+        available_tickets: 10,
+        admin_id: 1
+      })
+
+    # Sold-out instance (available_tickets = 0)
+    Repo.insert!(%TripInstance{
+      trip_id: trip.id,
+      date: Date.add(Date.utc_today(), 1),
+      available_tickets: 0
+    })
+
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see the sold-out trip highlighted$/, fn state ->
+    html = visible_page_text()
+
+    # We expect the "All future dates are sold out." text for the sold-out card.
+    if String.contains?(html, "All future dates are sold out.") do
+      {:ok, state}
+    else
+      {:error, "Sold-out message not found in search results"}
+    end
+  end
+
+  then_ ~r/^the purchase button should be disabled for that trip$/, fn state ->
+    # We rely on the data-role attribute added to the disabled button in the template.
+    html = page_source()
+
+    if String.contains?(html, "data-role=\"sold-out-button\"") do
+      {:ok, state}
+    else
+      {:error, "Disabled sold-out purchase button not found"}
+    end
   end
 end
