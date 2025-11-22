@@ -14,7 +14,9 @@ defmodule FilterResultsTest do
         "max_price" => "35"
       })
 
-    assert Enum.all?(results, fn t -> t.price >= 10 and t.price <= 35 end)
+    assert Enum.all?(results, fn t ->
+             Decimal.to_float(t.price) >= 10 and Decimal.to_float(t.price) <= 35
+           end)
   end
 
   test "filter by CO2" do
@@ -43,7 +45,7 @@ defmodule FilterResultsTest do
       })
 
     assert Enum.all?(results, fn t ->
-             t.price >= 10 and t.co2_level <= 150
+             Decimal.to_float(t.price) >= 10 and t.co2_level <= 150
            end)
   end
 end

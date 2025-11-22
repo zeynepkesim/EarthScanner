@@ -6,7 +6,7 @@ defmodule EarthScanner.Trips do
   """
 
   import Ecto.Query, warn: false
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Multi
   alias EarthScanner.Repo
 
   alias EarthScanner.Trips.{Trip, TripInstance}
@@ -324,184 +324,118 @@ defmodule EarthScanner.Trips do
     get_trip(id)
   end
 
-  # ---------- FR-07: User Search by Source + Destination ----------
+  # fr-34
+  def compute_recommended_price(transport_mode, duration_hours) do
+    lower = duration_hours * 0.8
+    upper = duration_hours * 1.2
+
+    matches =
+      Trip
+      |> where([t], t.transport_mode == ^transport_mode)
+      |> where([t], t.duration_hours >= ^lower and t.duration_hours <= ^upper)
+      |> Repo.all()
+
+    case matches do
+      [] ->
+        {:error, :no_matches}
+
+      list ->
+        avg_price =
+          list
+          |> Enum.map(& &1.price)
+          |> Enum.sum()
+          |> Kernel./(length(list))
+
+        {:ok, %{avg_price: Float.round(avg_price, 2), count: length(list)}}
+    end
+  end
+
+  # ---------------------- Public search & helpers -----------------------
 
   @doc """
-  Searches trips by source and destination, returning only future trips
-  (departure_time > now()).
+  Search for future trips matching source and destination patterns.
 
-  params = %{"source" => "...", "destination" => "..."} plus extra filters later.
+  Accepts SQL LIKE/ILIKE patterns (e.g. "%Paris%") or plain strings.
+  Returns a list of `Trip` structs (not preloaded with instances).
   """
-  def search_future_trips(source, destination, _params \\ %{}) do
-    now = DateTime.utc_now()
+  def search_future_trips(source_pattern, destination_pattern) do
+    today = Date.utc_today()
 
     query =
       from t in Trip,
         where:
-          ilike(t.source_city, ^source) and
-            ilike(t.destination_city, ^destination) and
-            t.departure_time > ^now,
+          ilike(t.source_city, ^source_pattern) and
+            ilike(t.destination_city, ^destination_pattern),
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
         order_by: [asc: t.departure_time]
 
     Repo.all(query)
   end
 
   @doc """
-  Searches trips by source & destination, returning future trips only,
-  with simple limit/offset pagination.
-
-  params must contain:
-    - "page" (optional)
-    - "per_page" (optional)
+  Simple paginated search helper. Returns a map with :trips, :total, :page, :per_page.
   """
   def search_future_trips_paginated(source, destination, params) do
-    now = DateTime.utc_now()
-
-    # Default page params
     page =
-      params
-      |> Map.get("page", "1")
-      |> String.to_integer()
+      case params["page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 1
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          1
+      end
 
     per_page =
-      params
-      |> Map.get("per_page", "5")
-      |> String.to_integer()
+      case params["per_page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 10
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          10
+      end
+
+    # Build base query
+    today = Date.utc_today()
+
+    base_q =
+      from t in Trip,
+        where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
+        order_by: [asc: t.departure_time]
+
+    # Total count (distinct trips)
+    ids_query = from t in subquery(base_q), select: t.id
+    total = ids_query |> Repo.all() |> length()
 
     offset = (page - 1) * per_page
 
-    base_query =
-      Trip
-      |> where(
-        [t],
-        ilike(t.source_city, ^source) and
-          ilike(t.destination_city, ^destination) and
-          t.departure_time > ^now
-      )
-      |> maybe_filter_min(:price, params["min_price"])
-      |> maybe_filter_max(:price, params["max_price"])
-      |> maybe_filter_min(:duration_minutes, params["min_duration"])
-      |> maybe_filter_max(:duration_minutes, params["max_duration"])
-      |> maybe_filter_min(:co2_level, params["min_co2"])
-      |> maybe_filter_max(:co2_level, params["max_co2"])
-      |> maybe_filter_datetime_min(:departure_time, params["min_departure"])
-      |> maybe_filter_datetime_max(:departure_time, params["max_departure"])
-      |> maybe_filter_datetime_min(:arrival_time, params["min_arrival"])
-      |> maybe_filter_datetime_max(:arrival_time, params["max_arrival"])
-
-    # total count (for next/prev buttons)
-    total =
-      base_query
-      |> select([t], count(t.id))
-      |> Repo.one()
-
-    # paginated result
-    sort_param = params["sort"]
-
     trips =
-      base_query
-      |> apply_sort(sort_param)
+      base_q
       |> limit(^per_page)
       |> offset(^offset)
       |> Repo.all()
 
-    %{
-      trips: trips,
-      total: total,
-      page: page,
-      per_page: per_page
-    }
-  end
-
-  # --- Numeric min ---
-  defp maybe_filter_min(query, _field, nil), do: query
-  defp maybe_filter_min(query, _field, ""), do: query
-
-  defp maybe_filter_min(query, field, value) do
-    case Integer.parse(value) do
-      {int, _} ->
-        where(query, [t], field(t, ^field) >= ^int)
-
-      :error ->
-        query
-    end
-  end
-
-  # --- Numeric max ---
-  defp maybe_filter_max(query, _field, nil), do: query
-  defp maybe_filter_max(query, _field, ""), do: query
-
-  defp maybe_filter_max(query, field, value) do
-    case Integer.parse(value) do
-      {int, _} ->
-        where(query, [t], field(t, ^field) <= ^int)
-
-      :error ->
-        query
-    end
-  end
-
-  # --- Datetime min ---
-  defp maybe_filter_datetime_min(query, _field, nil), do: query
-  defp maybe_filter_datetime_min(query, _field, ""), do: query
-
-  defp maybe_filter_datetime_min(query, field, value) do
-    case DateTime.from_iso8601(value) do
-      {:ok, dt, _} ->
-        where(query, [t], field(t, ^field) >= ^dt)
-
-      _ ->
-        query
-    end
-  end
-
-  # --- Datetime max ---
-  defp maybe_filter_datetime_max(query, _field, nil), do: query
-  defp maybe_filter_datetime_max(query, _field, ""), do: query
-
-  defp maybe_filter_datetime_max(query, field, value) do
-    case DateTime.from_iso8601(value) do
-      {:ok, dt, _} ->
-        where(query, [t], field(t, ^field) <= ^dt)
-
-      _ ->
-        query
-    end
-  end
-
-  # --- Sorting helper ---
-  defp apply_sort(query, nil), do: query
-  defp apply_sort(query, ""), do: query
-
-  defp apply_sort(query, "price_asc"), do: order_by(query, [t], asc: t.price)
-  defp apply_sort(query, "price_desc"), do: order_by(query, [t], desc: t.price)
-
-  defp apply_sort(query, "co2_asc"), do: order_by(query, [t], asc: t.co2_level)
-  defp apply_sort(query, "co2_desc"), do: order_by(query, [t], desc: t.co2_level)
-
-  defp apply_sort(query, "duration_asc"), do: order_by(query, [t], asc: t.duration_minutes)
-  defp apply_sort(query, "duration_desc"), do: order_by(query, [t], desc: t.duration_minutes)
-
-  # default fallback: order by soonest departure
-  defp apply_sort(query, _), do: order_by(query, [t], asc: t.departure_time)
-
-  # ---------- Purchases & Public Trip Helpers ----------
-
-  @doc """
-  Returns the given trip preloaded with its upcoming instances for public pages.
-  """
-  def get_public_trip!(trip_id) do
-    today = Date.utc_today()
-
-    Trip
-    |> Repo.get!(trip_id)
-    |> Repo.preload(
-      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
-    )
+    %{trips: trips, total: total, page: page, per_page: per_page}
   end
 
   @doc """
-  Preloads future instances for the provided list of trips.
+  Preloads only future instances for the given trip or list of trips.
   """
   def preload_future_instances(trips) do
     today = Date.utc_today()
@@ -512,127 +446,276 @@ defmodule EarthScanner.Trips do
   end
 
   @doc """
-  Returns a summary of the trips/instances purchased by the given user.
+  Returns a purchase summary for the given user as a map with two MapSets:
+    - :trip_ids -> MapSet of trip ids the user has purchased
+    - :instance_ids -> MapSet of trip_instance ids the user has purchased
+
+  If `user` is nil, returns empty sets.
   """
   def purchase_summary_for_user(nil) do
     %{trip_ids: MapSet.new(), instance_ids: MapSet.new()}
   end
 
   def purchase_summary_for_user(%User{id: user_id}) do
-    purchases =
-      from(p in Purchase,
+    query =
+      from p in Purchase,
         join: i in TripInstance,
-        on: i.id == p.trip_instance_id,
+        on: p.trip_instance_id == i.id,
         where: p.user_id == ^user_id,
-        select: %{trip_id: i.trip_id, instance_id: p.trip_instance_id}
-      )
-      |> Repo.all()
+        select: {i.trip_id, p.trip_instance_id}
 
-    %{
-      trip_ids: purchases |> Enum.map(& &1.trip_id) |> MapSet.new(),
-      instance_ids: purchases |> Enum.map(& &1.instance_id) |> MapSet.new()
-    }
+    pairs = Repo.all(query)
+
+    {trip_ids, instance_ids} =
+      Enum.reduce(pairs, {MapSet.new(), MapSet.new()}, fn {trip_id, inst_id}, {tset, iset} ->
+        {MapSet.put(tset, trip_id), MapSet.put(iset, inst_id)}
+      end)
+
+    %{trip_ids: trip_ids, instance_ids: instance_ids}
   end
 
   @doc """
-  Purchases a ticket for the given trip instance on behalf of the user.
-  Decrements the available ticket count if the instance is still available.
+  Public getter for a trip by id, preloading only future instances.
   """
-  def purchase_trip_instance(%User{id: user_id}, trip_instance_id) do
-    with {:ok, instance} <- fetch_instance(trip_instance_id),
-         :ok <- validate_instance_for_purchase(instance) do
-      Multi.new()
-      |> Multi.insert(
-        :purchase,
-        Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
-      )
-      |> Multi.update(
-        :instance,
-        Changeset.change(instance, %{available_tickets: instance.available_tickets - 1})
-      )
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{purchase: purchase}} ->
-          {:ok, purchase}
+  def get_public_trip!(id) do
+    today = Date.utc_today()
 
-        {:error, :purchase, %Ecto.Changeset{} = changeset, _} ->
-          handle_purchase_error(changeset)
-
-        {:error, _step, reason, _} ->
-          {:error, reason}
-      end
-    end
+    Trip
+    |> Repo.get!(id)
+    |> Repo.preload(
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
   end
 
-  def purchase_trip_instance(_, _), do: {:error, :invalid_user}
+  # ---------------------- Recommendations (similar trips) -----------------------
 
   @doc """
-  Returns (refunds) a previously purchased trip instance ticket for the given user.
-  Increases the available ticket count when the trip instance is still in the future.
+  Finds up to 5 similar trips based on source city, destination city, and price proximity.
+
+  Excludes the current trip and returns only trips with future instances.
+  Similarity scoring:
+    - Exact source & destination match: highest weight
+    - Price within ±30% of the given trip's price
+    - Results ordered by similarity score (descending)
   """
-  def return_trip_instance_purchase(%User{id: user_id}, trip_instance_id) do
-    with {:ok, instance} <- fetch_instance(trip_instance_id),
-         {:ok, purchase} <- fetch_purchase(user_id, instance.id),
-         :ok <- ensure_future_instance(instance) do
-      Multi.new()
-      |> Multi.delete(:purchase, purchase)
-      |> Multi.update(
-        :instance,
-        Changeset.change(instance, %{available_tickets: instance.available_tickets + 1})
-      )
-      |> Repo.transaction()
-      |> case do
-        {:ok, _} -> {:ok, :refunded}
-        {:error, _step, reason, _} -> {:error, reason}
-      end
-    end
-  end
-
-  def return_trip_instance_purchase(_, _), do: {:error, :invalid_user}
-
-  defp fetch_instance(instance_id) do
-    case Repo.get(TripInstance, instance_id) do
-      nil -> {:error, :not_found}
-      %TripInstance{} = instance -> {:ok, instance}
-    end
-  end
-
-  defp fetch_purchase(user_id, instance_id) do
-    case Repo.get_by(Purchase, user_id: user_id, trip_instance_id: instance_id) do
-      nil -> {:error, :not_found}
-      %Purchase{} = purchase -> {:ok, purchase}
-    end
-  end
-
-  defp validate_instance_for_purchase(%TripInstance{available_tickets: tickets} = instance) do
+  def find_similar_trips(%Trip{
+        id: trip_id,
+        source_city: source,
+        destination_city: dest,
+        price: price
+      }) do
     today = Date.utc_today()
+    price_decimal = Decimal.to_float(price)
+    price_tolerance = price_decimal * 0.3
+    min_price = price_decimal - price_tolerance
+    max_price = price_decimal + price_tolerance
 
-    cond do
-      Date.compare(instance.date, today) == :lt ->
-        {:error, :past_instance}
+    query =
+      from t in Trip,
+        where:
+          t.id != ^trip_id and
+            t.source_city == ^source and
+            t.destination_city == ^dest and
+            t.price >= ^min_price and
+            t.price <= ^max_price,
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        group_by: t.id,
+        select: t,
+        order_by: [asc: fragment("ABS(? - ?)", t.price, ^price_decimal)],
+        limit: 5
 
-      tickets <= 0 ->
-        {:error, :sold_out}
+    results = Repo.all(query)
 
-      true ->
-        :ok
+    # Preload instances for each trip
+    preload_future_instances(results)
+  end
+
+  @doc """
+  Simple version: find similar trips given a trip id.
+  """
+  def find_similar_trips(trip_id) do
+    case get_trip(trip_id) do
+      nil -> []
+      trip -> find_similar_trips(trip)
     end
   end
 
-  defp ensure_future_instance(%TripInstance{} = instance) do
-    today = Date.utc_today()
+  @doc """
+  High-level search API used by controllers and tests.
 
-    if Date.compare(instance.date, today) in [:gt, :eq] do
-      :ok
+  Accepts a map of params with string keys, e.g.
+    %{"source" => "Tartu", "destination" => "Tallinn", "min_price" => "10", "sort" => "price_asc"}
+
+  Returns a list of `Trip` structs (only future trips are considered).
+  """
+  def search(params) when is_map(params) do
+    src = params["source"] || ""
+    dst = params["destination"] || ""
+
+    # Don't run a query if required fields missing
+    if String.trim(src) == "" or String.trim(dst) == "" do
+      []
     else
-      {:error, :past_instance}
+      source = "%#{src}%"
+      destination = "%#{dst}%"
+
+      base_q =
+        from t in Trip,
+          where:
+            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
+              t.departure_time > ^DateTime.utc_now(),
+          distinct: true
+
+      # apply numeric filters
+      base_q =
+        case params["min_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price >= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price <= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_co2"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Integer.parse(v) do
+              {i, _} -> from q in base_q, where: q.co2_level <= ^i
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      # sorting
+      base_q =
+        case params["sort"] do
+          "price_asc" -> from q in base_q, order_by: [asc: q.price]
+          "price_desc" -> from q in base_q, order_by: [desc: q.price]
+          "co2_asc" -> from q in base_q, order_by: [asc: q.co2_level]
+          "co2_desc" -> from q in base_q, order_by: [desc: q.co2_level]
+          "duration_asc" -> from q in base_q, order_by: [asc: q.duration_minutes]
+          "duration_desc" -> from q in base_q, order_by: [desc: q.duration_minutes]
+          _ -> from q in base_q, order_by: [asc: q.departure_time]
+        end
+
+      trips = Repo.all(base_q)
+
+      # preload only future instances
+      preload_future_instances(trips)
     end
   end
 
-  defp handle_purchase_error(%Ecto.Changeset{errors: errors}) do
-    cond do
-      Keyword.has_key?(errors, :user_id) -> {:error, :already_purchased}
-      true -> {:error, :unknown}
+  @doc """
+  Purchases a trip instance for the given user.
+
+  Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
+  `:past_instance`, `:sold_out` or other Repo errors.
+  """
+  def purchase_trip_instance(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        cond do
+          Date.compare(instance.date, today) == :lt ->
+            {:error, :past_instance}
+
+          instance.available_tickets <= 0 ->
+            {:error, :sold_out}
+
+          true ->
+            Ecto.Multi.new()
+            |> Ecto.Multi.insert(
+              :purchase,
+              Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
+            )
+            |> Ecto.Multi.update(
+              :decrement,
+              TripInstance.changeset(instance, %{
+                available_tickets: instance.available_tickets - 1
+              })
+            )
+            |> Repo.transaction()
+            |> case do
+              {:ok, %{purchase: purchase}} -> {:ok, purchase}
+              {:error, _op, changeset, _} -> {:error, changeset}
+            end
+        end
+    end
+  end
+
+  @doc """
+  Returns a previously made purchase (refund) by the user for the given instance.
+
+  Returns `{:ok, purchase}` on success, or `{:error, :not_found}` if no purchase,
+  or `{:error, :past_instance}` if the instance is in the past.
+  """
+  def return_trip_instance_purchase(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        if Date.compare(instance.date, today) == :lt do
+          {:error, :past_instance}
+        else
+          query =
+            from p in Purchase,
+              where: p.user_id == ^user_id and p.trip_instance_id == ^instance_id,
+              limit: 1
+
+          case Repo.one(query) do
+            nil ->
+              {:error, :not_found}
+
+            %Purchase{} = purchase ->
+              Ecto.Multi.new()
+              |> Ecto.Multi.delete(:delete_purchase, purchase)
+              |> Ecto.Multi.update(
+                :inc_instance,
+                TripInstance.changeset(instance, %{
+                  available_tickets: instance.available_tickets + 1
+                })
+              )
+              |> Repo.transaction()
+              |> case do
+                {:ok, %{delete_purchase: deleted}} -> {:ok, deleted}
+                {:error, _op, changeset, _} -> {:error, changeset}
+              end
+          end
+        end
     end
   end
 
