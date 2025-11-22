@@ -1,5 +1,6 @@
 defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
-  use EarthScanner.DataCase, async: true
+  # To avoid DB pool issues on CI, set async: false if needed
+  use EarthScanner.DataCase, async: false
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
@@ -49,11 +50,15 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
     results =
       Trips.search_future_trips("Tartu", "Tallinn", %{})
 
-    # The future trip created in this test must be in the results
-    assert Enum.any?(results, &(&1.id == future_trip.id))
+    result_ids = Enum.map(results, & &1.id)
 
-    # The past trip created in this test must NOT be in the results
-    refute Enum.any?(results, &(&1.id == past_trip.id))
+    # The future_trip created in this test must be present in result_ids
+    assert future_trip.id in result_ids
+
+    # No results should be in the past or have departure_time exactly equal to now
+    refute Enum.any?(results, fn trip ->
+      DateTime.compare(trip.departure_time, now) in [:lt, :eq]
+    end)
   end
 
   @tag :fr11
@@ -82,8 +87,9 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
     results =
       Trips.search_future_trips("Tartu", "Tallinn", %{})
 
-    # Because search_future_trips uses departure_time > now,
     # the trip departing exactly at 'now' must NOT appear in results.
-    refute Enum.any?(results, &(&1.id == trip.id))
+    refute Enum.any?(results, fn trip ->
+      DateTime.compare(trip.departure_time, now) == :eq
+    end)
   end
 end
