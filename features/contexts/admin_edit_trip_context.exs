@@ -1,3 +1,4 @@
+# FR-32: Admin can update trip information
 defmodule AdminEditTripsContext do
   use WhiteBread.Context
   use Hound.Helpers

@@ -540,4 +540,182 @@ defmodule EarthScanner.Trips do
       trip -> find_similar_trips(trip)
     end
   end
+
+  @doc """
+  High-level search API used by controllers and tests.
+
+  Accepts a map of params with string keys, e.g.
+    %{"source" => "Tartu", "destination" => "Tallinn", "min_price" => "10", "sort" => "price_asc"}
+
+  Returns a list of `Trip` structs (only future trips are considered).
+  """
+  def search(params) when is_map(params) do
+    src = params["source"] || ""
+    dst = params["destination"] || ""
+
+    # Don't run a query if required fields missing
+    if String.trim(src) == "" or String.trim(dst) == "" do
+      []
+    else
+      source = "%#{src}%"
+      destination = "%#{dst}%"
+
+      base_q =
+        from t in Trip,
+          where:
+            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
+              t.departure_time > ^DateTime.utc_now(),
+          distinct: true
+
+      # apply numeric filters
+      base_q =
+        case params["min_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price >= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price <= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_co2"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Integer.parse(v) do
+              {i, _} -> from q in base_q, where: q.co2_level <= ^i
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      # sorting
+      base_q =
+        case params["sort"] do
+          "price_asc" -> from q in base_q, order_by: [asc: q.price]
+          "price_desc" -> from q in base_q, order_by: [desc: q.price]
+          "co2_asc" -> from q in base_q, order_by: [asc: q.co2_level]
+          "co2_desc" -> from q in base_q, order_by: [desc: q.co2_level]
+          "duration_asc" -> from q in base_q, order_by: [asc: q.duration_minutes]
+          "duration_desc" -> from q in base_q, order_by: [desc: q.duration_minutes]
+          _ -> from q in base_q, order_by: [asc: q.departure_time]
+        end
+
+      trips = Repo.all(base_q)
+
+      # preload only future instances
+      preload_future_instances(trips)
+    end
+  end
+
+  @doc """
+  Purchases a trip instance for the given user.
+
+  Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
+  `:past_instance`, `:sold_out` or other Repo errors.
+  """
+  def purchase_trip_instance(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        cond do
+          Date.compare(instance.date, today) == :lt ->
+            {:error, :past_instance}
+
+          instance.available_tickets <= 0 ->
+            {:error, :sold_out}
+
+          true ->
+            Ecto.Multi.new()
+            |> Ecto.Multi.insert(
+              :purchase,
+              Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
+            )
+            |> Ecto.Multi.update(
+              :decrement,
+              TripInstance.changeset(instance, %{
+                available_tickets: instance.available_tickets - 1
+              })
+            )
+            |> Repo.transaction()
+            |> case do
+              {:ok, %{purchase: purchase}} -> {:ok, purchase}
+              {:error, _op, changeset, _} -> {:error, changeset}
+            end
+        end
+    end
+  end
+
+  @doc """
+  Returns a previously made purchase (refund) by the user for the given instance.
+
+  Returns `{:ok, purchase}` on success, or `{:error, :not_found}` if no purchase,
+  or `{:error, :past_instance}` if the instance is in the past.
+  """
+  def return_trip_instance_purchase(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        if Date.compare(instance.date, today) == :lt do
+          {:error, :past_instance}
+        else
+          query =
+            from p in Purchase,
+              where: p.user_id == ^user_id and p.trip_instance_id == ^instance_id,
+              limit: 1
+
+          case Repo.one(query) do
+            nil ->
+              {:error, :not_found}
+
+            %Purchase{} = purchase ->
+              Ecto.Multi.new()
+              |> Ecto.Multi.delete(:delete_purchase, purchase)
+              |> Ecto.Multi.update(
+                :inc_instance,
+                TripInstance.changeset(instance, %{
+                  available_tickets: instance.available_tickets + 1
+                })
+              )
+              |> Repo.transaction()
+              |> case do
+                {:ok, %{delete_purchase: deleted}} -> {:ok, deleted}
+                {:error, _op, changeset, _} -> {:error, changeset}
+              end
+          end
+        end
+    end
+  end
 end
