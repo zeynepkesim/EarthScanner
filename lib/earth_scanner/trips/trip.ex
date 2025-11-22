@@ -79,5 +79,4 @@ defmodule EarthScanner.Trips.Trip do
       changeset
     end
   end
-
 end
