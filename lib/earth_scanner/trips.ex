@@ -679,6 +679,10 @@ defmodule EarthScanner.Trips do
           instance.available_tickets <= 0 ->
             {:error, :sold_out}
 
+          # Prevent duplicate purchases by the same user for the same instance
+          Repo.get_by(Purchase, user_id: user_id, trip_instance_id: instance.id) != nil ->
+            {:error, :already_purchased}
+
           true ->
             Ecto.Multi.new()
             |> Ecto.Multi.insert(

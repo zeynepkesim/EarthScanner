@@ -164,7 +164,8 @@ defmodule TripPurchaseContext do
   end
 
   then_ ~r/^I should see a refund confirmation message$/, fn state, _ ->
-    Process.sleep(800)
+    # allow the browser a moment to complete the round-trip and render the flash
+    Process.sleep(1200)
     text = visible_page_text()
     assert String.contains?(text, "Purchase returned.")
     {:ok, state}
@@ -237,7 +238,8 @@ defmodule TripPurchaseContext do
       )
 
     submit_element(form)
-    Process.sleep(800)
+    # allow a bit more time for the redirect and flash to appear in the browser
+    Process.sleep(1200)
   end
 
   then_ ~r/^I should see the purchased badge on the trip page$/, fn state, _ ->
