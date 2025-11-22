@@ -324,27 +324,29 @@ defmodule EarthScanner.Trips do
     get_trip(id)
   end
 
-  #fr-34
+  # fr-34
   def compute_recommended_price(transport_mode, duration_hours) do
-  lower = duration_hours * 0.8
-  upper = duration_hours * 1.2
+    lower = duration_hours * 0.8
+    upper = duration_hours * 1.2
 
-  matches =
-    Trip
-    |> where([t], t.transport_mode == ^transport_mode)
-    |> where([t], t.duration_hours >= ^lower and t.duration_hours <= ^upper)
-    |> Repo.all()
+    matches =
+      Trip
+      |> where([t], t.transport_mode == ^transport_mode)
+      |> where([t], t.duration_hours >= ^lower and t.duration_hours <= ^upper)
+      |> Repo.all()
 
-  case matches do
-    [] -> {:error, :no_matches}
-    list ->
-      avg_price =
-        list
-        |> Enum.map(& &1.price)
-        |> Enum.sum()
-        |> Kernel./(length(list))
-  {:ok, %{avg_price: Float.round(avg_price, 2), count: length(list)}}
+    case matches do
+      [] ->
+        {:error, :no_matches}
+
+      list ->
+        avg_price =
+          list
+          |> Enum.map(& &1.price)
+          |> Enum.sum()
+          |> Kernel./(length(list))
+
+        {:ok, %{avg_price: Float.round(avg_price, 2), count: length(list)}}
+    end
   end
-end
-
 end
