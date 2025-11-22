@@ -349,4 +349,195 @@ defmodule EarthScanner.Trips do
         {:ok, %{avg_price: Float.round(avg_price, 2), count: length(list)}}
     end
   end
+
+  # ---------------------- Public search & helpers -----------------------
+
+  @doc """
+  Search for future trips matching source and destination patterns.
+
+  Accepts SQL LIKE/ILIKE patterns (e.g. "%Paris%") or plain strings.
+  Returns a list of `Trip` structs (not preloaded with instances).
+  """
+  def search_future_trips(source_pattern, destination_pattern) do
+    today = Date.utc_today()
+
+    query =
+      from t in Trip,
+        where:
+          ilike(t.source_city, ^source_pattern) and
+            ilike(t.destination_city, ^destination_pattern),
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
+        order_by: [asc: t.departure_time]
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Simple paginated search helper. Returns a map with :trips, :total, :page, :per_page.
+  """
+  def search_future_trips_paginated(source, destination, params) do
+    page =
+      case params["page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 1
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          1
+      end
+
+    per_page =
+      case params["per_page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 10
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          10
+      end
+
+    # Build base query
+    today = Date.utc_today()
+
+    base_q =
+      from t in Trip,
+        where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
+        order_by: [asc: t.departure_time]
+
+    # Total count (distinct trips)
+    ids_query = from t in subquery(base_q), select: t.id
+    total = ids_query |> Repo.all() |> length()
+
+    offset = (page - 1) * per_page
+
+    trips =
+      base_q
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{trips: trips, total: total, page: page, per_page: per_page}
+  end
+
+  @doc """
+  Preloads only future instances for the given trip or list of trips.
+  """
+  def preload_future_instances(trips) do
+    today = Date.utc_today()
+
+    Repo.preload(trips,
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
+  end
+
+  @doc """
+  Returns a purchase summary for the given user as a map with two MapSets:
+    - :trip_ids -> MapSet of trip ids the user has purchased
+    - :instance_ids -> MapSet of trip_instance ids the user has purchased
+
+  If `user` is nil, returns empty sets.
+  """
+  def purchase_summary_for_user(nil) do
+    %{trip_ids: MapSet.new(), instance_ids: MapSet.new()}
+  end
+
+  def purchase_summary_for_user(%User{id: user_id}) do
+    query =
+      from p in Purchase,
+        join: i in TripInstance,
+        on: p.trip_instance_id == i.id,
+        where: p.user_id == ^user_id,
+        select: {i.trip_id, p.trip_instance_id}
+
+    pairs = Repo.all(query)
+
+    {trip_ids, instance_ids} =
+      Enum.reduce(pairs, {MapSet.new(), MapSet.new()}, fn {trip_id, inst_id}, {tset, iset} ->
+        {MapSet.put(tset, trip_id), MapSet.put(iset, inst_id)}
+      end)
+
+    %{trip_ids: trip_ids, instance_ids: instance_ids}
+  end
+
+  @doc """
+  Public getter for a trip by id, preloading only future instances.
+  """
+  def get_public_trip!(id) do
+    today = Date.utc_today()
+
+    Trip
+    |> Repo.get!(id)
+    |> Repo.preload(
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
+  end
+
+  # ---------------------- Recommendations (similar trips) -----------------------
+
+  @doc """
+  Finds up to 5 similar trips based on source city, destination city, and price proximity.
+
+  Excludes the current trip and returns only trips with future instances.
+  Similarity scoring:
+    - Exact source & destination match: highest weight
+    - Price within ±30% of the given trip's price
+    - Results ordered by similarity score (descending)
+  """
+  def find_similar_trips(%Trip{
+        id: trip_id,
+        source_city: source,
+        destination_city: dest,
+        price: price
+      }) do
+    today = Date.utc_today()
+    price_decimal = Decimal.to_float(price)
+    price_tolerance = price_decimal * 0.3
+    min_price = price_decimal - price_tolerance
+    max_price = price_decimal + price_tolerance
+
+    query =
+      from t in Trip,
+        where:
+          t.id != ^trip_id and
+            t.source_city == ^source and
+            t.destination_city == ^dest and
+            t.price >= ^min_price and
+            t.price <= ^max_price,
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        group_by: t.id,
+        select: t,
+        order_by: [asc: fragment("ABS(? - ?)", t.price, ^price_decimal)],
+        limit: 5
+
+    results = Repo.all(query)
+
+    # Preload instances for each trip
+    preload_future_instances(results)
+  end
+
+  @doc """
+  Simple version: find similar trips given a trip id.
+  """
+  def find_similar_trips(trip_id) do
+    case get_trip(trip_id) do
+      nil -> []
+      trip -> find_similar_trips(trip)
+    end
+  end
 end

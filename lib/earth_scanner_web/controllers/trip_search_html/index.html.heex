@@ -1,28 +1,53 @@
 <h1>Search Results</h1>
 
-<form method="get" action={~p"/search/results"} class="mb-4">
-  <%= for {k, v} <- @filters do %>
-    <input type="hidden" name={k} value={v} />
-  <% end %>
-   <label class="font-medium">Sort by:</label>
-  <select name="sort" class="border rounded-md px-2 py-1 ml-2" onchange="this.form.submit()">
-    <option value="">Default (Departure time)</option>
-    
-    <option value="price_asc" selected={@filters["sort"] == "price_asc"}>Price ↑</option>
-    
-    <option value="price_desc" selected={@filters["sort"] == "price_desc"}>Price ↓</option>
-    
-    <option value="co2_asc" selected={@filters["sort"] == "co2_asc"}>CO₂ ↑</option>
-    
-    <option value="co2_desc" selected={@filters["sort"] == "co2_desc"}>CO₂ ↓</option>
-    
-    <option value="duration_asc" selected={@filters["sort"] == "duration_asc"}>Duration ↑</option>
-    
-    <option value="duration_desc" selected={@filters["sort"] == "duration_desc"}>
-      Duration ↓
-    </option>
-  </select>
-</form>
+<div class="mb-6 flex gap-6">
+  <div class="flex-1">
+    <form method="get" action={~p"/search/results"} class="mb-4">
+      <%= for {k, v} <- @filters do %>
+        <input type="hidden" name={k} value={v} />
+      <% end %>
+      <label class="font-medium">Sort by:</label>
+      <select name="sort" class="border rounded-md px-2 py-1 ml-2" onchange="this.form.submit()">
+        <option value="">Default (Departure time)</option>
+
+        <option value="price_asc" selected={@filters["sort"] == "price_asc"}>Price ↑</option>
+
+        <option value="price_desc" selected={@filters["sort"] == "price_desc"}>Price ↓</option>
+
+        <option value="co2_asc" selected={@filters["sort"] == "co2_asc"}>CO₂ ↑</option>
+
+        <option value="co2_desc" selected={@filters["sort"] == "co2_desc"}>CO₂ ↓</option>
+
+        <option value="duration_asc" selected={@filters["sort"] == "duration_asc"}>
+          Duration ↑
+        </option>
+
+        <option value="duration_desc" selected={@filters["sort"] == "duration_desc"}>
+          Duration ↓
+        </option>
+      </select>
+    </form>
+  </div>
+
+  <div
+    :if={@recent_searches != []}
+    class="w-64 p-3 bg-slate-50 rounded-lg border border-slate-200"
+  >
+    <h3 class="font-semibold text-sm text-slate-900 mb-2">Recent Searches</h3>
+    <div class="space-y-1 text-sm">
+      <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">
+        <.link
+          navigate={
+            ~p"/search/results?source=#{search.source_city}&destination=#{search.destination_city}"
+          }
+          class="text-sky-600 hover:text-sky-800"
+        >
+          {search.source_city} → {search.destination_city}
+        </.link>
+      </div>
+    </div>
+  </div>
+</div>
 
 <% filter_labels = %{
   "min_price" => "Min Price",
@@ -100,7 +125,8 @@
           class="text-sm text-slate-500"
         >
           Not purchased yet
-        </span> <% first_available_instance =
+        </span>
+         <% first_available_instance =
           Enum.find(trip.instances, fn instance -> instance.available_tickets > 0 end) %>
         <div class="mt-3 space-y-2 text-sm">
           <div :if={trip.instances != []}>
@@ -141,7 +167,7 @@
               </div>
             <% end %>
           </div>
-          
+
           <.form
             :if={first_available_instance}
             for={%{}}
@@ -159,7 +185,7 @@
               Purchase next available date
             </button>
           </.form>
-          
+
           <p :if={!first_available_instance} class="text-slate-500">
             All future dates are sold out.
           </p>
@@ -168,7 +194,7 @@
     <% end %>
   </ul>
 <% end %>
- <hr class="my-4" />
+<hr class="my-4" />
 <div class="flex justify-between items-center">
   <%= if @page > 1 do %>
     <a
@@ -182,7 +208,7 @@
   <% else %>
     <span></span>
   <% end %>
-  
+
   <%= if @page * @per_page < @total do %>
     <a
       class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"

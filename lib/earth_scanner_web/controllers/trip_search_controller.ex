@@ -2,10 +2,14 @@ defmodule EarthScannerWeb.TripSearchController do
   use EarthScannerWeb, :controller
 
   alias EarthScanner.Trips
+  alias EarthScanner.Searches
 
   # STEP 2A — render empty search form
   def new(conn, _params) do
-    render(conn, :new)
+    current_user = conn.assigns[:current_user]
+    recent_searches = (current_user && Searches.get_recent_searches(current_user)) || []
+
+    render(conn, :new, recent_searches: recent_searches)
   end
 
   # STEP 2B — basic validation for source & destination
@@ -17,9 +21,17 @@ defmodule EarthScannerWeb.TripSearchController do
         |> redirect(to: ~p"/search")
 
       true ->
+        # Record the search if user is logged in
+        current_user = conn.assigns[:current_user]
+
+        if current_user do
+          Searches.record_search(current_user, source, destination)
+        end
+
         result = Trips.search_future_trips_paginated(source, destination, params)
         trips = Trips.preload_future_instances(result.trips)
-        purchase_summary = Trips.purchase_summary_for_user(conn.assigns[:current_user])
+        purchase_summary = Trips.purchase_summary_for_user(current_user)
+        recent_searches = (current_user && Searches.get_recent_searches(current_user)) || []
 
         render(conn, :index,
           trips: trips,
@@ -28,10 +40,9 @@ defmodule EarthScannerWeb.TripSearchController do
           per_page: result.per_page,
           filters: params,
           purchase_summary: purchase_summary,
+          recent_searches: recent_searches,
           return_path: current_path(conn, conn.params)
         )
-
-        # render(conn, :index, trips: trips, filters: params)
     end
   end
 
