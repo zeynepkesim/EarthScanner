@@ -23,8 +23,9 @@ defmodule WhiteBreadConfig do
           "features/fr07_search_by_route.feature",
           "features/fr08_filter_results.feature",
           "features/fr09_sort_results.feature",
-          "features/fr11_exclude_sold_out_trips.feature",
-          "features/fr15_sold_out_trips.feature"
+          "features/fr10_highlight_top_trips.feature",
+          "features/fr11_exclude_past_trips.feature",
+          "features/fr15_highlight_sold_out_trips.feature"
         ]
 
 end
