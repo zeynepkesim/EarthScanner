@@ -21,6 +21,16 @@ defmodule EarthScannerWeb.TripSearchController do
         trips = Trips.preload_future_instances(result.trips)
         purchase_summary = Trips.purchase_summary_for_user(conn.assigns[:current_user])
 
+        # FR-15: compute sold-out trip ids for highlighting in the view
+        sold_out_trip_ids =
+          trips
+          |> Enum.filter(fn trip ->
+            trip.instances != [] and
+              Enum.all?(trip.instances, fn instance -> instance.available_tickets <= 0 end)
+          end)
+          |> Enum.map(& &1.id)
+          |> MapSet.new()
+
         render(conn, :index,
           trips: trips,
           total: result.total,
@@ -28,6 +38,7 @@ defmodule EarthScannerWeb.TripSearchController do
           per_page: result.per_page,
           filters: params,
           purchase_summary: purchase_summary,
+          sold_out_trip_ids: sold_out_trip_ids,
           return_path: current_path(conn, conn.params)
         )
 
