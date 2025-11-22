@@ -28,25 +28,7 @@
       </select>
     </form>
   </div>
-
-  <div
-    :if={@recent_searches != []}
-    class="w-64 p-3 bg-slate-50 rounded-lg border border-slate-200"
-  >
-    <h3 class="font-semibold text-sm text-slate-900 mb-2">Recent Searches</h3>
-    <div class="space-y-1 text-sm">
-      <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">
-        <.link
-          navigate={
-            ~p"/search/results?source=#{search.source_city}&destination=#{search.destination_city}"
-          }
-          class="text-sky-600 hover:text-sky-800"
-        >
-          {search.source_city} → {search.destination_city}
-        </.link>
-      </div>
-    </div>
-  </div>
+ 
 </div>
 
 <% filter_labels = %{
@@ -300,3 +282,21 @@
     <a href={~p"/search"}>New Search</a>
   </button>
 </p>
+
+<%= if @recent_searches != [] do %>
+  <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-200">
+    <h3 class="font-semibold text-sm text-slate-900 mb-2">Recent Searches</h3>
+    <div class="space-y-1 text-sm">
+      <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">
+        <.link
+          navigate={
+            ~p"/search/results?source=#{search.source_city}&destination=#{search.destination_city}"
+          }
+          class="text-sky-600 hover:text-sky-800"
+        >
+          {search.source_city} → {search.destination_city}
+        </.link>
+      </div>
+    </div>
+  </div>
+<% end %>

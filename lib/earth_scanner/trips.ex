@@ -288,8 +288,24 @@ defmodule EarthScanner.Trips do
   def force_delete_trip(trip_id, %User{id: admin_id, role: "admin"}) do
     with {:ok, trip} <- get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}),
          :ok <- validate_trip_is_future(trip) do
-      # Delete all purchases first (cascade will handle this, but explicit is better)
-      Repo.delete(trip)
+      # Ensure associated purchases are removed first, then delete the trip.
+      # Load instances so we can find related purchases.
+      Repo.transaction(fn ->
+        # delete purchases for instances that belong to this trip
+        from(p in Purchase,
+          join: i in TripInstance,
+          on: p.trip_instance_id == i.id,
+          where: i.trip_id == ^trip.id
+        )
+        |> Repo.delete_all()
+
+        # delete the trip (instances should be cascade-deleted if configured)
+        Repo.delete!(trip)
+      end)
+      |> case do
+        {:ok, _} -> {:ok, trip}
+        {:error, _} = err -> err
+      end
     end
   end
 
@@ -372,6 +388,16 @@ defmodule EarthScanner.Trips do
         order_by: [asc: t.departure_time]
 
     Repo.all(query)
+  end
+
+  @doc """
+  Backwards compatible API: accepts source, destination and params and
+  returns a list of trips. Tests in the suite call this arity.
+  """
+  def search_future_trips(source, destination, _params) do
+    # Delegate to the higher-level `search/1` which applies the same
+    # filtering semantics used by the controllers and tests.
+    search(%{"source" => source, "destination" => destination})
   end
 
   @doc """
