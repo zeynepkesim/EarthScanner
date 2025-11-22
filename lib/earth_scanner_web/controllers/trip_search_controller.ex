@@ -31,6 +31,9 @@ defmodule EarthScannerWeb.TripSearchController do
           |> Enum.map(& &1.id)
           |> MapSet.new()
 
+        # FR-10: compute top trips (fastest, cheapest, greenest)
+        top_trips = Trips.compute_top_trips(trips)
+
         render(conn, :index,
           trips: trips,
           total: result.total,
@@ -39,6 +42,7 @@ defmodule EarthScannerWeb.TripSearchController do
           filters: params,
           purchase_summary: purchase_summary,
           sold_out_trip_ids: sold_out_trip_ids,
+          top_trips: top_trips,
           return_path: current_path(conn, conn.params)
         )
 

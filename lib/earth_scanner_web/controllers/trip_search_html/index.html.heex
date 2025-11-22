@@ -74,10 +74,7 @@
   </div>
 <% end %>
 
-<%= if @trips == [] do %>
-  <p>No trips found yet (we will implement filtering & DB next).</p>
-<% else %>
-
+<%= if @trips != [] do %>
   <!-- FR-10: Top Picks section (fastest, cheapest, greenest) -->
   <h2 class="mt-4 mb-2 text-lg font-semibold">Top Picks</h2>
 
@@ -127,7 +124,11 @@
       </.link>
     <% end %>
   </div>
+<% end %>
 
+<%= if @trips == [] do %>
+  <p>No trips found yet (we will implement filtering & DB next).</p>
+<% else %>
   <ul class="space-y-4">
     <%= for trip <- @trips do %>
       <li
