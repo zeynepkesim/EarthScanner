@@ -7,7 +7,8 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
 
   @tag :fr11
   test "search_future_trips/3 excludes trips with departure time in the past" do
-    now = DateTime.utc_now()
+    # Truncate to seconds because Trip uses :utc_datetime (no microseconds allowed)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
     past = DateTime.add(now, -3600, :second)
     future = DateTime.add(now, 3600, :second)
 
@@ -43,12 +44,14 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
     results =
       Trips.search_future_trips("Tartu", "Tallinn", %{})
 
+    # Only the future trip should be returned
     assert Enum.map(results, & &1.id) == [future_trip.id]
   end
 
   @tag :fr11
   test "trip with departure exactly equal to now is treated as past" do
-    now = DateTime.utc_now()
+    # Truncate to seconds so it can be stored in :utc_datetime
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     # This trip departs exactly 'now'
     Repo.insert!(%Trip{
