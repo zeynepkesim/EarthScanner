@@ -2,8 +2,9 @@
 <div class="min-h-screen flex items-center justify-center px-6 py-12 bg-white">
   <div class="max-w-2xl text-center">
     <h1 class="text-3xl font-semibold text-slate-900 mb-4">Explore upcoming trips</h1>
+    
     <p class="text-slate-600 mb-8">Find and book upcoming trips in one place.</p>
-
+    
     <%= if @current_user && @current_user.role != "admin" do %>
       <a
         href={~p"/trips"}

@@ -424,30 +424,226 @@ defmodule EarthScanner.Trips do
         p when is_binary(p) ->
           case Integer.parse(p) do
             {i, _} when i > 0 -> i
-            _ -> 10
+            _ -> 5
           end
 
         p when is_integer(p) and p > 0 ->
           p
 
         _ ->
-          10
+          5
       end
 
-    # Build base query
-    today = Date.utc_today()
+    # Build base query with filters
+    now = DateTime.utc_now()
 
     base_q =
       from t in Trip,
-        where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
-        join: i in TripInstance,
-        on: i.trip_id == t.id and i.date >= ^today,
-        distinct: true,
-        order_by: [asc: t.departure_time]
+        where:
+          ilike(t.source_city, ^source) and
+            ilike(t.destination_city, ^destination) and
+            t.departure_time > ^now,
+        distinct: true
 
-    # Total count (distinct trips)
-    ids_query = from t in subquery(base_q), select: t.id
-    total = ids_query |> Repo.all() |> length()
+    # Apply numeric filters for price
+    base_q =
+      case params["min_price"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.price >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_price"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.price <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for duration
+    base_q =
+      case params["min_duration"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.duration_minutes >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_duration"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.duration_minutes <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for CO2
+    base_q =
+      case params["min_co2"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.co2_level >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_co2"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.co2_level <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for departure time
+    base_q =
+      case params["min_departure"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.departure_time >= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_departure"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.departure_time <= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for arrival time
+    base_q =
+      case params["min_arrival"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.arrival_time >= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_arrival"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.arrival_time <= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply sorting
+    base_q =
+      case params["sort"] do
+        "price_asc" -> from q in base_q, order_by: [asc: q.price]
+        "price_desc" -> from q in base_q, order_by: [desc: q.price]
+        "co2_asc" -> from q in base_q, order_by: [asc: q.co2_level]
+        "co2_desc" -> from q in base_q, order_by: [desc: q.co2_level]
+        "duration_asc" -> from q in base_q, order_by: [asc: q.duration_minutes]
+        "duration_desc" -> from q in base_q, order_by: [desc: q.duration_minutes]
+        _ -> from q in base_q, order_by: [asc: q.departure_time]
+      end
+
+    # Total count
+    total = base_q |> Repo.all() |> length()
 
     offset = (page - 1) * per_page
 

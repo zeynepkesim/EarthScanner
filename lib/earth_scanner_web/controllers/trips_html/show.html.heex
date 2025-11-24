@@ -15,52 +15,53 @@
         Purchased
       </span>
     </div>
+    
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <p class="text-xs font-semibold uppercase text-slate-500">
         {String.capitalize(@trip.transport_mode)} trip
       </p>
-
+      
       <h1 class="mt-2 text-3xl font-bold text-slate-900">
         {@trip.source_city} → {@trip.destination_city}
       </h1>
-
+      
       <p class="mt-1 text-sm text-slate-600">
         Departure {@trip.departure_time} • Arrival {@trip.arrival_time}
       </p>
-
+      
       <dl class="mt-4 grid gap-4 md:grid-cols-3">
         <div class="rounded-lg border border-slate-100 p-3">
           <dt class="text-xs uppercase text-slate-500">Duration</dt>
-
+          
           <dd class="text-lg font-semibold text-slate-800">{@trip.duration_minutes} min</dd>
         </div>
-
+        
         <div class="rounded-lg border border-slate-100 p-3">
           <dt class="text-xs uppercase text-slate-500">Price</dt>
-
+          
           <dd class="text-lg font-semibold text-slate-800">€{@trip.price}</dd>
         </div>
-
+        
         <div class="rounded-lg border border-slate-100 p-3">
           <dt class="text-xs uppercase text-slate-500">CO₂</dt>
-
+          
           <dd class="text-lg font-semibold text-slate-800">{@trip.co2_level} g/km</dd>
         </div>
       </dl>
     </section>
-
+    
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 class="text-xl font-semibold text-slate-900">Available dates</h2>
-
+      
       <p class="text-sm text-slate-600">Pick a date to reserve your seat.</p>
-
+      
       <div
         :if={@trip.instances == []}
         class="mt-4 rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500"
       >
         This trip does not have future dates yet.
       </div>
-
+      
       <div :if={@trip.instances != []} class="mt-4 space-y-4">
         <div
           :for={instance <- @trip.instances}
@@ -71,10 +72,10 @@
               <p class="text-lg font-semibold text-slate-900">
                 {Calendar.strftime(instance.date, "%A, %b %d")}
               </p>
-
+              
               <p class="text-sm text-slate-500">{instance.available_tickets} tickets left</p>
             </div>
-
+            
             <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
               <span
                 :if={instance.available_tickets == 0}
@@ -90,7 +91,7 @@
               </span>
             </div>
           </div>
-
+          
           <div class="mt-4">
             <.form
               :if={instance.available_tickets > 0}
@@ -109,11 +110,11 @@
                 Purchase ticket
               </button>
             </.form>
-
+            
             <p :if={instance.available_tickets == 0} class="text-sm text-slate-500">
               Try another date if you still need a seat.
             </p>
-
+            
             <.form
               :if={MapSet.member?(@purchase_summary.instance_ids, instance.id)}
               for={%{}}
@@ -136,13 +137,13 @@
         </div>
       </div>
     </section>
-
+    
     <section
       :if={@similar_trips != []}
       class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
     >
       <h2 class="text-xl font-semibold text-slate-900">Similar trips you might like</h2>
-
+      
       <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
           :for={trip <- @similar_trips}
@@ -152,19 +153,19 @@
             <h3 class="font-semibold text-slate-900 text-sm">
               {trip.source_city} → {trip.destination_city}
             </h3>
-            <span class="text-lg font-bold text-sky-600">€{trip.price}</span>
+             <span class="text-lg font-bold text-sky-600">€{trip.price}</span>
           </div>
-
+          
           <p class="text-xs text-slate-500 mb-2">
             {String.capitalize(trip.transport_mode)} • CO₂: {trip.co2_level}kg
           </p>
-
+          
           <p class="text-xs text-slate-500 mb-3">
             {trip.duration_minutes} min • {length(trip.instances)} date{if length(trip.instances) !=
                                                                              1,
                                                                            do: "s"}
           </p>
-
+          
           <.link
             navigate={~p"/trips/#{trip.id}"}
             class="inline-flex items-center justify-center w-full rounded-lg bg-sky-600 px-3 py-2 text-xs font-semibold text-white hover:bg-sky-700 transition"
