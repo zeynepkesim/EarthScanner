@@ -162,7 +162,7 @@
         >
           Not purchased yet
         </span>
-         <% first_available_instance =
+        <% first_available_instance =
           Enum.find(trip.instances, fn instance -> instance.available_tickets > 0 end) %>
         <div class="mt-3 space-y-2 text-sm">
           <div :if={trip.instances != []}>
