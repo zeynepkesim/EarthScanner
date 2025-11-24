@@ -288,8 +288,24 @@ defmodule EarthScanner.Trips do
   def force_delete_trip(trip_id, %User{id: admin_id, role: "admin"}) do
     with {:ok, trip} <- get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}),
          :ok <- validate_trip_is_future(trip) do
-      # Delete all purchases first (cascade will handle this, but explicit is better)
-      Repo.delete(trip)
+      # Ensure associated purchases are removed first, then delete the trip.
+      # Load instances so we can find related purchases.
+      Repo.transaction(fn ->
+        # delete purchases for instances that belong to this trip
+        from(p in Purchase,
+          join: i in TripInstance,
+          on: p.trip_instance_id == i.id,
+          where: i.trip_id == ^trip.id
+        )
+        |> Repo.delete_all()
+
+        # delete the trip (instances should be cascade-deleted if configured)
+        Repo.delete!(trip)
+      end)
+      |> case do
+        {:ok, _} -> {:ok, trip}
+        {:error, _} = err -> err
+      end
     end
   end
 
@@ -315,4 +331,683 @@ defmodule EarthScanner.Trips do
       :ok
     end
   end
+
+  # fr-32
+
+  def get_trip(id), do: Repo.get(Trip, id)
+
+  def get_trip_by_id(id) do
+    get_trip(id)
+  end
+
+  # fr-34
+  def compute_recommended_price(transport_mode, duration_hours) do
+    lower = duration_hours * 0.8
+    upper = duration_hours * 1.2
+
+    matches =
+      Trip
+      |> where([t], t.transport_mode == ^transport_mode)
+      |> where([t], t.duration_hours >= ^lower and t.duration_hours <= ^upper)
+      |> Repo.all()
+
+    case matches do
+      [] ->
+        {:error, :no_matches}
+
+      list ->
+        avg_price =
+          list
+          |> Enum.map(& &1.price)
+          |> Enum.sum()
+          |> Kernel./(length(list))
+
+        {:ok, %{avg_price: Float.round(avg_price, 2), count: length(list)}}
+    end
+  end
+
+  # ---------------------- Public search & helpers -----------------------
+
+  @doc """
+  Search for future trips matching source and destination patterns.
+
+  Accepts SQL LIKE/ILIKE patterns (e.g. "%Paris%") or plain strings.
+  Returns a list of `Trip` structs (not preloaded with instances).
+  """
+  def search_future_trips(source_pattern, destination_pattern) do
+    today = Date.utc_today()
+
+    query =
+      from t in Trip,
+        where:
+          ilike(t.source_city, ^source_pattern) and
+            ilike(t.destination_city, ^destination_pattern),
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
+        order_by: [asc: t.departure_time]
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Backwards compatible API: accepts source, destination and params and
+  returns a list of trips. Tests in the suite call this arity.
+  """
+  def search_future_trips(source, destination, _params) do
+    # Delegate to the higher-level `search/1` which applies the same
+    # filtering semantics used by the controllers and tests.
+    search(%{"source" => source, "destination" => destination})
+  end
+
+  @doc """
+  Simple paginated search helper. Returns a map with :trips, :total, :page, :per_page.
+  """
+  def search_future_trips_paginated(source, destination, params) do
+    page =
+      case params["page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 1
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          1
+      end
+
+    per_page =
+      case params["per_page"] do
+        p when is_binary(p) ->
+          case Integer.parse(p) do
+            {i, _} when i > 0 -> i
+            _ -> 5
+          end
+
+        p when is_integer(p) and p > 0 ->
+          p
+
+        _ ->
+          5
+      end
+
+    # Build base query with filters
+    now = DateTime.utc_now()
+
+    base_q =
+      from t in Trip,
+        where:
+          ilike(t.source_city, ^source) and
+            ilike(t.destination_city, ^destination) and
+            t.departure_time > ^now,
+        distinct: true
+
+    # Apply numeric filters for price
+    base_q =
+      case params["min_price"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.price >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_price"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.price <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for duration
+    base_q =
+      case params["min_duration"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.duration_minutes >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_duration"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.duration_minutes <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for CO2
+    base_q =
+      case params["min_co2"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.co2_level >= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_co2"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case Integer.parse(v) do
+            {i, _} -> from q in base_q, where: q.co2_level <= ^i
+            :error -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for departure time
+    base_q =
+      case params["min_departure"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.departure_time >= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_departure"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.departure_time <= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply filters for arrival time
+    base_q =
+      case params["min_arrival"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.arrival_time >= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    base_q =
+      case params["max_arrival"] do
+        nil ->
+          base_q
+
+        "" ->
+          base_q
+
+        v when is_binary(v) ->
+          case DateTime.from_iso8601(v) do
+            {:ok, dt, _} -> from q in base_q, where: q.arrival_time <= ^dt
+            _ -> base_q
+          end
+
+        _ ->
+          base_q
+      end
+
+    # Apply sorting
+    base_q =
+      case params["sort"] do
+        "price_asc" -> from q in base_q, order_by: [asc: q.price]
+        "price_desc" -> from q in base_q, order_by: [desc: q.price]
+        "co2_asc" -> from q in base_q, order_by: [asc: q.co2_level]
+        "co2_desc" -> from q in base_q, order_by: [desc: q.co2_level]
+        "duration_asc" -> from q in base_q, order_by: [asc: q.duration_minutes]
+        "duration_desc" -> from q in base_q, order_by: [desc: q.duration_minutes]
+        _ -> from q in base_q, order_by: [asc: q.departure_time]
+      end
+
+    # Total count
+    total = base_q |> Repo.all() |> length()
+
+    offset = (page - 1) * per_page
+
+    trips =
+      base_q
+      |> limit(^per_page)
+      |> offset(^offset)
+      |> Repo.all()
+
+    %{trips: trips, total: total, page: page, per_page: per_page}
+  end
+
+  @doc """
+  Preloads only future instances for the given trip or list of trips.
+  """
+  def preload_future_instances(trips) do
+    today = Date.utc_today()
+
+    Repo.preload(trips,
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
+  end
+
+  @doc """
+  Returns a purchase summary for the given user as a map with two MapSets:
+    - :trip_ids -> MapSet of trip ids the user has purchased
+    - :instance_ids -> MapSet of trip_instance ids the user has purchased
+
+  If `user` is nil, returns empty sets.
+  """
+  def purchase_summary_for_user(nil) do
+    %{trip_ids: MapSet.new(), instance_ids: MapSet.new()}
+  end
+
+  def purchase_summary_for_user(%User{id: user_id}) do
+    query =
+      from p in Purchase,
+        join: i in TripInstance,
+        on: p.trip_instance_id == i.id,
+        where: p.user_id == ^user_id,
+        select: {i.trip_id, p.trip_instance_id}
+
+    pairs = Repo.all(query)
+
+    {trip_ids, instance_ids} =
+      Enum.reduce(pairs, {MapSet.new(), MapSet.new()}, fn {trip_id, inst_id}, {tset, iset} ->
+        {MapSet.put(tset, trip_id), MapSet.put(iset, inst_id)}
+      end)
+
+    %{trip_ids: trip_ids, instance_ids: instance_ids}
+  end
+
+  @doc """
+  Public getter for a trip by id, preloading only future instances.
+  """
+  def get_public_trip!(id) do
+    today = Date.utc_today()
+
+    Trip
+    |> Repo.get!(id)
+    |> Repo.preload(
+      instances: from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+    )
+  end
+
+  # ---------------------- Recommendations (similar trips) -----------------------
+
+  @doc """
+  Finds up to 5 similar trips based on source city, destination city, and price proximity.
+
+  Excludes the current trip and returns only trips with future instances.
+  Similarity scoring:
+    - Exact source & destination match: highest weight
+    - Price within ±30% of the given trip's price
+    - Results ordered by similarity score (descending)
+  """
+  def find_similar_trips(%Trip{
+        id: trip_id,
+        source_city: source,
+        destination_city: dest,
+        price: price
+      }) do
+    today = Date.utc_today()
+    price_decimal = Decimal.to_float(price)
+    price_tolerance = price_decimal * 0.3
+    min_price = price_decimal - price_tolerance
+    max_price = price_decimal + price_tolerance
+
+    query =
+      from t in Trip,
+        where:
+          t.id != ^trip_id and
+            t.source_city == ^source and
+            t.destination_city == ^dest and
+            t.price >= ^min_price and
+            t.price <= ^max_price,
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        group_by: t.id,
+        select: t,
+        order_by: [asc: fragment("ABS(? - ?)", t.price, ^price_decimal)],
+        limit: 5
+
+    results = Repo.all(query)
+
+    # Preload instances for each trip
+    preload_future_instances(results)
+  end
+
+  @doc """
+  Simple version: find similar trips given a trip id.
+  """
+  def find_similar_trips(trip_id) do
+    case get_trip(trip_id) do
+      nil -> []
+      trip -> find_similar_trips(trip)
+    end
+  end
+
+  @doc """
+  High-level search API used by controllers and tests.
+
+  Accepts a map of params with string keys, e.g.
+    %{"source" => "Tartu", "destination" => "Tallinn", "min_price" => "10", "sort" => "price_asc"}
+
+  Returns a list of `Trip` structs (only future trips are considered).
+  """
+  def search(params) when is_map(params) do
+    src = params["source"] || ""
+    dst = params["destination"] || ""
+
+    # Don't run a query if required fields missing
+    if String.trim(src) == "" or String.trim(dst) == "" do
+      []
+    else
+      source = "%#{src}%"
+      destination = "%#{dst}%"
+
+      base_q =
+        from t in Trip,
+          where:
+            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
+              t.departure_time > ^DateTime.utc_now(),
+          distinct: true
+
+      # apply numeric filters
+      base_q =
+        case params["min_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price >= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_price"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Float.parse(v) do
+              {f, _} -> from q in base_q, where: q.price <= ^f
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      base_q =
+        case params["max_co2"] do
+          nil ->
+            base_q
+
+          v when is_binary(v) ->
+            case Integer.parse(v) do
+              {i, _} -> from q in base_q, where: q.co2_level <= ^i
+              :error -> base_q
+            end
+
+          _ ->
+            base_q
+        end
+
+      # sorting
+      base_q =
+        case params["sort"] do
+          "price_asc" -> from q in base_q, order_by: [asc: q.price]
+          "price_desc" -> from q in base_q, order_by: [desc: q.price]
+          "co2_asc" -> from q in base_q, order_by: [asc: q.co2_level]
+          "co2_desc" -> from q in base_q, order_by: [desc: q.co2_level]
+          "duration_asc" -> from q in base_q, order_by: [asc: q.duration_minutes]
+          "duration_desc" -> from q in base_q, order_by: [desc: q.duration_minutes]
+          _ -> from q in base_q, order_by: [asc: q.departure_time]
+        end
+
+      trips = Repo.all(base_q)
+
+      # preload only future instances
+      preload_future_instances(trips)
+    end
+  end
+
+  @doc """
+  Purchases a trip instance for the given user.
+
+  Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
+  `:past_instance`, `:sold_out` or other Repo errors.
+  """
+  def purchase_trip_instance(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        cond do
+          Date.compare(instance.date, today) == :lt ->
+            {:error, :past_instance}
+
+          instance.available_tickets <= 0 ->
+            {:error, :sold_out}
+
+          # Prevent duplicate purchases by the same user for the same instance
+          Repo.get_by(Purchase, user_id: user_id, trip_instance_id: instance.id) != nil ->
+            {:error, :already_purchased}
+
+          true ->
+            Ecto.Multi.new()
+            |> Ecto.Multi.insert(
+              :purchase,
+              Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
+            )
+            |> Ecto.Multi.update(
+              :decrement,
+              TripInstance.changeset(instance, %{
+                available_tickets: instance.available_tickets - 1
+              })
+            )
+            |> Repo.transaction()
+            |> case do
+              {:ok, %{purchase: purchase}} -> {:ok, purchase}
+              {:error, _op, changeset, _} -> {:error, changeset}
+            end
+        end
+    end
+  end
+
+  @doc """
+  Returns a previously made purchase (refund) by the user for the given instance.
+
+  Returns `{:ok, purchase}` on success, or `{:error, :not_found}` if no purchase,
+  or `{:error, :past_instance}` if the instance is in the past.
+  """
+  def return_trip_instance_purchase(%User{id: user_id} = _user, instance_id) do
+    today = Date.utc_today()
+
+    case Repo.get(TripInstance, instance_id) do
+      nil ->
+        {:error, :not_found}
+
+      %TripInstance{} = instance ->
+        if Date.compare(instance.date, today) == :lt do
+          {:error, :past_instance}
+        else
+          query =
+            from p in Purchase,
+              where: p.user_id == ^user_id and p.trip_instance_id == ^instance_id,
+              limit: 1
+
+          case Repo.one(query) do
+            nil ->
+              {:error, :not_found}
+
+            %Purchase{} = purchase ->
+              Ecto.Multi.new()
+              |> Ecto.Multi.delete(:delete_purchase, purchase)
+              |> Ecto.Multi.update(
+                :inc_instance,
+                TripInstance.changeset(instance, %{
+                  available_tickets: instance.available_tickets + 1
+                })
+              )
+              |> Repo.transaction()
+              |> case do
+                {:ok, %{delete_purchase: deleted}} -> {:ok, deleted}
+                {:error, _op, changeset, _} -> {:error, changeset}
+              end
+          end
+        end
+    end
+  end
+
+  # ---------- FR-10: Top trips (fastest, cheapest, greenest) ----------
+
+  @doc """
+  Computes top trips (fastest, cheapest, greenest) from the given list.
+
+  Tie-breaking is deterministic:
+    * Fastest  -> duration_minutes -> price -> id
+    * Cheapest -> price -> duration_minutes -> id
+    * Greenest -> co2_level -> price -> duration_minutes -> id
+  """
+  def compute_top_trips([]) do
+    # When there are no trips, safely return nils so the view can handle it.
+    %{fastest: nil, cheapest: nil, greenest: nil}
+  end
+
+  def compute_top_trips(trips) when is_list(trips) do
+    %{
+      fastest: pick_fastest(trips),
+      cheapest: pick_cheapest(trips),
+      greenest: pick_greenest(trips)
+    }
+  end
+
+  # Picks the fastest trip using duration as main metric.
+  # Tie-breaking uses price and then id to keep the result deterministic.
+  defp pick_fastest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        trip.duration_minutes || 0,
+        normalize_price(trip.price),
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Picks the cheapest trip using price as main metric.
+  # Tie-breaking uses duration and then id.
+  defp pick_cheapest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        normalize_price(trip.price),
+        trip.duration_minutes || 0,
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Picks the greenest trip using CO₂ as main metric.
+  # Tie-breaking uses price, then duration, then id.
+  defp pick_greenest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        trip.co2_level || 0,
+        normalize_price(trip.price),
+        trip.duration_minutes || 0,
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Normalizes different price representations to a float for comparison.
+  defp normalize_price(%Decimal{} = price), do: Decimal.to_float(price)
+  defp normalize_price(price) when is_integer(price), do: price * 1.0
+  defp normalize_price(price) when is_float(price), do: price
+  defp normalize_price(_), do: 0.0
 end

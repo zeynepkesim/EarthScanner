@@ -17,6 +17,9 @@ defmodule EarthScanner.Trips.Trip do
     field :co2_level, :integer
     field :available_tickets, :integer
 
+    # 👉 NEW FIELD
+    field :recommended_price, :decimal
+
     belongs_to :admin, User, foreign_key: :admin_id
     has_many :instances, TripInstance
     has_many :purchases, through: [:instances, :purchases]
@@ -36,7 +39,10 @@ defmodule EarthScanner.Trips.Trip do
     admin_id
   )a
 
-  @optional_fields ~w(picture_url)a
+  @optional_fields ~w(
+    picture_url
+    recommended_price
+  )a
 
   def changeset(trip, attrs) do
     trip
@@ -47,10 +53,13 @@ defmodule EarthScanner.Trips.Trip do
     |> validate_number(:price, greater_than: 0)
     |> validate_number(:co2_level, greater_than_or_equal_to: 0)
     |> compute_duration()
+    |> compute_recommended_price()
     |> validate_arrival_after_departure()
   end
 
-  # FR-29: Trip duration is calculated automatically
+  # --------------------------------------------------------
+  # 1) Automatically compute duration
+  # --------------------------------------------------------
   defp compute_duration(changeset) do
     dep = get_field(changeset, :departure_time)
     arr = get_field(changeset, :arrival_time)
@@ -59,7 +68,6 @@ defmodule EarthScanner.Trips.Trip do
       minutes = DateTime.diff(arr, dep, :minute)
 
       if minutes <= 0 do
-        # arrival must be after departure
         changeset
       else
         put_change(changeset, :duration_minutes, minutes)
@@ -69,6 +77,35 @@ defmodule EarthScanner.Trips.Trip do
     end
   end
 
+  # --------------------------------------------------------
+  # 2) Automatically compute recommended price
+  # --------------------------------------------------------
+  defp compute_recommended_price(changeset) do
+    mode = get_field(changeset, :transport_mode)
+    co2 = get_field(changeset, :co2_level)
+
+    if mode && co2 do
+      factor =
+        case mode do
+          "plane" -> 0.15
+          "train" -> 0.05
+          "bus" -> 0.07
+        end
+
+      recommended =
+        co2
+        |> Kernel.*(factor)
+        |> Decimal.from_float()
+
+      put_change(changeset, :recommended_price, recommended)
+    else
+      changeset
+    end
+  end
+
+  # --------------------------------------------------------
+  # 3) Validate arrival > departure
+  # --------------------------------------------------------
   defp validate_arrival_after_departure(changeset) do
     dep = get_field(changeset, :departure_time)
     arr = get_field(changeset, :arrival_time)

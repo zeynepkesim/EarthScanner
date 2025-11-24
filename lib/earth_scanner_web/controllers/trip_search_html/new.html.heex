@@ -1,0 +1,72 @@
+<h1>Search Trips</h1>
+<.flash kind={:error} />
+<div class="mb-6">
+  <form method="get" action={~p"/search/results"}>
+    <label>Source:</label>
+    <input
+      type="text"
+      name="source"
+      required
+      class="border rounded-md px-3 py-2 w-full mb-3"
+    /> <label>Destination:</label>
+    <input
+      type="text"
+      name="destination"
+      required
+      class="border rounded-md px-3 py-2 w-full mb-3"
+    />
+    <h2 class="text-lg font-semibold mt-4">Filters (optional)</h2>
+    <label>Min Price:</label>
+    <input type="number" name="min_price" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Max Price:</label>
+    <input type="number" name="max_price" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Min CO₂:</label>
+    <input type="number" name="min_co2" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Max CO₂:</label>
+    <input type="number" name="max_co2" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Min Duration (minutes):</label>
+    <input type="number" name="min_duration" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Max Duration (minutes):</label>
+    <input type="number" name="max_duration" class="border rounded-md px-3 py-2 w-full mb-3" />
+    <label>Min Departure Time (ISO):</label>
+    <input
+      type="datetime-local"
+      name="min_departure"
+      class="border rounded-md px-3 py-2 w-full mb-3"
+    /> <label>Max Departure Time (ISO):</label>
+    <input
+      type="datetime-local"
+      name="max_departure"
+      class="border rounded-md px-3 py-2 w-full mb-3"
+    />
+    <button
+      type="submit"
+      class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium"
+    >
+      Search
+    </button>
+  </form>
+</div>
+
+<div :if={@recent_searches != []} class="mt-8 p-4 bg-slate-50 rounded-lg">
+  <h2 class="text-lg font-semibold text-slate-900 mb-3">Recent Searches</h2>
+
+  <div class="space-y-2">
+    <div
+      :for={search <- @recent_searches}
+      class="flex items-center justify-between p-3 bg-white rounded border border-slate-200 hover:border-sky-400"
+    >
+      <.link
+        navigate={
+          ~p"/search/results?source=#{search.source_city}&destination=#{search.destination_city}"
+        }
+        class="flex-1 text-sky-600 hover:text-sky-800 font-medium"
+      >
+        {search.source_city} → {search.destination_city}
+      </.link>
+      <span class="text-xs text-slate-400 ml-2">
+        {Calendar.strftime(search.inserted_at, "%b %d")}
+      </span>
+    </div>
+  </div>
+</div>
