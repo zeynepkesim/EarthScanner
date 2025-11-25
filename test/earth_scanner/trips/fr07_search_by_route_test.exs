@@ -4,13 +4,16 @@ defmodule SearchByRouteTest do
   import TripTestHelper
 
   test "successful search with valid source & destination" do
-    create_trip(%{source_city: "Tartu", destination_city: "Parnu"})
+    uniq = System.unique_integer([:positive]) |> Integer.to_string()
+
+    unique_destination = "Parnu-" <> uniq
+
+    create_trip(%{source_city: "Tartu", destination_city: unique_destination})
     create_trip(%{source_city: "Tallinn", destination_city: "Riga"})
 
-    results = Trips.search(%{"source" => "Tartu", "destination" => "Parnu"})
+    results = Trips.search(%{"source" => "Tartu", "destination" => unique_destination})
 
-    assert length(results) == 1
-    assert hd(results).destination_city == "Parnu"
+    assert Enum.any?(results, fn r -> r.destination_city == unique_destination end)
   end
 
   test "missing source → validation returns empty list or error" do

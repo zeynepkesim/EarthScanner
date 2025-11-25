@@ -68,7 +68,6 @@ defmodule EarthScannerWeb.CoreComponents do
         <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
         <div>
           <p :if={@title} class="font-semibold">{@title}</p>
-
           <p>{msg}</p>
         </div>
         <div class="flex-1" />

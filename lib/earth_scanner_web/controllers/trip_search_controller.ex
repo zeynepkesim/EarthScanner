@@ -2,10 +2,14 @@ defmodule EarthScannerWeb.TripSearchController do
   use EarthScannerWeb, :controller
 
   alias EarthScanner.Trips
+  alias EarthScanner.Searches
 
   # STEP 2A — render empty search form
   def new(conn, _params) do
-    render(conn, :new)
+    current_user = conn.assigns[:current_user]
+    recent_searches = (current_user && Searches.get_recent_searches(current_user)) || []
+
+    render(conn, :new, recent_searches: recent_searches)
   end
 
   # STEP 2B — basic validation for source & destination
@@ -17,9 +21,52 @@ defmodule EarthScannerWeb.TripSearchController do
         |> redirect(to: ~p"/search")
 
       true ->
-        result = Trips.search_future_trips_paginated(source, destination, params)
-        trips = Trips.preload_future_instances(result.trips)
-        purchase_summary = Trips.purchase_summary_for_user(conn.assigns[:current_user])
+        # Record the search if user is logged in
+        current_user = conn.assigns[:current_user]
+
+        if current_user do
+          Searches.record_search(current_user, source, destination)
+        end
+
+        all_trips = Trips.search(params)
+
+        # Pagination in-controller
+        page =
+          case params["page"] do
+            p when is_binary(p) ->
+              case Integer.parse(p) do
+                {i, _} when i > 0 -> i
+                _ -> 1
+              end
+
+            p when is_integer(p) and p > 0 ->
+              p
+
+            _ ->
+              1
+          end
+
+        per_page =
+          case params["per_page"] do
+            p when is_binary(p) ->
+              case Integer.parse(p) do
+                {i, _} when i > 0 -> i
+                _ -> 10
+              end
+
+            p when is_integer(p) and p > 0 ->
+              p
+
+            _ ->
+              10
+          end
+
+        total = length(all_trips)
+        offset = (page - 1) * per_page
+        trips = Enum.slice(all_trips, offset, per_page) || []
+        result = %{trips: trips, total: total, page: page, per_page: per_page}
+        purchase_summary = Trips.purchase_summary_for_user(current_user)
+        recent_searches = (current_user && Searches.get_recent_searches(current_user)) || []
 
         # FR-15: compute sold-out trip ids for highlighting in the view
         sold_out_trip_ids =
@@ -41,12 +88,11 @@ defmodule EarthScannerWeb.TripSearchController do
           per_page: result.per_page,
           filters: params,
           purchase_summary: purchase_summary,
+          recent_searches: recent_searches,
           sold_out_trip_ids: sold_out_trip_ids,
           top_trips: top_trips,
           return_path: current_path(conn, conn.params)
         )
-
-        # render(conn, :index, trips: trips, filters: params)
     end
   end
 

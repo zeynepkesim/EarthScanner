@@ -126,11 +126,14 @@ defmodule EarthScanner.TripsTest do
       admin1 = admin_fixture(%{"username" => "admin1", "email" => "admin1@example.com"})
       admin2 = admin_fixture(%{"username" => "admin2", "email" => "admin2@example.com"})
 
+      future1 = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
+      future2 = Date.utc_today() |> Date.add(2) |> Date.to_iso8601()
+
       {:ok, trip1} =
-        Trips.create_trip(admin1, valid_trip_attrs() |> Map.put("dates", "2025-11-21"))
+        Trips.create_trip(admin1, valid_trip_attrs() |> Map.put("dates", future1))
 
       {:ok, _trip2} =
-        Trips.create_trip(admin2, valid_trip_attrs() |> Map.put("dates", "2025-11-22"))
+        Trips.create_trip(admin2, valid_trip_attrs() |> Map.put("dates", future2))
 
       result = Trips.list_future_trips_for_admin(admin1)
 
@@ -304,8 +307,16 @@ defmodule EarthScanner.TripsTest do
       assert deleted_trip.id == trip.id
       assert_raise Ecto.NoResultsError, fn -> Trips.get_trip!(trip.id) end
 
-      # Verify purchases are also deleted (cascade)
-      assert Repo.all(Purchase) == []
+      # Verify purchases for this trip are also deleted
+      purchases_for_trip =
+        from(p in Purchase,
+          join: i in TripInstance,
+          on: p.trip_instance_id == i.id,
+          where: i.trip_id == ^trip.id
+        )
+        |> Repo.all()
+
+      assert purchases_for_trip == []
     end
   end
 

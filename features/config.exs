@@ -28,4 +28,12 @@ defmodule WhiteBreadConfig do
           "features/fr15_highlight_sold_out_trips.feature"
         ]
 
+  suite name:          "TripPurchase",
+        context:       TripPurchaseContext,
+        feature_paths: [
+          "features/fr12_purchase_ticket.feature",
+          "features/fr13_refund_ticket.feature",
+          "features/fr14_highlight_purchased_trips.feature"
+        ]
+
 end
