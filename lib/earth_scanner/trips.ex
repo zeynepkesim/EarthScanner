@@ -722,4 +722,70 @@ defmodule EarthScanner.Trips do
         end
     end
   end
+
+  # ---------- FR-10: Top trips (fastest, cheapest, greenest) ----------
+
+  @doc """
+  Computes top trips (fastest, cheapest, greenest) from the given list.
+
+  Tie-breaking is deterministic:
+    * Fastest  -> duration_minutes -> price -> id
+    * Cheapest -> price -> duration_minutes -> id
+    * Greenest -> co2_level -> price -> duration_minutes -> id
+  """
+  def compute_top_trips([]) do
+    # When there are no trips, safely return nils so the view can handle it.
+    %{fastest: nil, cheapest: nil, greenest: nil}
+  end
+
+  def compute_top_trips(trips) when is_list(trips) do
+    %{
+      fastest: pick_fastest(trips),
+      cheapest: pick_cheapest(trips),
+      greenest: pick_greenest(trips)
+    }
+  end
+
+  # Picks the fastest trip using duration as main metric.
+  # Tie-breaking uses price and then id to keep the result deterministic.
+  defp pick_fastest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        trip.duration_minutes || 0,
+        normalize_price(trip.price),
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Picks the cheapest trip using price as main metric.
+  # Tie-breaking uses duration and then id.
+  defp pick_cheapest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        normalize_price(trip.price),
+        trip.duration_minutes || 0,
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Picks the greenest trip using CO₂ as main metric.
+  # Tie-breaking uses price, then duration, then id.
+  defp pick_greenest(trips) do
+    Enum.min_by(trips, fn trip ->
+      {
+        trip.co2_level || 0,
+        normalize_price(trip.price),
+        trip.duration_minutes || 0,
+        trip.id || 0
+      }
+    end)
+  end
+
+  # Normalizes different price representations to a float for comparison.
+  defp normalize_price(%Decimal{} = price), do: Decimal.to_float(price)
+  defp normalize_price(price) when is_integer(price), do: price * 1.0
+  defp normalize_price(price) when is_float(price), do: price
+  defp normalize_price(_), do: 0.0
 end
