@@ -25,4 +25,14 @@ defmodule WhiteBreadConfig do
           "features/fr09_sort_results.feature"
         ]
 
+   suite name:          "FRBDD",
+         context:       FRBDDContext,
+         feature_paths: [
+          "features/fr16_view_trip.feature",
+          "features/fr17_similar_trips.feature",
+          "features/fr18_recent_searches.feature",
+          "features/fr34_recommended_price.feature"
+        ]
+
+
 end

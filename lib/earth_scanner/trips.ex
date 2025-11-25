@@ -329,10 +329,14 @@ defmodule EarthScanner.Trips do
     lower = duration_hours * 0.8
     upper = duration_hours * 1.2
 
+    # Trip schema stores duration in minutes; convert hour bounds to minutes
+    lower_minutes = round(lower * 60)
+    upper_minutes = round(upper * 60)
+
     matches =
       Trip
       |> where([t], t.transport_mode == ^transport_mode)
-      |> where([t], t.duration_hours >= ^lower and t.duration_hours <= ^upper)
+      |> where([t], t.duration_minutes >= ^lower_minutes and t.duration_minutes <= ^upper_minutes)
       |> Repo.all()
 
     case matches do

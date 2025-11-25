@@ -1,10 +1,33 @@
 defmodule TripTestHelper do
   alias EarthScanner.Repo
   alias EarthScanner.Trips.Trip
+  alias EarthScanner.Accounts.User
 
   # Inserts a future trip with given attributes
   def create_trip(attrs \\ %{}) do
     base_time = DateTime.add(DateTime.utc_now(), 3600, :second)
+
+    admin_id =
+      case Map.get(attrs, :admin_id) || Map.get(attrs, "admin_id") do
+        nil ->
+          # create a throwaway admin for tests when none provided
+          admin =
+            %User{}
+            |> User.admin_changeset(%{
+              username: "test_admin_#{System.unique_integer([:positive])}",
+              password: "Password123!",
+              password_confirmation: "Password123!",
+              email: "test_admin_#{System.unique_integer([:positive])}@example.com",
+              phone_number: "+90000000000",
+              role: "admin"
+            })
+            |> Repo.insert!()
+
+          admin.id
+
+        id ->
+          id
+      end
 
     defaults = %{
       source_city: "Tartu",
@@ -16,7 +39,7 @@ defmodule TripTestHelper do
       price: 20,
       co2_level: 100,
       available_tickets: 50,
-      admin_id: 1
+      admin_id: admin_id
     }
 
     %Trip{}
