@@ -20,6 +20,37 @@ defmodule TripSearchContext do
   end
 
   ##########################################################################
+  # HELPER FUNCTIONS
+  ##########################################################################
+
+  defp parse_integer(value) when is_integer(value), do: value
+  defp parse_integer(value) when is_binary(value), do: String.to_integer(value)
+
+  defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
+  defp parse_decimal(value) when is_binary(value), do: Decimal.new(value)
+  defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
+
+  defp get_or_create_test_admin do
+    case Repo.get_by(EarthScanner.Accounts.User, email: "bdd_test_admin@example.com") do
+      nil ->
+        Repo.insert!(%EarthScanner.Accounts.User{
+          username: "bdd_test_admin",
+          email: "bdd_test_admin@example.com",
+          password_hash: "$2b$12$test_hash_for_bdd_testing_only",
+          name: "BDD",
+          last_name: "Admin",
+          birthdate: ~D[1990-01-01],
+          nationality: "EE",
+          residence_address: "Test Street 1",
+          phone_number: "+37200000000",
+          role: "admin"
+        })
+      admin -> admin
+    end
+  end
+
+
+  ##########################################################################
   # GIVEN STEPS — DB setup for trips
   ##########################################################################
 
@@ -173,7 +204,7 @@ defmodule TripSearchContext do
       price: 20,
       co2_level: 100,
       available_tickets: 50,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
   end
 
@@ -196,7 +227,7 @@ defmodule TripSearchContext do
       price: 15,
       co2_level: 150,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
 
     # Future trip
@@ -210,7 +241,7 @@ defmodule TripSearchContext do
       price: 25,
       co2_level: 120,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
   end
 
@@ -231,7 +262,7 @@ defmodule TripSearchContext do
         price: price,
         co2_level: 100,
         available_tickets: 20,
-        admin_id: 1
+        admin_id: get_or_create_test_admin().id
       })
     end
   end
@@ -253,7 +284,7 @@ defmodule TripSearchContext do
         price: 20,
         co2_level: co2,
         available_tickets: 20,
-        admin_id: 1
+        admin_id: get_or_create_test_admin().id
       })
     end
   end
@@ -274,7 +305,7 @@ defmodule TripSearchContext do
       price: 15,
       co2_level: 120,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
 
     Repo.insert!(%Trip{
@@ -287,7 +318,7 @@ defmodule TripSearchContext do
       price: 25,
       co2_level: 150,
       available_tickets: 20,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
   end
 
@@ -313,7 +344,7 @@ defmodule TripSearchContext do
       price: Decimal.new("20.00"),
       co2_level: 150,
       available_tickets: 10,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
 
     # Trip B: cheapest and greenest, but slower
@@ -327,7 +358,7 @@ defmodule TripSearchContext do
       price: Decimal.new("10.00"),
       co2_level: 80,
       available_tickets: 10,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
 
     # Trip C: fastest but more expensive and more polluting
@@ -341,7 +372,7 @@ defmodule TripSearchContext do
       price: Decimal.new("40.00"),
       co2_level: 300,
       available_tickets: 10,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
     })
 
     {:ok, state}
@@ -432,7 +463,7 @@ defmodule TripSearchContext do
       price: 20,
       co2_level: 150,
       available_tickets: 10,
-      admin_id: 1
+      admin_id: get_or_create_test_admin().id
       # We rely on source/destination + time to identify this in tests if needed
     })
 
@@ -468,7 +499,7 @@ defmodule TripSearchContext do
         price: 30,
         co2_level: 200,
         available_tickets: 10,
-        admin_id: 1
+        admin_id: get_or_create_test_admin().id
       })
 
     # Sold-out instance (available_tickets = 0)
