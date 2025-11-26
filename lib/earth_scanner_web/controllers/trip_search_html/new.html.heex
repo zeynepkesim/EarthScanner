@@ -1,6 +1,5 @@
 <h1>Search Trips</h1>
 <.flash kind={:error} />
-
 <div class="mb-6">
   <form method="get" action={~p"/search/results"}>
     <label>Source:</label>
@@ -51,6 +50,7 @@
 
 <div :if={@recent_searches != []} class="mt-8 p-4 bg-slate-50 rounded-lg">
   <h2 class="text-lg font-semibold text-slate-900 mb-3">Recent Searches</h2>
+
   <div class="space-y-2">
     <div
       :for={search <- @recent_searches}

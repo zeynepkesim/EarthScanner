@@ -1,5 +1,5 @@
 defmodule EarthScannerWeb.AccountDeleteControllerTest do
-  use EarthScannerWeb.ConnCase, async: true
+  use EarthScannerWeb.ConnCase, async: false
   alias EarthScanner.{Accounts, Repo}
   alias EarthScanner.Accounts.User
 

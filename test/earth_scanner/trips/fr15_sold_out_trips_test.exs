@@ -3,6 +3,7 @@ defmodule EarthScanner.Trips.Fr15SoldOutTripsTest do
 
   alias EarthScanner.{Trips, Accounts, Repo}
   alias EarthScanner.Trips.{Trip, TripInstance}
+  alias TripTestHelper
 
   @tag :fr15
   test "purchase_trip_instance/2 returns :sold_out when instance has no available tickets" do
@@ -27,6 +28,9 @@ defmodule EarthScanner.Trips.Fr15SoldOutTripsTest do
 
     future = DateTime.add(now, 86_400, :second)
 
+    # Create a real admin so foreign key admin_id points to an existing record
+    admin = TripTestHelper.admin_fixture()
+
     trip =
       Repo.insert!(%Trip{
         source_city: "Tartu",
@@ -38,7 +42,7 @@ defmodule EarthScanner.Trips.Fr15SoldOutTripsTest do
         price: 25,
         co2_level: 150,
         available_tickets: 10,
-        admin_id: 1
+        admin_id: admin.id
       })
 
     # Insert a sold-out instance directly (bypassing changeset validation)

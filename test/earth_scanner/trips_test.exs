@@ -307,8 +307,16 @@ defmodule EarthScanner.TripsTest do
       assert deleted_trip.id == trip.id
       assert_raise Ecto.NoResultsError, fn -> Trips.get_trip!(trip.id) end
 
-      # Verify purchases are also deleted (cascade)
-      assert Repo.all(Purchase) == []
+      # Verify purchases for this trip are also deleted
+      purchases_for_trip =
+        from(p in Purchase,
+          join: i in TripInstance,
+          on: p.trip_instance_id == i.id,
+          where: i.trip_id == ^trip.id
+        )
+        |> Repo.all()
+
+      assert purchases_for_trip == []
     end
   end
 

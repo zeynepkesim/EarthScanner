@@ -23,7 +23,6 @@ defmodule WhiteBreadConfig do
           "features/fr07_search_by_route.feature",
           "features/fr08_filter_results.feature",
           "features/fr09_sort_results.feature",
-          "features/fr10_highlight_top_trips.feature",
           "features/fr11_exclude_past_trips.feature",
           "features/fr15_highlight_sold_out_trips.feature"
         ]
@@ -36,6 +35,18 @@ defmodule WhiteBreadConfig do
           "features/fr18_recent_searches.feature",
           "features/fr34_recommended_price.feature"
         ]
+
+  suite name:          "TripPurchase",
+        context:       TripPurchaseContext,
+        feature_paths: [
+          "features/fr12_purchase_ticket.feature",
+          "features/fr13_refund_ticket.feature",
+          "features/fr14_highlight_purchased_trips.feature"
+        ]
+
+  suite name:          "TopTrips",
+        context:       TopTripsContext,
+        feature_paths: ["features/fr10_highlight_top_trips.feature"]
 
 
 end

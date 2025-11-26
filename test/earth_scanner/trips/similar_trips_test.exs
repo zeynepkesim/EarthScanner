@@ -30,12 +30,12 @@ defmodule EarthScanner.Trips.SimilarTripsTest do
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Paris",
-        "departure_time" => "2025-11-20T10:00:00Z",
-        "arrival_time" => "2025-11-20T13:00:00Z",
+        "departure_time" => "2026-11-20T10:00:00Z",
+        "arrival_time" => "2026-11-20T13:00:00Z",
         "price" => "100.0",
         "co2_level" => "200",
         "available_tickets" => "50",
-        "dates" => "2025-11-21"
+        "dates" => "2026-11-21"
       }
 
       {:ok, trip} = Trips.create_trip(admin, attrs)
@@ -44,7 +44,7 @@ defmodule EarthScanner.Trips.SimilarTripsTest do
       for i <- 1..6 do
         Trips.create_trip(
           admin,
-          Map.merge(attrs, %{"price" => "#{100 + i}", "dates" => "2025-11-2#{i}"})
+          Map.merge(attrs, %{"price" => "#{100 + i}", "dates" => "2026-11-2#{i}"})
         )
       end
 

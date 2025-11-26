@@ -28,8 +28,43 @@ defmodule EarthScannerWeb.TripSearchController do
           Searches.record_search(current_user, source, destination)
         end
 
-        result = Trips.search_future_trips_paginated(source, destination, params)
-        trips = Trips.preload_future_instances(result.trips)
+        all_trips = Trips.search(params)
+
+        # Pagination in-controller
+        page =
+          case params["page"] do
+            p when is_binary(p) ->
+              case Integer.parse(p) do
+                {i, _} when i > 0 -> i
+                _ -> 1
+              end
+
+            p when is_integer(p) and p > 0 ->
+              p
+
+            _ ->
+              1
+          end
+
+        per_page =
+          case params["per_page"] do
+            p when is_binary(p) ->
+              case Integer.parse(p) do
+                {i, _} when i > 0 -> i
+                _ -> 10
+              end
+
+            p when is_integer(p) and p > 0 ->
+              p
+
+            _ ->
+              10
+          end
+
+        total = length(all_trips)
+        offset = (page - 1) * per_page
+        trips = Enum.slice(all_trips, offset, per_page) || []
+        result = %{trips: trips, total: total, page: page, per_page: per_page}
         purchase_summary = Trips.purchase_summary_for_user(current_user)
         recent_searches = (current_user && Searches.get_recent_searches(current_user)) || []
 
