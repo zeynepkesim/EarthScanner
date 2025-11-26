@@ -193,6 +193,28 @@ defmodule EarthScanner.Trips do
   end
 
   @doc """
+  Gets a trip instance by id and preloads the associated trip.
+  Returns `nil` if not found.
+  """
+  def get_instance_with_trip(id) do
+    Repo.get(TripInstance, id)
+    |> case do
+      nil ->
+        nil
+      instance ->
+        Repo.preload(instance, :trip)
+    end
+  end
+
+  @doc """
+  Lists purchases for a given user with the trip_instance and trip preloaded.
+  """
+  def list_purchases_for_user_with_trip(user_id) do
+    from(p in Purchase, where: p.user_id == ^user_id, preload: [trip_instance: :trip])
+    |> Repo.all()
+  end
+
+  @doc """
   Updates a single trip instance (e.g. date or available tickets).
 
   ## Examples
@@ -568,6 +590,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.departure_time >= ^dt
+            {:ok, dt} -> from q in base_q, where: q.departure_time >= ^dt
             _ -> base_q
           end
 
@@ -586,6 +609,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.departure_time <= ^dt
+            {:ok, dt} -> from q in base_q, where: q.departure_time <= ^dt
             _ -> base_q
           end
 
@@ -605,6 +629,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.arrival_time >= ^dt
+            {:ok, dt} -> from q in base_q, where: q.arrival_time >= ^dt
             _ -> base_q
           end
 
@@ -623,6 +648,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.arrival_time <= ^dt
+            {:ok, dt} -> from q in base_q, where: q.arrival_time <= ^dt
             _ -> base_q
           end
 

@@ -1,56 +1,19 @@
-defmodule EarthScanner.Notifications.Fr27TripReminderNotificationsTest do
-  use EarthScanner.DataCase, async: true
+defmodule EarthScannerWeb.Notifications.Fr27TripReminderNotificationsTestClean do
+  use EarthScannerWeb.ConnCase, async: true
 
   alias EarthScanner.Trips
-  alias EarthScanner.Accounts
   alias EarthScanner.Repo
 
-  # FR-27 (Trip Reminder Notifications)
-  defp admin_fixture do
-    {:ok, admin} =
-      Accounts.register_user(%{
-        "username" => "admin_#{System.unique_integer([:positive])}",
-        "password" => "Password123!",
-        "password_confirmation" => "Password123!",
-        "name" => "Admin",
-        "last_name" => "User",
-        "email" => "admin_#{System.unique_integer([:positive])}@example.com",
-        "birthdate" => "1990-01-01",
-        "nationality" => "TR",
-        "residence_address" => "Admin Street",
-        "phone_number" => "+905551111111"
-      })
+  setup %{conn: conn} do
+    {:ok, admin} = create_admin()
+    {:ok, user} = create_regular_user(%{username: "notif_user", email: "notif@test.com"})
 
-    admin
+    {:ok, conn: conn, admin: admin, user: user}
   end
 
-  defp user_fixture do
-    {:ok, user} =
-      Accounts.register_user(%{
-        "username" => "user_#{System.unique_integer([:positive])}",
-        "password" => "Password123!",
-        "password_confirmation" => "Password123!",
-        "name" => "Normal",
-        "last_name" => "User",
-        "email" => "user_#{System.unique_integer([:positive])}@example.com",
-        "birthdate" => "1995-01-01",
-        "nationality" => "US",
-        "residence_address" => "User Street",
-        "phone_number" => "+12025550123"
-      })
-
-    user
-  end
-
-  @tag :skip
-  test "FR-27: creates a reminder scheduled 24 hours before departure when a purchase is made" do
-    admin = admin_fixture()
-    user = user_fixture()
-
-    # create a trip with a departure_time 72 hours from now and a single instance 3 days from today
-    departure_dt = DateTime.add(DateTime.utc_now(), 72 * 3600, :second)
+  test "FR-27: shows reminder when user has a purchase within 24h", %{conn: conn, admin: admin, user: user} do
+    departure_dt = DateTime.add(DateTime.utc_now(), 2 * 3600, :second)
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
-    instance_date = Date.add(Date.utc_today(), 3)
 
     attrs = %{
       "transport_mode" => "plane",
@@ -61,51 +24,98 @@ defmodule EarthScanner.Notifications.Fr27TripReminderNotificationsTest do
       "price" => "150.0",
       "co2_level" => "200",
       "available_tickets" => "10",
-      "dates" => Date.to_iso8601(instance_date)
+      "dates" => Date.to_iso8601(Date.utc_today())
     }
 
     {:ok, trip} = Trips.create_trip(admin, attrs)
-    # pick the created instance
-    instance = List.first(trip.instances)
+    instance = hd(trip.instances)
 
-    # perform the purchase
-    {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
+    assert {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
 
-    # Query the reminders table directly (Notifications context not yet implemented)
-    reminder_scheduled =
-      Repo.one(
-        from r in "reminders",
-          where: r.user_id == ^user.id and r.trip_instance_id == ^instance.id,
-          select: r.scheduled_at
-      )
+    conn = log_in_user(conn, user)
+    conn = get(conn, "/notifications")
 
-    assert not is_nil(reminder_scheduled)
-
-    # compute expected scheduled_at by combining the trip's departure time-of-day with the instance date,
-    # then subtracting 24 hours
-    {:ok, time} =
-      Time.new(trip.departure_time.hour, trip.departure_time.minute, trip.departure_time.second)
-
-    {:ok, expected_dt} = DateTime.new(instance.date, time, "Etc/UTC")
-    expected_scheduled = DateTime.add(expected_dt, -24 * 3600, :second)
-
-    scheduled_dt =
-      case reminder_scheduled do
-        %NaiveDateTime{} = ndt -> DateTime.from_naive!(ndt, "Etc/UTC")
-        %DateTime{} = dt -> dt
-        other -> flunk("unexpected scheduled value: #{inspect(other)}")
-      end
-
-    assert DateTime.diff(scheduled_dt, expected_scheduled) == 0
+    body = html_response(conn, 200)
+    assert body =~ "Reminder: departs within 24 hours"
+    assert body =~ "Tallinn"
+    assert body =~ "Paris"
   end
 
-  @tag :skip
-  test "FR-27: delivers in-app notification when the user connects and a reminder is due" do
-    assert true
+  test "FR-27: shows empty state when no due notifications", %{conn: conn, admin: admin, user: user} do
+    departure_dt = DateTime.add(DateTime.utc_now(), 10 * 24 * 3600, :second)
+    arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
+
+    attrs = %{
+      "transport_mode" => "plane",
+      "source_city" => "Madrid",
+      "destination_city" => "Rome",
+      "departure_time" => DateTime.to_iso8601(departure_dt),
+      "arrival_time" => DateTime.to_iso8601(arrival_dt),
+      "price" => "120.0",
+      "co2_level" => "150",
+      "available_tickets" => "10",
+      "dates" => Date.to_iso8601(Date.add(Date.utc_today(), 10))
+    }
+
+    {:ok, trip} = Trips.create_trip(admin, attrs)
+    instance = hd(trip.instances)
+
+    assert {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
+
+    conn = log_in_user(conn, user)
+    conn = get(conn, "/notifications")
+
+    body = html_response(conn, 200)
+    assert body =~ "No notifications at this time."
   end
 
-  @tag :skip
-  test "FR-27: respects user opt-in/opt-out preference (no reminders created or delivered when opted-out)" do
-    assert true
+  # Helpers
+  defp create_admin(), do: create_admin(%{})
+
+  defp create_admin(attrs) do
+    default_attrs = %{
+      username: "admin_user",
+      password: "password123",
+      password_confirmation: "password123",
+      email: "admin_user@test.com",
+      phone_number: "1234567890",
+      role: "admin"
+    }
+
+    merged = Map.merge(default_attrs, attrs)
+
+    %EarthScanner.Accounts.User{}
+    |> EarthScanner.Accounts.User.admin_changeset(merged)
+    |> Repo.insert()
+  end
+
+  defp create_regular_user(), do: create_regular_user(%{})
+
+  defp create_regular_user(attrs) do
+    default_attrs = %{
+      username: "regular_user",
+      password: "password123",
+      password_confirmation: "password123",
+      name: "John",
+      last_name: "Doe",
+      email: "regular_user@test.com",
+      birthdate: ~D[1990-01-01],
+      nationality: "US",
+      residence_address: "123 Main St",
+      phone_number: "0987654321"
+    }
+
+    merged = Map.merge(default_attrs, attrs)
+
+    %EarthScanner.Accounts.User{}
+    |> EarthScanner.Accounts.User.registration_changeset(merged)
+    |> Repo.insert()
+  end
+
+  defp log_in_user(conn, user) do
+    conn
+    |> init_test_session(%{})
+    |> put_session(:user_id, user.id)
+    |> EarthScannerWeb.FetchCurrentUser.call([])
   end
 end

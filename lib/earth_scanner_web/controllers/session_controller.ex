@@ -30,4 +30,6 @@ defmodule EarthScannerWeb.SessionController do
     |> put_flash(:info, "Signed out successfully")
     |> redirect(to: ~p"/users/login")
   end
+
+  # no departure helper here; notifications are shown on the notifications page
 end
