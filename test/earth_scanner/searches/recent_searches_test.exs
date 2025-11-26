@@ -68,5 +68,23 @@ defmodule EarthScanner.Searches.RecentSearchesTest do
       assert [%{source_city: "A", destination_city: "B"}] = Searches.get_recent_searches(user1)
       assert [%{source_city: "X", destination_city: "Y"}] = Searches.get_recent_searches(user2)
     end
+
+    test "returns empty list when user has no searches" do
+      {:ok, user} =
+        Accounts.register_user(%{
+          "username" => "empty_user_#{System.unique_integer([:positive])}",
+          "password" => "Password123!",
+          "password_confirmation" => "Password123!",
+          "name" => "No",
+          "last_name" => "Search",
+          "email" => "empty_#{System.unique_integer([:positive])}@example.com",
+          "birthdate" => "1990-01-01",
+          "nationality" => "TR",
+          "residence_address" => "Nowhere",
+          "phone_number" => "+905551111113"
+        })
+
+      assert Searches.get_recent_searches(user) == []
+    end
   end
 end

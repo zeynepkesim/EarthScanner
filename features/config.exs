@@ -27,6 +27,15 @@ defmodule WhiteBreadConfig do
           "features/fr15_highlight_sold_out_trips.feature"
         ]
 
+   suite name:          "FRBDD",
+         context:       FRBDDContext,
+         feature_paths: [
+          "features/fr16_view_trip.feature",
+          "features/fr17_similar_trips.feature",
+          "features/fr18_recent_searches.feature",
+          "features/fr34_recommended_price.feature"
+        ]
+
   suite name:          "TripPurchase",
         context:       TripPurchaseContext,
         feature_paths: [
@@ -38,5 +47,6 @@ defmodule WhiteBreadConfig do
   suite name:          "TopTrips",
         context:       TopTripsContext,
         feature_paths: ["features/fr10_highlight_top_trips.feature"]
+
 
 end
