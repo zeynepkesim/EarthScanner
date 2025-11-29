@@ -7,8 +7,12 @@ defmodule EarthScannerWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_earth_scanner_key",
-    signing_salt: "bUGSMEeH",
-    same_site: "Lax"
+    # Prefer environment variables in production; fall back to dev-safe defaults.
+    signing_salt: System.get_env("SESSION_SIGNING_SALT") || "bUGSMEeH",
+    encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT") || "ENCRYPT1234",
+    same_site: "Lax",
+    # Only send cookies over HTTPS in prod
+    secure: Mix.env() == :prod
   ]
 
   socket "/live", Phoenix.LiveView.Socket,

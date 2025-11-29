@@ -11,6 +11,8 @@ defmodule EarthScannerWeb.SessionController do
     case Accounts.authenticate_user(email, password) do
       {:ok, user} ->
         conn
+        # rotate session id to prevent fixation
+        |> configure_session(renew: true)
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Welcome back")
         |> redirect(to: ~p"/")

@@ -1,0 +1,58 @@
+<h1 class="text-3xl font-bold text-blue-700 mb-6">My Trips</h1>
+
+<h2 class="text-xl font-semibold text-green-700 mt-4 mb-2">Future Trips</h2>
+
+<%= if @future_trips == [] do %>
+  <p>No future trips.</p>
+<% else %>
+  <ul class="list-disc ml-4">
+    <%= for t <- @future_trips do %>
+      <li class="mb-1">
+        <a
+          href={~p"/admin/trips/#{t.id}"}
+          class="text-blue-600 hover:underline"
+        >
+          {t.source_city} → {t.destination_city}
+        </a> <span class="text-gray-600">(Departs: {t.departure_time})</span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<h2 class="text-xl font-semibold text-red-700 mt-6 mb-2">Past Trips</h2>
+
+<%= if @past_trips == [] do %>
+  <p>No past trips.</p>
+<% else %>
+  <ul class="list-disc ml-4">
+    <%= for t <- @past_trips do %>
+      <li class="mb-1">
+        <a
+          href={~p"/admin/trips/#{t.id}"}
+          class="text-blue-600 hover:underline"
+        >
+          {t.source_city} → {t.destination_city}
+        </a> <span class="text-gray-600">(Departed: {t.departure_time})</span>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
+<h2 class="text-xl font-semibold text-purple-700 mt-6 mb-2">All Trips</h2>
+
+<%= if @all_trips == [] do %>
+  <p>No trips created yet.</p>
+<% else %>
+  <ul class="list-disc ml-4">
+    <%= for t <- @all_trips do %>
+      <li class="mb-1">
+        <a
+          href={~p"/admin/trips/#{t.id}"}
+          class="text-blue-600 hover:underline"
+        >
+          {t.source_city} → {t.destination_city}
+        </a>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
