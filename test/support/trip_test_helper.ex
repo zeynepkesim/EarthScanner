@@ -34,12 +34,6 @@ defmodule TripTestHelper do
   def create_trip(attrs \\ %{}) do
     base_time = DateTime.add(DateTime.utc_now(), 3600, :second)
 
-    # Use provided admin if given, otherwise create a fresh test admin.
-    admin =
-      Map.get(attrs, :admin) ||
-        Map.get(attrs, "admin") ||
-        admin_fixture()
-
     defaults = %{
       source_city: "Tartu",
       destination_city: "Tallinn",
@@ -50,7 +44,7 @@ defmodule TripTestHelper do
       price: 20,
       co2_level: 100,
       available_tickets: 50,
-      admin_id: admin.id
+      admin_id: 1
     }
 
     # Do not pass the :admin struct itself into the changeset.

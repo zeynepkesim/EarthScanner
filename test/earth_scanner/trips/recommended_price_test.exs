@@ -64,6 +64,13 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       {:ok, trip} = Trips.create_trip(admin, attrs)
       assert trip.recommended_price == Decimal.from_float(50 * 0.07)
     end
+
+    test "compute_recommended_price returns :no_matches when no similar trips exist" do
+      # use a unique transport mode unlikely to exist in fixtures
+      mode = "no_mode_#{System.unique_integer([:positive])}"
+
+      assert {:error, :no_matches} = Trips.compute_recommended_price(mode, 10)
+    end
   end
 
   defp insert_admin do

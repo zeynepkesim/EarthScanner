@@ -37,6 +37,12 @@ defmodule EarthScannerWeb.TripsControllerTest do
     assert body =~ "Available dates"
   end
 
+  test "FR-16: returns 404 for non-existent trip" do
+    assert_error_sent 404, fn ->
+      get(build_conn(), "/trips/999999")
+    end
+  end
+
   # FR-16: User can see which instances they have already purchased
   test "FR-12: marks purchased instances in the detail view", %{
     conn: conn,
