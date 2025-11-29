@@ -173,9 +173,90 @@ defmodule EarthScanner.Trips do
 
   """
   def update_trip(%Trip{} = trip, attrs) do
-    trip
-    |> Trip.changeset(attrs)
-    |> Repo.update()
+    changeset = Trip.changeset(trip, attrs)
+
+    # compute simple diff for changed fields: %{field => {old, new}}
+    watched = Map.keys(changeset.changes)
+
+    diff =
+      watched
+      |> Enum.reduce(%{}, fn key, acc ->
+        old = Map.get(trip, key)
+        new = Map.get(changeset.changes, key)
+        Map.put(acc, to_string(key), {old, new})
+      end)
+
+    case Repo.update(changeset) do
+      {:ok, trip} ->
+        # After successful update, notify purchasers synchronously (no worker)
+        notify_trip_change(trip, diff)
+        {:ok, trip, diff}
+
+      other ->
+        other
+    end
+  end
+
+  defp notify_trip_change(trip, diff) when diff == %{} do
+    :ok
+  end
+
+  defp notify_trip_change(trip, diff) do
+    # find unique purchasers for this trip
+    purchasers = list_purchasers_for_trip(trip.id)
+
+    Enum.each(purchasers, fn user ->
+      # create in-app notification (best-effort)
+      sanitized = sanitize_diff_for_storage(diff)
+      attrs = %{
+        "user_id" => user.id,
+        "kind" => "trip_change",
+        "payload" => %{"trip_id" => trip.id, "diff" => sanitized}
+      }
+
+      try do
+        EarthScanner.Notifications.create_notification(attrs)
+      rescue
+        _ -> :ok
+      end
+
+      # send email synchronously
+      try do
+        email = EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
+        EarthScanner.Mailer.deliver(email)
+      rescue
+        _ -> :ok
+      end
+    end)
+
+    :ok
+  end
+
+  defp sanitize_diff_for_storage(diff) when is_map(diff) do
+    diff
+    |> Enum.map(fn {k, {old, new}} ->
+      {k, %{"old" => old, "new" => new}}
+    end)
+    |> Enum.into(%{})
+  end
+  defp sanitize_diff_for_storage(_), do: %{}
+
+  @doc """
+  Lists unique purchasers (users) for a given trip id.
+  Returns a list of `EarthScanner.Accounts.User` structs.
+  """
+  def list_purchasers_for_trip(trip_id) do
+    query =
+      from u in User,
+        join: p in Purchase,
+        on: p.user_id == u.id,
+        join: i in TripInstance,
+        on: p.trip_instance_id == i.id,
+        where: i.trip_id == ^trip_id,
+        distinct: u.id,
+        select: u
+
+    Repo.all(query)
   end
 
   @doc """

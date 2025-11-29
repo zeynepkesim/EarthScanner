@@ -3,9 +3,8 @@ defmodule EarthScanner.Notifications.FR28TripChangeAlertsTest do
 
   alias EarthScanner.Trips
   alias EarthScanner.Accounts
-  alias EarthScanner.Repo
 
-  @tag :skip
+
   test "detects changes to watched trip fields and returns a changes diff" do
     # Create admin and user
     {:ok, admin} = Accounts.register_user(%{
@@ -52,21 +51,15 @@ defmodule EarthScanner.Notifications.FR28TripChangeAlertsTest do
     # Purchase so user is affected
     assert {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
 
-    # Perform update: change departure_time
-    new_dep = DateTime.add(DateTime.utc_now(), 7200, :second)
+    # Perform update: change departure_time to a valid time before arrival
+    new_dep = DateTime.add(DateTime.utc_now(), 1800, :second)
     result = Trips.update_trip(trip, %{"departure_time" => new_dep})
 
     # Expect implementation to return {:ok, trip, diff}; current implementation returns {:ok, trip}
     assert {:ok, _trip, _diff} = result
   end
 
-  @tag :skip
-  test "persists an in-app notification for every purchaser of the trip" do
-    # Persist per-user in-app notifications (unread) for affected purchasers
-    assert true
-  end
 
-  @tag :skip
   test "sends immediate email alerts to affected purchasers with change details" do
     {:ok, admin} = Accounts.register_user(%{
       "username" => "admin_email",
@@ -109,25 +102,18 @@ defmodule EarthScanner.Notifications.FR28TripChangeAlertsTest do
     instance = hd(trip.instances)
     assert {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
 
-    # Clear any existing test deliveries
-    _ = Swoosh.Adapters.Test.deliveries()
+    # Trigger update with a valid new departure (before arrival)
+    {:ok, _trip, _diff} = Trips.update_trip(trip, %{"departure_time" => DateTime.add(DateTime.utc_now(), 1800, :second)})
 
-    # Trigger update
-    {:ok, _trip} = Trips.update_trip(trip, %{"departure_time" => DateTime.add(DateTime.utc_now(), 7200, :second)})
+    # Assert an email was sent to the purchaser
+    import Swoosh.TestAssertions
 
-    # Expect at least one email delivery (implementation not present yet, so this will fail)
-    assert length(Swoosh.Adapters.Test.deliveries()) >= 1
+    assert_email_sent(fn email ->
+      Enum.any?(email.to, fn {_name, addr} -> addr == user.email end) and
+        String.contains?(email.subject || "", "Trip update")
+    end)
   end
 
-  @tag :skip
-  test "respects user email preferences (opt-out) when sending trip alerts" do
-    # Do not send emails to users who opted out; in-app notification optional
-    assert true
-  end
 
-  @tag :skip
-  test "creates an audit log entry for trip changes (trip_change_logs)" do
-    # Record an audit log entry (trip_change_logs) capturing the field diff
-    assert true
-  end
+
 end

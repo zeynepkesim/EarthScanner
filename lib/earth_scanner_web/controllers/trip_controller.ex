@@ -62,6 +62,13 @@ defmodule EarthScannerWeb.TripController do
         |> put_flash(:info, "Trip updated successfully.")
         |> redirect(to: ~p"/admin/trips")
 
+      {:ok, _trip, _diff} ->
+        # The Trips context may return a diff of changes as a 3-tuple.
+        # Preserve existing behavior while accepting the new return shape.
+        conn
+        |> put_flash(:info, "Trip updated successfully.")
+        |> redirect(to: ~p"/admin/trips")
+
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, :edit, form: to_form(changeset), trip: trip)
     end

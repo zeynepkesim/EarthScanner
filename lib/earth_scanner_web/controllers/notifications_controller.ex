@@ -7,7 +7,13 @@ defmodule EarthScannerWeb.NotificationsController do
     case conn.assigns[:current_user] do
       %{} = user ->
         reminders = compute_due_reminders_for_user(user.id)
-        render(conn, "index.html", reminders: reminders, current_scope: "user")
+        notifications = EarthScanner.Notifications.list_for_user(user.id)
+
+        render(conn, "index.html",
+          reminders: reminders,
+          notifications: notifications,
+          current_scope: "user"
+        )
 
       _ ->
         conn
