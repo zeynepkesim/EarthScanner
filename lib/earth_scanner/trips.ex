@@ -820,6 +820,49 @@ defmodule EarthScanner.Trips do
     )
   end
 
+  @doc """
+  Returns a trip visible to the given user.
+
+  - If `user` is `nil` (anonymous), returns the public trip (future instances only) or `{:error, :not_found}`.
+  - If `user.role == "admin"`, delegates to `get_trip_for_admin/2` (which checks ownership).
+  - If `user.role == "user"`, returns the public trip (future instances only).
+
+  This centralizes authorization so controllers won't accidentally leak admin-only data.
+  """
+  def get_trip_for_user(nil, _id), do: {:error, :unauthorized}
+
+  def get_trip_for_user(%User{role: "admin", id: admin_id}, id) do
+    # FR-24: Admins can ONLY view trips they created
+    case Repo.get(Trip, id) do
+      nil ->
+        {:error, :not_found}
+
+      %Trip{admin_id: ^admin_id} = trip ->
+        # Admin owns this trip
+        trip =
+          Repo.preload(trip, [:admin, instances: from(i in TripInstance, order_by: [asc: i.date])])
+
+        {:ok, trip}
+
+      %Trip{} ->
+        # Admin doesn't own this trip
+        {:error, :unauthorized}
+    end
+  end
+
+  def get_trip_for_user(%User{role: "user"}, id) do
+    # FR-24: Regular users can view ANY trip (for booking purposes)
+    # They see public information only (future instances)
+    case Repo.get(Trip, id) do
+      nil ->
+        {:error, :not_found}
+
+      %Trip{} = trip ->
+        trip = preload_future_instances(trip)
+        {:ok, trip}
+    end
+  end
+
   # ---------------------- Recommendations (similar trips) -----------------------
 
   @doc """
@@ -864,9 +907,6 @@ defmodule EarthScanner.Trips do
     preload_future_instances(results)
   end
 
-  @doc """
-  Simple version: find similar trips given a trip id.
-  """
   def find_similar_trips(trip_id) do
     case get_trip(trip_id) do
       nil -> []

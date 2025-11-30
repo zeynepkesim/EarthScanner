@@ -4,6 +4,10 @@ defmodule EarthScannerWeb.TripSearchController do
   alias EarthScanner.Trips
   alias EarthScanner.Searches
 
+  # FR-20: Require authentication for all search actions
+  plug :require_authenticated_user
+  plug :block_admin_access
+
   # STEP 2A — render empty search form
   def new(conn, _params) do
     current_user = conn.assigns[:current_user]
@@ -14,6 +18,10 @@ defmodule EarthScannerWeb.TripSearchController do
 
   # STEP 2B — basic validation for source & destination
   def index(conn, %{"source" => source, "destination" => destination} = params) do
+    source = String.trim(source || "")
+    destination = String.trim(destination || "")
+    params = Map.put(params, "source", source) |> Map.put("destination", destination)
+
     cond do
       source in [nil, ""] or destination in [nil, ""] ->
         conn
@@ -21,7 +29,6 @@ defmodule EarthScannerWeb.TripSearchController do
         |> redirect(to: ~p"/search")
 
       true ->
-        # Record the search if user is logged in
         current_user = conn.assigns[:current_user]
 
         if current_user do
@@ -91,6 +98,7 @@ defmodule EarthScannerWeb.TripSearchController do
           recent_searches: recent_searches,
           sold_out_trip_ids: sold_out_trip_ids,
           top_trips: top_trips,
+          current_user: current_user,
           return_path: current_path(conn, conn.params)
         )
     end
@@ -101,5 +109,33 @@ defmodule EarthScannerWeb.TripSearchController do
     conn
     |> put_flash(:error, "Source and destination are required")
     |> redirect(to: ~p"/search")
+  end
+
+  # FR-20: Only authenticated regular users can search
+  defp require_authenticated_user(conn, _opts) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+        |> put_flash(:error, "You must be logged in to search trips")
+        |> redirect(to: ~p"/users/login")
+        |> halt()
+
+      _ ->
+        conn
+    end
+  end
+
+  # FR-20: Block admin from accessing search
+  defp block_admin_access(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %{role: "admin"} ->
+        conn
+        |> put_flash(:error, "Admins cannot search trips")
+        |> redirect(to: ~p"/")
+        |> halt()
+
+      _ ->
+        conn
+    end
   end
 end
