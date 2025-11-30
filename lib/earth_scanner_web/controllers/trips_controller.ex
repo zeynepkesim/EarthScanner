@@ -2,14 +2,35 @@ defmodule EarthScannerWeb.TripsController do
   use EarthScannerWeb, :controller
 
   alias EarthScanner.Trips
+  alias EarthScanner.Trips.Trip
+  alias EarthScanner.Trips.TripInstance
+  alias EarthScanner.Repo
+  import Ecto.Query
 
-  # Require authentication for all actions
   plug :require_authenticated_user
 
   def index(conn, _params) do
-    # Show public trips listing
-    # Implementation depends on your existing code
-    render(conn, :index)
+    current_user = conn.assigns.current_user
+
+    # Get all future trips
+    today = Date.utc_today()
+
+    trips =
+      from(t in Trip,
+        join: i in TripInstance,
+        on: i.trip_id == t.id and i.date >= ^today,
+        distinct: true,
+        order_by: [asc: t.departure_time]
+      )
+      |> Repo.all()
+      |> Trips.preload_future_instances()
+
+    purchase_summary = Trips.purchase_summary_for_user(current_user)
+
+    render(conn, :index,
+      trips: trips,
+      purchase_summary: purchase_summary
+    )
   end
 
   def show(conn, %{"id" => id}) do
@@ -17,7 +38,6 @@ defmodule EarthScannerWeb.TripsController do
 
     case Trips.get_trip_for_user(current_user, id) do
       {:ok, trip} ->
-        # User is authorized to view this trip
         trip = Trips.preload_future_instances(trip)
         purchase_summary = Trips.purchase_summary_for_user(current_user)
         similar_trips = Trips.find_similar_trips(trip)
