@@ -1,10 +1,10 @@
 defmodule EarthScanner.LoyaltyPointsTest do
   use EarthScanner.DataCase
 
-  alias EarthScanner.Trips
-  alias EarthScanner.Accounts
-  alias EarthScanner.Accounts.User
-  alias EarthScanner.Repo
+  alias EarthScanner.{Accounts, Trips, Repo}
+  alias EarthScanner.Accounts.{User, PointLog}
+  alias EarthScanner.Trips.TripInstance
+  alias EarthScanner.Purchases.Purchase
 
   defp admin_fixture(attrs \\ %{}) do
     TripTestHelper.admin_fixture(attrs)
@@ -12,6 +12,7 @@ defmodule EarthScanner.LoyaltyPointsTest do
 
   defp create_regular_user(attrs \\ %{}) do
     unique = System.unique_integer([:positive])
+
     default_attrs = %{
       "username" => "user_#{unique}",
       "password" => "Password123!",
@@ -24,12 +25,14 @@ defmodule EarthScanner.LoyaltyPointsTest do
       "residence_address" => "123 Main St",
       "phone_number" => "+1234567890"
     }
+
     {:ok, user} = Accounts.register_user(Map.merge(default_attrs, attrs))
     user
   end
 
   defp valid_trip_attrs do
     future_date = Date.utc_today() |> Date.add(10) |> Date.to_iso8601()
+
     %{
       "picture_url" => "https://example.com/pic.jpg",
       "transport_mode" => "plane",
@@ -49,7 +52,8 @@ defmodule EarthScanner.LoyaltyPointsTest do
 
     test "FR-25: User earns points on standard purchase" do
       admin = admin_fixture()
-      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs()) # Price 100.0
+      # Price 100.0
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
       instance = hd(trip.instances)
       user = create_regular_user()
 
@@ -61,17 +65,27 @@ defmodule EarthScanner.LoyaltyPointsTest do
 
       updated_user = Repo.get!(User, user.id)
       assert updated_user.loyalty_points == 100
+
+      # NFR-09: Points Security & Integrity
+      # Check audit log
+      log = Repo.one!(PointLog)
+      assert log.user_id == user.id
+      assert log.change_amount == 100
+      assert log.reason == "trip_purchase"
+      assert log.balance_after == 100
     end
 
     test "FR-26: User redeems points for partial discount" do
       admin = admin_fixture()
-      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs()) # Price 100.0
+      # Price 100.0
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
       instance = hd(trip.instances)
 
       # User has 500 points (worth 50.0 EUR discount)
       user = create_regular_user() |> set_points(500)
 
-      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
+      assert {:ok, purchase} =
+               Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
 
       # Discount: 50.0. Final Price: 50.0.
       # Points Redeemed: 500.
@@ -83,17 +97,28 @@ defmodule EarthScanner.LoyaltyPointsTest do
       updated_user = Repo.get!(User, user.id)
       # 500 (start) - 500 (redeemed) + 50 (earned) = 50
       assert updated_user.loyalty_points == 50
+
+      # NFR-09: Points Security & Integrity
+      # Check audit log
+      # Single log with net change: 50 (earned) - 500 (redeemed) = -450
+      log = Repo.one!(PointLog)
+      assert log.user_id == user.id
+      assert log.change_amount == -450
+      assert log.reason == "trip_purchase"
+      assert log.balance_after == 50
     end
 
     test "FR-26: User redeems points for full discount" do
       admin = admin_fixture()
-      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs()) # Price 100.0
+      # Price 100.0
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
       instance = hd(trip.instances)
 
       # User has 2000 points (worth 200.0 EUR, more than price)
       user = create_regular_user() |> set_points(2000)
 
-      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
+      assert {:ok, purchase} =
+               Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
 
       # Discount: 100.0 (capped at price). Final Price: 0.0.
       # Points Redeemed: 1000 (100.0 * 10).
@@ -105,6 +130,77 @@ defmodule EarthScanner.LoyaltyPointsTest do
       updated_user = Repo.get!(User, user.id)
       # 2000 (start) - 1000 (redeemed) + 0 (earned) = 1000
       assert updated_user.loyalty_points == 1000
+
+      # NFR-09: Points Security & Integrity
+      # Check audit log
+      log = Repo.one!(PointLog)
+      assert log.user_id == user.id
+      assert log.change_amount == -1000
+      assert log.reason == "trip_purchase"
+      assert log.balance_after == 1000
+    end
+
+    # --- NFR-09: Points Security & Integrity Tests ---
+
+    # Positive Scenario: Point updates are atomic and audited
+    test "NFR-09: Point updates are atomic and audited" do
+      admin = admin_fixture()
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
+      instance = hd(trip.instances)
+      user = create_regular_user()
+
+      assert {:ok, _purchase} = Trips.purchase_trip_instance(user, instance.id)
+
+      # Verify Log
+      log = Repo.one!(PointLog)
+      assert log.user_id == user.id
+      assert log.change_amount == 100
+      assert log.reason == "trip_purchase"
+    end
+
+    # Negative Scenario: Transaction rollback prevents partial updates
+    test "NFR-09: Transaction rollback prevents partial updates" do
+      admin = admin_fixture()
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
+      instance = hd(trip.instances)
+      user = create_regular_user()
+
+      # Simulate a failure by trying to purchase a sold-out trip (which fails validation)
+      # First, make it sold out
+      Ecto.Changeset.change(instance, available_tickets: 0) |> Repo.update!()
+
+      assert {:error, :sold_out} = Trips.purchase_trip_instance(user, instance.id)
+
+      # Verify NO points changed
+      updated_user = Repo.get!(User, user.id)
+      assert updated_user.loyalty_points == 0
+
+      # Verify NO audit log created
+      assert Repo.aggregate(PointLog, :count, :id) == 0
+    end
+
+    # Edge Case: Zero point change is still logged
+    test "NFR-09: Zero point change is logged for audit trail" do
+      admin = admin_fixture()
+      user = create_regular_user()
+
+      # If price is 0.1 (very cheap), earned is 0, redeemed is 0.
+      free_trip_attrs = Map.merge(valid_trip_attrs(), %{"price" => 0.1})
+      {:ok, free_trip} = Trips.create_trip(admin, free_trip_attrs)
+      free_instance = hd(free_trip.instances)
+
+      assert {:ok, _purchase} = Trips.purchase_trip_instance(user, free_instance.id)
+
+      log =
+        Repo.one!(
+          from l in PointLog,
+            where: l.user_id == ^user.id,
+            order_by: [desc: l.inserted_at],
+            limit: 1
+        )
+
+      assert log.change_amount == 0
+      assert log.reason == "trip_purchase"
     end
 
     # --- Negative Scenarios ---
@@ -151,14 +247,18 @@ defmodule EarthScanner.LoyaltyPointsTest do
 
     test "FR-26: User with 0 points cannot get discount even if requested" do
       admin = admin_fixture()
-      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs()) # Price 100.0
+      # Price 100.0
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
       instance = hd(trip.instances)
-      user = create_regular_user() # 0 points
+      # 0 points
+      user = create_regular_user()
 
-      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
+      assert {:ok, purchase} =
+               Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
 
       assert purchase.points_redeemed == 0
-      assert purchase.points_earned == 100 # Full price paid
+      # Full price paid
+      assert purchase.points_earned == 100
 
       updated_user = Repo.get!(User, user.id)
       assert updated_user.loyalty_points == 100
@@ -189,13 +289,15 @@ defmodule EarthScanner.LoyaltyPointsTest do
 
     test "FR-26: User has exactly enough points for max discount" do
       admin = admin_fixture()
-      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs()) # Price 100.0
+      # Price 100.0
+      {:ok, trip} = Trips.create_trip(admin, valid_trip_attrs())
       instance = hd(trip.instances)
 
       # Exact points needed: 1000
       user = create_regular_user() |> set_points(1000)
 
-      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
+      assert {:ok, purchase} =
+               Trips.purchase_trip_instance(user, instance.id, redeem_points: true)
 
       assert purchase.points_redeemed == 1000
       assert purchase.points_earned == 0
@@ -212,13 +314,15 @@ defmodule EarthScanner.LoyaltyPointsTest do
       user = create_regular_user() |> set_points(500)
 
       # redeem_points: false (default)
-      assert {:ok, purchase} = Trips.purchase_trip_instance(user, instance.id, redeem_points: false)
+      assert {:ok, purchase} =
+               Trips.purchase_trip_instance(user, instance.id, redeem_points: false)
 
       assert purchase.points_redeemed == 0
       assert purchase.points_earned == 100
 
       updated_user = Repo.get!(User, user.id)
-      assert updated_user.loyalty_points == 600 # 500 + 100
+      # 500 + 100
+      assert updated_user.loyalty_points == 600
     end
   end
 
