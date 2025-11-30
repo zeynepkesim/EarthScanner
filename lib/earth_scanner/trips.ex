@@ -821,12 +821,15 @@ defmodule EarthScanner.Trips do
     else
       source = "%#{src}%"
       destination = "%#{dst}%"
+      today = Date.utc_today()
 
+      # Base query: search trips with future instances
       base_q =
         from t in Trip,
           where:
-            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
-              t.departure_time > ^DateTime.utc_now(),
+            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
+          join: i in TripInstance,
+          on: i.trip_id == t.id and i.date >= ^today,
           distinct: true
 
       # apply numeric filters
