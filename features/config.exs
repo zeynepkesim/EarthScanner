@@ -59,4 +59,8 @@ defmodule WhiteBreadConfig do
         context:       LoyaltyPointsContext,
         feature_paths: ["features/nfr09_points_security.feature"]
 
+  suite name:          "Accessibility",
+        context:       AccessibilityContext,
+        feature_paths: ["features/nfr03_accessibility.feature"]
+
 end
