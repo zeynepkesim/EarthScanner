@@ -7,7 +7,9 @@ defmodule EarthScanner.AccessibilityTest do
   describe "NFR-03: Accessibility Attributes" do
     # NFR-03: Positive Scenario - ARIA labels exist
     test "sort select has proper ARIA labels" do
+      user = user_fixture()
       conn = build_conn()
+      conn = log_in_user(conn, user)
       conn = get(conn, "/search/results?source=Tallinn&destination=Tartu")
 
       html = html_response(conn, 200)
@@ -20,7 +22,9 @@ defmodule EarthScanner.AccessibilityTest do
 
     # NFR-03: Positive Scenario - Filter badges have ARIA labels
     test "filter removal links have ARIA labels" do
+      user = user_fixture()
       conn = build_conn()
+      conn = log_in_user(conn, user)
       conn = get(conn, "/search/results?source=Tallinn&destination=Tartu&max_price=100")
 
       html = html_response(conn, 200)
@@ -49,7 +53,9 @@ defmodule EarthScanner.AccessibilityTest do
           "dates" => future_date
         })
 
+      user = user_fixture()
       conn = build_conn()
+      conn = log_in_user(conn, user)
       conn = get(conn, "/search/results?source=Tallinn&destination=Tartu")
 
       html = html_response(conn, 200)
@@ -60,7 +66,9 @@ defmodule EarthScanner.AccessibilityTest do
 
     # NFR-03: Negative Scenario - Missing ARIA labels would fail
     test "page structure includes accessibility regions" do
+      user = user_fixture()
       conn = build_conn()
+      conn = log_in_user(conn, user)
       conn = get(conn, "/search/results?source=Tallinn&destination=Tartu&max_price=100")
 
       html = html_response(conn, 200)
@@ -72,7 +80,9 @@ defmodule EarthScanner.AccessibilityTest do
 
     # NFR-03: Edge Case - Screen reader text exists
     test "screen reader only text is present for descriptions" do
+      user = user_fixture()
       conn = build_conn()
+      conn = log_in_user(conn, user)
       conn = get(conn, "/search/results?source=Tallinn&destination=Tartu")
 
       html = html_response(conn, 200)
@@ -81,5 +91,33 @@ defmodule EarthScanner.AccessibilityTest do
       assert html =~ ~r/class="sr-only"/
       assert html =~ "Choose how to sort the trip results"
     end
+  end
+
+  # Helper functions
+  defp user_fixture(attrs \\ %{}) do
+    unique = System.unique_integer([:positive])
+
+    default_attrs = %{
+      "username" => "user_#{unique}",
+      "password" => "Password123!",
+      "password_confirmation" => "Password123!",
+      "name" => "Test",
+      "last_name" => "User",
+      "email" => "user_#{unique}@example.com",
+      "birthdate" => "1990-01-01",
+      "nationality" => "US",
+      "residence_address" => "123 Test St",
+      "phone_number" => "+1234567890"
+    }
+
+    {:ok, user} = EarthScanner.Accounts.register_user(Map.merge(default_attrs, attrs))
+    user
+  end
+
+  defp log_in_user(conn, user) do
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_id, user.id)
+    |> EarthScannerWeb.FetchCurrentUser.call([])
   end
 end
