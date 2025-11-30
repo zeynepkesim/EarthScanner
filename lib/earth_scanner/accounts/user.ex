@@ -48,6 +48,8 @@ defmodule EarthScanner.Accounts.User do
   # Hash the password when needed.
   # - If the changeset is valid and has a new :password, set :password_hash.
   # - Otherwise, do nothing.
+  # nfr-04
+  # nfr-04: passwords are hashed using PBKDF2 before persisting
   defp maybe_put_password_hash(%Ecto.Changeset{valid?: true} = changeset) do
     if password = get_change(changeset, :password) do
       put_change(changeset, :password_hash, Pbkdf2.hash_pwd_salt(password))

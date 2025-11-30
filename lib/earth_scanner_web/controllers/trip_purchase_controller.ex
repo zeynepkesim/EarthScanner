@@ -2,10 +2,13 @@ defmodule EarthScannerWeb.TripPurchaseController do
   use EarthScannerWeb, :controller
 
   alias EarthScanner.Trips
+  require Logger
 
   def create(conn, %{"trip_id" => trip_id} = params) do
     redirect_to = Map.get(params, "redirect_to", ~p"/trips/#{trip_id}")
 
+    # nfr-08
+    # nfr-08: only authenticated users may perform purchase actions
     with %{} = user <- conn.assigns[:current_user],
          {:ok, instance_id} <- parse_instance_id(params["trip_instance_id"]),
          {:ok, _purchase} <- Trips.purchase_trip_instance(user, instance_id) do
@@ -14,6 +17,10 @@ defmodule EarthScannerWeb.TripPurchaseController do
       |> redirect(to: redirect_to)
     else
       nil ->
+        Logger.warning(
+          "Unauthorized purchase attempt for trip #{trip_id} from #{inspect(conn.remote_ip)}"
+        )
+
         conn
         |> put_flash(:error, "Please log in to purchase trips.")
         |> redirect(to: ~p"/users/login")
@@ -53,6 +60,8 @@ defmodule EarthScannerWeb.TripPurchaseController do
   def delete(conn, %{"trip_id" => trip_id} = params) do
     redirect_to = Map.get(params, "redirect_to", ~p"/trips/#{trip_id}")
 
+    # nfr-08
+    # nfr-08: only authenticated users may perform refund actions
     with %{} = user <- conn.assigns[:current_user],
          {:ok, instance_id} <- parse_instance_id(params["trip_instance_id"]),
          {:ok, _} <- Trips.return_trip_instance_purchase(user, instance_id) do
@@ -61,6 +70,10 @@ defmodule EarthScannerWeb.TripPurchaseController do
       |> redirect(to: redirect_to)
     else
       nil ->
+        Logger.warning(
+          "Unauthorized refund attempt for trip #{trip_id} from #{inspect(conn.remote_ip)}"
+        )
+
         conn
         |> put_flash(:error, "Please log in to manage purchases.")
         |> redirect(to: ~p"/users/login")

@@ -36,6 +36,7 @@
     <header class="w-full border-b border-base-200 sticky top-0 z-20 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <a href={~p"/"} class="font-semibold">EarthScanner</a>
+        <%!-- FR-19: Account access links visible to all users, adapting to logged-in/logged-out state --%>
         <div class="flex items-center gap-3">
           <%= if assigns[:current_user] do %>
             <span class="text-sm opacity-80">

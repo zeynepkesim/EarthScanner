@@ -1,4 +1,5 @@
 Feature: User Registration
+  # nfr-04: BDD - registration scenarios exercise password hashing/verification flows
   As a visitor
   I want to register for an account
   So that I can sign in and use EarthScanner

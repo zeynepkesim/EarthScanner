@@ -1,4 +1,5 @@
 # FR-12
+# nfr-08: TDD - verifies authenticated search behavior (positive/negative)
 defmodule EarthScannerWeb.TripSearchControllerTest do
   use EarthScannerWeb.ConnCase
 
@@ -96,8 +97,9 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
         ~p"/search/results?source=#{trip.source_city}&destination=#{trip.destination_city}"
       )
 
-    guest_html = html_response(guest_conn, 200)
-    refute guest_html =~ ~s(data-role="purchased-badge")
+    # Guests are no longer allowed to perform searches (nfr-08)
+    assert redirected_to(guest_conn) == ~p"/"
+    assert get_flash(guest_conn, :error) =~ "Please log in"
   end
 
   defp create_admin(attrs \\ %{}) do

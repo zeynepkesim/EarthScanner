@@ -19,6 +19,9 @@ defmodule EarthScannerWeb.Admin.TripDetailController do
   end
 
   # FR-35: Show trip details
+  # fr-23: admin trip detail view — only the creating admin may view a trip
+  # Authorization is delegated to `Trips.get_trip_for_admin/2` which returns
+  # `{:error, :unauthorized}` for non-creators.
   def show(conn, %{"id" => id}) do
     admin = conn.assigns.current_user
 

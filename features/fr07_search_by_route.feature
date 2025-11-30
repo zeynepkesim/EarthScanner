@@ -1,4 +1,5 @@
 Feature: FR-07 Search by Route
+  # nfr-08: BDD - ensures search requires authentication and validates search behaviors
   As an authenticated user
   I want to search for trips by selecting source and destination cities
   So that I can find available future trips.

@@ -36,6 +36,14 @@ defmodule WhiteBreadConfig do
           "features/fr34_recommended_price.feature"
         ]
 
+  suite name:          "FR19AccountAccess",
+        context:       FR19Context,
+        feature_paths: ["features/fr19_account_access_links.feature"]
+
+  suite name:          "FR23AdminTripDetail",
+        context:       FR23Context,
+        feature_paths: ["features/fr23_admin_trip_detail.feature"]
+
   suite name:          "TripPurchase",
         context:       TripPurchaseContext,
         feature_paths: [
