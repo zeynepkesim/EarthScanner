@@ -1,4 +1,5 @@
 defmodule EarthScannerWeb.SessionControllerTest do
+  # nfr-04: TDD - login tests rely on hashed passwords created during registration
   use EarthScannerWeb.ConnCase, async: true
 
   alias EarthScanner.Accounts

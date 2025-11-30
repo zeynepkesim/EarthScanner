@@ -1,4 +1,5 @@
 # FR-12, FR-13
+# nfr-08: TDD - verifies authenticated purchase/refund behavior (positive/negative)
 defmodule EarthScannerWeb.TripPurchaseControllerTest do
   use EarthScannerWeb.ConnCase
 

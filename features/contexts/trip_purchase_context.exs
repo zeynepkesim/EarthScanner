@@ -2,6 +2,8 @@ defmodule TripPurchaseContext do
   use WhiteBread.Context
   use Hound.Helpers
 
+  # nfr-08: This BDD context backs purchase/refund features and is tied to NFR-08 (auth required)
+
   alias Ecto.Changeset
   alias EarthScanner.{Accounts, Trips, Repo}
   alias Hound.Helpers.Cookie

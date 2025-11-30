@@ -1,4 +1,5 @@
 Feature: FR-13 Refund Trip Ticket
+  # nfr-08: BDD - ensures authentication is required for refund flows (positive and negative scenarios)
   As a traveler
   I want to refund a previously purchased ticket
   So that I can free my seat when I no longer need it.
