@@ -12,7 +12,11 @@ defmodule EarthScannerWeb.NotificationsControllerTest do
     {:ok, conn: conn, admin: admin, user: user}
   end
 
-  test "shows reminder when user has a purchase within 24h", %{conn: conn, admin: admin, user: user} do
+  test "shows reminder when user has a purchase within 24h", %{
+    conn: conn,
+    admin: admin,
+    user: user
+  } do
     # Create a trip with departure 2 hours from now and an instance today
     departure_dt = DateTime.add(DateTime.utc_now(), 2 * 3600, :second)
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)

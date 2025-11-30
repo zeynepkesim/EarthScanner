@@ -56,7 +56,8 @@ defmodule EarthScannerWeb.FetchCurrentUser do
           {:error, _} = err -> err
         end
 
-      {:error, _} = err -> err
+      {:error, _} = err ->
+        err
     end
   end
 

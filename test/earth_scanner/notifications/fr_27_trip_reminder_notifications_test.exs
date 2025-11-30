@@ -11,7 +11,11 @@ defmodule EarthScannerWeb.Notifications.Fr27TripReminderNotificationsTestClean d
     {:ok, conn: conn, admin: admin, user: user}
   end
 
-  test "FR-27: shows reminder when user has a purchase within 24h", %{conn: conn, admin: admin, user: user} do
+  test "FR-27: shows reminder when user has a purchase within 24h", %{
+    conn: conn,
+    admin: admin,
+    user: user
+  } do
     departure_dt = DateTime.add(DateTime.utc_now(), 2 * 3600, :second)
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
 
@@ -41,7 +45,11 @@ defmodule EarthScannerWeb.Notifications.Fr27TripReminderNotificationsTestClean d
     assert body =~ "Paris"
   end
 
-  test "FR-27: shows empty state when no due notifications", %{conn: conn, admin: admin, user: user} do
+  test "FR-27: shows empty state when no due notifications", %{
+    conn: conn,
+    admin: admin,
+    user: user
+  } do
     departure_dt = DateTime.add(DateTime.utc_now(), 10 * 24 * 3600, :second)
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
 

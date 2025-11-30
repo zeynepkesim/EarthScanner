@@ -20,7 +20,10 @@ defmodule EarthScanner.Notifications do
   Returns the count of unread notifications for the given user.
   """
   def unread_count_for_user(user_id) do
-    from(n in Notification, where: n.user_id == ^user_id and is_nil(n.read_at), select: count(n.id))
+    from(n in Notification,
+      where: n.user_id == ^user_id and is_nil(n.read_at),
+      select: count(n.id)
+    )
     |> Repo.one()
   end
 end

@@ -2,36 +2,45 @@
   <div class="mx-auto max-w-4xl">
     <h1 class="text-2xl font-semibold mb-4">Notifications</h1>
 
-    <div :if={@reminders == []} class="text-sm text-slate-500">No notifications at this time.</div>
+    <div :if={@reminders == []} class="text-sm text-slate-500">
+      No notifications at this time.
+    </div>
+
     <div :if={@notifications != []} class="mb-6">
       <h2 class="text-lg font-semibold">In-app Notifications</h2>
+
       <ul class="space-y-3 mt-3">
         <li :for={n <- @notifications} class="p-3 border rounded">
           <div class="flex items-center justify-between">
-            <div class="font-semibold"><%= n.kind %></div>
-            <div class="text-sm text-slate-500"><%= n.inserted_at %></div>
+            <div class="font-semibold">{n.kind}</div>
+
+            <div class="text-sm text-slate-500">{n.inserted_at}</div>
           </div>
 
           <div class="text-sm text-slate-600 mt-2">
             <%= case n.kind do %>
               <% "trip_change" -> %>
-                <% payload = n.payload || %{} %>
-                <% trip_id = payload["trip_id"] %>
-                <div>Trip updated: ID <%= trip_id %></div>
+                <% payload = n.payload || %{} %> <% trip_id = payload["trip_id"] %>
+                <div>Trip updated: ID {trip_id}</div>
+
                 <div class="mt-2 text-xs text-slate-700">
                   <%= for {field, change} <- Map.to_list(payload["diff"] || %{}) do %>
                     <%= case change do %>
                       <% {old, new} when is_tuple(change) -> %>
-                        <div><strong><%= field %></strong>: <%= inspect(elem(change,0)) %> → <%= inspect(elem(change,1)) %></div>
+                        <div>
+                          <strong><%= field %></strong>: {inspect(elem(change, 0))} → {inspect(
+                            elem(change, 1)
+                          )}
+                        </div>
                       <% %{"old" => old, "new" => new} -> %>
-                        <div><strong><%= field %></strong>: <%= inspect(old) %> → <%= inspect(new) %></div>
+                        <div><strong><%= field %></strong>: {inspect(old)} → {inspect(new)}</div>
                       <% _ -> %>
-                        <div><strong><%= field %></strong>: <%= inspect(change) %></div>
+                        <div><strong><%= field %></strong>: {inspect(change)}</div>
                     <% end %>
                   <% end %>
                 </div>
               <% _ -> %>
-                <div>Notification: <%= inspect(n.payload) %></div>
+                <div>Notification: {inspect(n.payload)}</div>
             <% end %>
           </div>
         </li>
@@ -40,12 +49,18 @@
 
     <div :if={@reminders != []}>
       <h2 class="text-lg font-semibold">Reminders</h2>
+
       <ul class="space-y-3 mt-3">
         <li :for={r <- @reminders} class="p-3 border rounded">
-          <div class="font-semibold"><%= r.trip.source_city %> → <%= r.trip.destination_city %></div>
-          <div class="text-sm text-slate-600">Instance date: <%= r.instance.date %></div>
-          <div class="text-sm text-slate-600">Departure: <%= r.departure %></div>
-          <div class="mt-2 text-sm text-gray-700">You purchased this trip. Reminder: departs within 24 hours.</div>
+          <div class="font-semibold">{r.trip.source_city} → {r.trip.destination_city}</div>
+
+          <div class="text-sm text-slate-600">Instance date: {r.instance.date}</div>
+
+          <div class="text-sm text-slate-600">Departure: {r.departure}</div>
+
+          <div class="mt-2 text-sm text-gray-700">
+            You purchased this trip. Reminder: departs within 24 hours.
+          </div>
         </li>
       </ul>
     </div>

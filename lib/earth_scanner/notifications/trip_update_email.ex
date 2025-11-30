@@ -6,7 +6,9 @@ defmodule EarthScanner.Notifications.TripUpdateEmail do
 
     body_text =
       "Trip #{trip.id} has been updated.\n\nChanges:\n" <>
-        (diff |> Enum.map(fn {k, {old, new}} -> "- #{k}: #{inspect(old)} -> #{inspect(new)}\n" end) |> Enum.join(""))
+        (diff
+         |> Enum.map(fn {k, {old, new}} -> "- #{k}: #{inspect(old)} -> #{inspect(new)}\n" end)
+         |> Enum.join(""))
 
     new()
     |> to({user.name || user.username || "", user.email})

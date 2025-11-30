@@ -208,6 +208,7 @@ defmodule EarthScanner.Trips do
     Enum.each(purchasers, fn user ->
       # create in-app notification (best-effort)
       sanitized = sanitize_diff_for_storage(diff)
+
       attrs = %{
         "user_id" => user.id,
         "kind" => "trip_change",
@@ -239,6 +240,7 @@ defmodule EarthScanner.Trips do
     end)
     |> Enum.into(%{})
   end
+
   defp sanitize_diff_for_storage(_), do: %{}
 
   @doc """
@@ -282,6 +284,7 @@ defmodule EarthScanner.Trips do
     |> case do
       nil ->
         nil
+
       instance ->
         Repo.preload(instance, :trip)
     end

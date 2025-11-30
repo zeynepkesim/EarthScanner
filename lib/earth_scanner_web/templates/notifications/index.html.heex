@@ -8,10 +8,15 @@
       <ul class="space-y-3">
         <%= for r <- @reminders do %>
           <li class="p-3 border rounded">
-            <div class="font-semibold"><%= r.trip.source_city %> → <%= r.trip.destination_city %></div>
-            <div>Instance date: <%= r.instance.date %></div>
-            <div>Departs at: <%= r.departure %></div>
-            <div class="mt-2 text-sm text-gray-700">You purchased this trip. Reminder: departs within 24 hours.</div>
+            <div class="font-semibold">{r.trip.source_city} → {r.trip.destination_city}</div>
+
+            <div>Instance date: {r.instance.date}</div>
+
+            <div>Departs at: {r.departure}</div>
+
+            <div class="mt-2 text-sm text-gray-700">
+              You purchased this trip. Reminder: departs within 24 hours.
+            </div>
           </li>
         <% end %>
       </ul>
