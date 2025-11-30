@@ -18,6 +18,7 @@ defmodule EarthScanner.Accounts.User do
     field :nationality, :string
     field :residence_address, :string
     field :phone_number, :string
+    field :loyalty_points, :integer, default: 0
 
     timestamps()
   end
@@ -95,5 +96,15 @@ defmodule EarthScanner.Accounts.User do
     |> unique_constraint(:username)
     |> put_change(:role, "admin")
     |> maybe_put_password_hash()
+  end
+
+  # NFR-09: Points Security & Integrity
+  # Changeset for internal loyalty point updates.
+  # This prevents mass assignment via the public API.
+  def loyalty_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:loyalty_points])
+    |> validate_required([:loyalty_points])
+    |> validate_number(:loyalty_points, greater_than_or_equal_to: 0)
   end
 end
