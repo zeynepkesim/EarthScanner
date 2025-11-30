@@ -905,6 +905,7 @@ defmodule EarthScanner.Trips do
             points_earned = round(final_price)
 
             new_points_balance = user.loyalty_points - points_redeemed + points_earned
+            net_point_change = points_earned - points_redeemed
 
             Ecto.Multi.new()
             |> Ecto.Multi.insert(
@@ -922,9 +923,20 @@ defmodule EarthScanner.Trips do
                 available_tickets: instance.available_tickets - 1
               })
             )
+            # NFR-09: Points Security & Integrity
+            # Use restricted changeset and log changes within the transaction
             |> Ecto.Multi.update(
               :update_user_points,
-              Ecto.Changeset.change(user, loyalty_points: new_points_balance)
+              User.loyalty_changeset(user, %{loyalty_points: new_points_balance})
+            )
+            |> Ecto.Multi.insert(
+              :log_points,
+              EarthScanner.Accounts.PointLog.changeset(%EarthScanner.Accounts.PointLog{}, %{
+                user_id: user_id,
+                change_amount: net_point_change,
+                reason: "trip_purchase",
+                balance_after: new_points_balance
+              })
             )
             |> Repo.transaction()
             |> case do
