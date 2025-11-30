@@ -1,4 +1,5 @@
 Feature: FR-12 Purchase Trip Ticket
+  # nfr-08: BDD - ensures authentication is required for purchase flows (positive and negative scenarios)
   As a traveler
   I want to purchase a ticket for a trip date
   So that I can reserve my seat for an upcoming journey.

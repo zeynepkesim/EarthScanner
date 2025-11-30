@@ -221,6 +221,9 @@ defmodule EarthScanner.Trips do
 
   Returns `{:ok, trip}` or `{:error, :not_found}` or `{:error, :unauthorized}`.
   """
+  # fr-23: enforce creator-only access for admin trip details
+  # This function returns {:error, :unauthorized} when the requesting admin
+  # is not the creator of the requested trip.
   def get_trip_for_admin(trip_id, %User{id: admin_id, role: "admin"}) do
     trip =
       Trip

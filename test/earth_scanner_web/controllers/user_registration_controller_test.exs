@@ -1,4 +1,5 @@
 defmodule EarthScannerWeb.UserRegistrationControllerTest do
+  # nfr-04: TDD - registration tests exercise password hashing (stored and verified)
   use EarthScannerWeb.ConnCase, async: true
 
   @moduletag :registration

@@ -2,6 +2,8 @@ defmodule TripSearchContext do
   use WhiteBread.Context
   use Hound.Helpers
 
+  # nfr-08: This BDD context backs the Trip search features and is tied to NFR-08 (auth required)
+
   alias EarthScanner.Repo
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
