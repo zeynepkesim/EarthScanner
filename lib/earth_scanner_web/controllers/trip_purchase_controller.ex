@@ -99,4 +99,6 @@ defmodule EarthScannerWeb.TripPurchaseController do
   end
 
   defp parse_instance_id(_), do: {:error, :invalid_instance}
+
+  # kept parse helper only
 end
