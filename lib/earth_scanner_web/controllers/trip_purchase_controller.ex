@@ -9,7 +9,8 @@ defmodule EarthScannerWeb.TripPurchaseController do
 
     with %{} = user <- conn.assigns[:current_user],
          {:ok, instance_id} <- parse_instance_id(params["trip_instance_id"]),
-         {:ok, _purchase} <- Trips.purchase_trip_instance(user, instance_id, redeem_points: redeem_points) do
+         {:ok, _purchase} <-
+           Trips.purchase_trip_instance(user, instance_id, redeem_points: redeem_points) do
       conn
       |> put_flash(:info, "Trip purchased! See you on board.")
       |> redirect(to: redirect_to)

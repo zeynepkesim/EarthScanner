@@ -102,10 +102,19 @@
             >
               <input type="hidden" name="trip_instance_id" value={instance.id} />
               <input type="hidden" name="redirect_to" value={@return_path} />
-              
+
               <div :if={@current_user} class="flex items-center gap-2">
-                <input type="checkbox" name="redeem_points" value="true" id={"redeem_#{instance.id}"} class="rounded border-slate-300" />
-                <label for={"redeem_#{instance.id}"} class="text-sm text-slate-600 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  name="redeem_points"
+                  value="true"
+                  id={"redeem_#{instance.id}"}
+                  class="rounded border-slate-300"
+                />
+                <label
+                  for={"redeem_#{instance.id}"}
+                  class="text-sm text-slate-600 whitespace-nowrap"
+                >
                   Use points ({@current_user.loyalty_points})
                 </label>
               </div>
