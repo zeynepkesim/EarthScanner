@@ -5,6 +5,7 @@ defmodule LoyaltyPointsContext do
   alias Ecto.Changeset
   alias EarthScanner.{Accounts, Trips, Repo}
   alias Hound.Helpers.Cookie
+  import Ecto.Query
 
   @base "http://localhost:4002"
 
@@ -130,6 +131,34 @@ defmodule LoyaltyPointsContext do
     {:ok, state}
   end
 
+  then_ ~r/^an audit log should exist for my point change$/, fn %{user: user} = state, _ ->
+    log = Repo.one!(EarthScanner.Accounts.PointLog)
+    assert log.user_id == user.id
+    assert log.reason == "trip_purchase"
+    {:ok, state}
+  end
+
+  then_ ~r/^an audit log should exist showing a decrease of (?<amount>\d+) points$/, fn %{user: user} = state, %{amount: amount} ->
+    log = Repo.one!(EarthScanner.Accounts.PointLog)
+    assert log.user_id == user.id
+    expected_change = -String.to_integer(amount)
+    assert log.change_amount == expected_change
+    {:ok, state}
+  end
+
+  then_ ~r/^an audit log should exist showing a change of 0 points$/, fn %{user: user} = state, _ ->
+    log = Repo.one!(EarthScanner.Accounts.PointLog)
+    assert log.user_id == user.id
+    assert log.change_amount == 0
+    {:ok, state}
+  end
+
+  then_ ~r/^no audit log should exist for this user$/, fn %{user: user} = state, _ ->
+    count = Repo.aggregate(from(l in EarthScanner.Accounts.PointLog, where: l.user_id == ^user.id), :count, :id)
+    assert count == 0
+    {:ok, state}
+  end
+
   # Helpers
   defp create_user(name) do
     suffix = System.unique_integer([:positive]) |> Integer.to_string()
@@ -183,6 +212,9 @@ defmodule LoyaltyPointsContext do
       "name" => "Admin",
       "last_name" => "User",
       "email" => "admin_#{suffix}@example.com",
+      "birthdate" => "1990-01-01",
+      "nationality" => "US",
+      "residence_address" => "Admin Address",
       "phone_number" => "+1234567890"
     })
     user |> Changeset.change(role: "admin") |> Repo.update!()

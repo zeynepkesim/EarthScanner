@@ -55,4 +55,8 @@ defmodule WhiteBreadConfig do
           "features/fr26_redeem_loyalty_points.feature"
         ]
 
+  suite name:          "PointsSecurity",
+        context:       LoyaltyPointsContext,
+        feature_paths: ["features/nfr09_points_security.feature"]
+
 end
