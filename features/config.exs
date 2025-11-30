@@ -48,5 +48,11 @@ defmodule WhiteBreadConfig do
         context:       TopTripsContext,
         feature_paths: ["features/fr10_highlight_top_trips.feature"]
 
+  suite name:          "LoyaltyPoints",
+        context:       LoyaltyPointsContext,
+        feature_paths: [
+          "features/fr25_earn_loyalty_points.feature",
+          "features/fr26_redeem_loyalty_points.feature"
+        ]
 
 end

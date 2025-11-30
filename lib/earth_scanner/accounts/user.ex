@@ -18,6 +18,7 @@ defmodule EarthScanner.Accounts.User do
     field :nationality, :string
     field :residence_address, :string
     field :phone_number, :string
+    field :loyalty_points, :integer, default: 0
 
     timestamps()
   end

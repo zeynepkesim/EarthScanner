@@ -5,10 +5,11 @@ defmodule EarthScannerWeb.TripPurchaseController do
 
   def create(conn, %{"trip_id" => trip_id} = params) do
     redirect_to = Map.get(params, "redirect_to", ~p"/trips/#{trip_id}")
+    redeem_points = Map.get(params, "redeem_points") == "true"
 
     with %{} = user <- conn.assigns[:current_user],
          {:ok, instance_id} <- parse_instance_id(params["trip_instance_id"]),
-         {:ok, _purchase} <- Trips.purchase_trip_instance(user, instance_id) do
+         {:ok, _purchase} <- Trips.purchase_trip_instance(user, instance_id, redeem_points: redeem_points) do
       conn
       |> put_flash(:info, "Trip purchased! See you on board.")
       |> redirect(to: redirect_to)
