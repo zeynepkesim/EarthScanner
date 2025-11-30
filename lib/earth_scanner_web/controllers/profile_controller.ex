@@ -2,7 +2,7 @@ defmodule EarthScannerWeb.ProfileController do
   use EarthScannerWeb, :controller
   alias EarthScanner.Accounts
 
-  def show(conn, _params) do
+  def show(conn, params) do
     case conn.assigns[:current_user] do
       nil ->
         conn
@@ -10,7 +10,16 @@ defmodule EarthScannerWeb.ProfileController do
         |> redirect(to: ~p"/users/login")
 
       user ->
-        render(conn, :show, user: user)
+        requested_id = params["user_id"]
+
+        # ❗ Only allow current user's own profile — block any other user_id
+        if requested_id && requested_id != "" && requested_id != Integer.to_string(user.id) do
+          conn
+          |> put_flash(:error, "Unauthorized access.")
+          |> redirect(to: ~p"/profile")
+        else
+          render(conn, :show, user: user)
+        end
     end
   end
 
@@ -100,7 +109,10 @@ defmodule EarthScannerWeb.ProfileController do
     case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
       {:ok, _updated_user} ->
         conn
-        |> put_flash(:info, "Password changed successfully.")
+        # rotate session after password change
+        |> configure_session(renew: true)
+        |> put_session(:user_id, user.id)
+        |> put_flash(:info, "Password updated successfully")
         |> redirect(to: ~p"/profile")
 
       {:error, :invalid_current_password} ->

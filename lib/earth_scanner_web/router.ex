@@ -46,6 +46,7 @@ defmodule EarthScannerWeb.Router do
     get "/trips/:id", TripsController, :show
     post "/trips/:trip_id/purchase", TripPurchaseController, :create
     delete "/trips/:trip_id/purchase", TripPurchaseController, :delete
+    get "/notifications", NotificationsController, :index
   end
 
   scope "/admin", EarthScannerWeb do
@@ -81,6 +82,8 @@ defmodule EarthScannerWeb.Router do
 
     get "/future-trips", Admin.FutureTripsController, :index
     get "/future-trips/:id", Admin.FutureTripsController, :show
+
+    get "/my-trips", Admin.MyTripsController, :index
   end
 
   if Application.compile_env(:earth_scanner, :dev_routes) do
