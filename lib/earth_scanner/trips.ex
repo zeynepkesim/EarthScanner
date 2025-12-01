@@ -302,6 +302,76 @@ defmodule EarthScanner.Trips do
   end
 
   @doc """
+  Partitions a user's purchases into upcoming and past buckets based on the
+  combined departure datetime of the trip + instance date.
+
+  Returns `%{upcoming: [entry], past: [entry]}` where each `entry` contains the
+  purchase, the preloaded trip, the trip instance, and the computed
+  `:departure_at` datetime for easy rendering.
+  """
+  def partition_purchases_by_departure(user_id, opts \\ []) do
+    now = Keyword.get(opts, :now, DateTime.utc_now())
+
+    list_purchases_for_user_with_trip(user_id)
+    |> Enum.reduce(%{upcoming: [], past: []}, fn purchase, acc ->
+      instance = purchase.trip_instance
+      trip = instance && instance.trip
+
+      case build_instance_departure_datetime(trip, instance) do
+        {:ok, departure_at} ->
+          entry = %{
+            purchase: purchase,
+            trip: trip,
+            instance: instance,
+            departure_at: departure_at
+          }
+
+          if DateTime.compare(departure_at, now) == :lt do
+            %{acc | past: [entry | acc.past]}
+          else
+            %{acc | upcoming: [entry | acc.upcoming]}
+          end
+
+        _ ->
+          acc
+      end
+    end)
+    |> sort_partitioned_purchases()
+  end
+
+  defp sort_partitioned_purchases(%{upcoming: upcoming, past: past} = data) do
+    asc = fn a, b -> DateTime.compare(a, b) != :gt end
+    desc = fn a, b -> DateTime.compare(a, b) != :lt end
+
+    %{
+      data
+      | upcoming: Enum.sort_by(upcoming, & &1.departure_at, asc),
+        past: Enum.sort_by(past, & &1.departure_at, desc)
+    }
+  end
+
+  @doc """
+  Derives the actual departure datetime for a trip instance by combining the
+  trip's configured departure_time with the specific instance date.
+  """
+  def build_instance_departure_datetime(
+        %Trip{departure_time: %DateTime{} = dep_dt},
+        %TripInstance{date: %Date{} = date}
+      ) do
+    zone = dep_dt.time_zone || "Etc/UTC"
+
+    with {:ok, time} <- Time.new(dep_dt.hour, dep_dt.minute, dep_dt.second),
+         {:ok, dt, _offset} <- DateTime.new(date, time, zone) do
+      {:ok, dt}
+    else
+      {:ok, dt} -> {:ok, dt}
+      {:error, _} = err -> err
+    end
+  end
+
+  def build_instance_departure_datetime(_, _), do: {:error, :invalid_data}
+
+  @doc """
   Updates a single trip instance (e.g. date or available tickets).
 
   ## Examples
