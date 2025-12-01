@@ -90,8 +90,8 @@ defmodule EarthScanner.Notifications do
     # reload latest state
     notification = Repo.get(Notification, notification.id)
 
-    if DateTime.utc_now() > deadline do
-      Logger.warn("Notification #{notification.id} exceeded delivery deadline; marking failed")
+    if DateTime.compare(DateTime.utc_now(), deadline) == :gt do
+      Logger.warning("Notification #{notification.id} exceeded delivery deadline; marking failed")
       {:ok, _} = mark_failed(notification, "deadline_exceeded")
       {:error, :deadline_exceeded}
     else
@@ -130,7 +130,7 @@ defmodule EarthScanner.Notifications do
               {:ok, :sent}
 
             {:error, reason} ->
-              Logger.warn("Notification #{notification.id} delivery failed: #{inspect(reason)}")
+              Logger.warning("Notification #{notification.id} delivery failed: #{inspect(reason)}")
               {:ok, _} = mark_attempt(notification, %{error: inspect(reason)})
 
               # compute backoff (exponential), but cap to remaining time
@@ -143,7 +143,7 @@ defmodule EarthScanner.Notifications do
                 :timer.sleep(sleep_ms)
                 attempt_loop(notification, email_fun, deadline, next_attempts)
               else
-                Logger.warn(
+                Logger.warning(
                   "No time left for retrying notification #{notification.id}; marking failed"
                 )
 
