@@ -130,7 +130,10 @@ defmodule EarthScanner.Notifications do
               {:ok, :sent}
 
             {:error, reason} ->
-              Logger.warning("Notification #{notification.id} delivery failed: #{inspect(reason)}")
+              Logger.warning(
+                "Notification #{notification.id} delivery failed: #{inspect(reason)}"
+              )
+
               {:ok, _} = mark_attempt(notification, %{error: inspect(reason)})
 
               # compute backoff (exponential), but cap to remaining time
