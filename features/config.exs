@@ -71,4 +71,12 @@ defmodule WhiteBreadConfig do
         context:       AccessibilityContext,
         feature_paths: ["features/nfr03_accessibility.feature"]
 
+  suite name:          "Notifications",
+        context:       FR27NotificationsContext,
+        feature_paths: [
+          "features/fr27_notifications.feature",
+          "features/fr28_trip_change_alerts.feature"
+        ]
+
+
 end
