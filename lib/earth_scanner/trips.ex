@@ -215,18 +215,21 @@ defmodule EarthScanner.Trips do
         "payload" => %{"trip_id" => trip.id, "diff" => sanitized}
       }
 
-      try do
-        EarthScanner.Notifications.create_notification(attrs)
-      rescue
-        _ -> :ok
-      end
+      case EarthScanner.Notifications.create_notification(attrs) do
+        {:ok, notification} ->
+          # build email lazily and synchronously attempt delivery with retries (blocking)
+          EarthScanner.Notifications.send_with_retries(notification, fn ->
+            EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
+          end)
 
-      # send email synchronously
-      try do
-        email = EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
-        EarthScanner.Mailer.deliver(email)
-      rescue
-        _ -> :ok
+        {:error, _changeset} ->
+          # failed to persist notification; still attempt to send email once
+          try do
+            email = EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
+            EarthScanner.Mailer.deliver(email)
+          rescue
+            _ -> :ok
+          end
       end
     end)
 
