@@ -69,6 +69,7 @@
                 My Trips
               </a>
             <% end %>
+
             <form action={~p"/users/logout"} method="post">
               <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
               <input type="hidden" name="_method" value="delete" />
@@ -83,6 +84,7 @@
         </div>
       </div>
     </header>
+
     <div class="mx-auto max-w-4xl mt-4 px-4">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="mb-4 rounded-md bg-emerald-100 px-4 py-2 text-emerald-800 font-medium border border-emerald-200">
@@ -95,7 +97,6 @@
           {Phoenix.Flash.get(@flash, :error)}
         </div>
       <% end %>
-
       {@inner_content}
     </div>
   </body>

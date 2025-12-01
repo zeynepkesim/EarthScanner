@@ -19,7 +19,17 @@ defmodule EarthScanner.Notifications.Notification do
 
   def changeset(notification, attrs) do
     notification
-    |> cast(attrs, [:user_id, :kind, :payload, :read_at, :status, :attempts, :last_attempted_at, :error, :delivered_at])
+    |> cast(attrs, [
+      :user_id,
+      :kind,
+      :payload,
+      :read_at,
+      :status,
+      :attempts,
+      :last_attempted_at,
+      :error,
+      :delivered_at
+    ])
     |> validate_required([:user_id, :kind, :payload])
   end
 end

@@ -2,6 +2,7 @@
   Results for: <span class="text-green-700">{@filters["source"]}</span>
   → <span class="text-blue-700">{@filters["destination"]}</span>
 </h1>
+
 <%= if @current_user do %>
   <.form method="post" action={~p"/search/save"} class="mb-4">
     <input type="hidden" name="source" value={@filters["source"]} />
@@ -14,6 +15,7 @@
     </button>
   </.form>
 <% end %>
+
 <div class="mb-6 flex gap-6">
   <div class="flex-1">
     <!-- NFR-03: Accessibility - ARIA labels and keyboard navigation -->
@@ -313,9 +315,8 @@
 
 <%= if @recent_searches != [] do %>
   <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-200">
-    <h3 class="font-bold text-base text-slate-900 mb-3">
-      🔍 Recent Searches
-    </h3>
+    <h3 class="font-bold text-base text-slate-900 mb-3">🔍 Recent Searches</h3>
+
     <div class="space-y-1 text-sm">
       <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">
         <.link

@@ -76,7 +76,8 @@ defmodule EarthScanner.Notifications do
   - `email_fun` is a zero-arity function that returns a Swoosh email struct.
   This function will block until the message is delivered or the 10-minute deadline is reached.
   """
-  def send_with_retries(%Notification{} = notification, email_fun, opts \\ []) when is_function(email_fun, 0) do
+  def send_with_retries(%Notification{} = notification, email_fun, opts \\ [])
+      when is_function(email_fun, 0) do
     # Default deadline: 30 seconds (was 10 minutes) to avoid long blocking admin requests
     max_deadline_sec = Keyword.get(opts, :deadline_seconds, 30)
     start = DateTime.utc_now()
@@ -95,27 +96,32 @@ defmodule EarthScanner.Notifications do
       {:error, :deadline_exceeded}
     else
       # build email and attempt delivery
-      email = try do
-        email_fun.()
-      rescue
-        e ->
-          {:error, {:email_build_failed, e}}
-      end
+      email =
+        try do
+          email_fun.()
+        rescue
+          e ->
+            {:error, {:email_build_failed, e}}
+        end
 
       case email do
         {:error, _} = err ->
-          Logger.error("Failed to build email for notification #{notification.id}: #{inspect(err)}")
+          Logger.error(
+            "Failed to build email for notification #{notification.id}: #{inspect(err)}"
+          )
+
           {:ok, _} = mark_attempt(notification, %{error: inspect(err)})
           {:ok, _} = mark_failed(notification, err)
           {:error, err}
 
         email_struct ->
           # attempt delivery
-          result = try do
-            EarthScanner.Mailer.deliver(email_struct)
-          rescue
-            e -> {:error, e}
-          end
+          result =
+            try do
+              EarthScanner.Mailer.deliver(email_struct)
+            rescue
+              e -> {:error, e}
+            end
 
           case result do
             {:ok, _resp} ->
@@ -137,7 +143,10 @@ defmodule EarthScanner.Notifications do
                 :timer.sleep(sleep_ms)
                 attempt_loop(notification, email_fun, deadline, next_attempts)
               else
-                Logger.warn("No time left for retrying notification #{notification.id}; marking failed")
+                Logger.warn(
+                  "No time left for retrying notification #{notification.id}; marking failed"
+                )
+
                 {:ok, _} = mark_failed(notification, reason)
                 {:error, :no_time_left}
               end
@@ -147,6 +156,7 @@ defmodule EarthScanner.Notifications do
   end
 
   defp backoff_ms(attempt) when attempt <= 0, do: 1000
+
   defp backoff_ms(attempt) do
     # exponential backoff in ms: 1000 * 2^(attempt-1), capped at 30s
     ms = trunc(1000 * :math.pow(2, attempt - 1))
