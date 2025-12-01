@@ -1,13 +1,37 @@
-<h1>Search Results</h1>
+<h1 class="text-2xl font-bold text-indigo-700 mb-4">
+  Results for: <span class="text-green-700">{@filters["source"]}</span>
+  → <span class="text-blue-700">{@filters["destination"]}</span>
+</h1>
+
+<%= if @current_user do %>
+  <.form method="post" action={~p"/search/save"} class="mb-4">
+    <input type="hidden" name="source" value={@filters["source"]} />
+    <input type="hidden" name="destination" value={@filters["destination"]} />
+    <button
+      type="submit"
+      class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
+    >
+      ★ Save This Search
+    </button>
+  </.form>
+<% end %>
 
 <div class="mb-6 flex gap-6">
   <div class="flex-1">
+    <!-- NFR-03: Accessibility - ARIA labels and keyboard navigation -->
     <form method="get" action={~p"/search/results"} class="mb-4">
       <%= for {k, v} <- @filters do %>
         <input type="hidden" name={k} value={v} />
       <% end %>
-      <label class="font-medium">Sort by:</label>
-      <select name="sort" class="border rounded-md px-2 py-1 ml-2" onchange="this.form.submit()">
+      <label for="sort-select" class="font-medium">Sort by:</label>
+      <select
+        id="sort-select"
+        name="sort"
+        class="border rounded-md px-2 py-1 ml-2"
+        onchange="this.form.submit()"
+        aria-label="Sort trips by different criteria"
+        aria-describedby="sort-description"
+      >
         <option value="">Default (Departure time)</option>
 
         <option value="price_asc" selected={@filters["sort"] == "price_asc"}>Price ↑</option>
@@ -26,6 +50,7 @@
           Duration ↓
         </option>
       </select>
+      <span id="sort-description" class="sr-only">Choose how to sort the trip results</span>
     </form>
   </div>
 </div>
@@ -46,7 +71,8 @@
   @filters
   |> Enum.filter(fn {k, v} -> k in Map.keys(filter_labels) and v not in [nil, ""] end) %>
 <%= if active_filters != [] do %>
-  <div class="my-4 flex flex-wrap gap-2">
+  <!-- NFR-03: Accessibility - ARIA labels for filter badges -->
+  <div class="my-4 flex flex-wrap gap-2" role="region" aria-label="Active filters">
     <%= for {key, value} <- active_filters do %>
       <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
         {filter_labels[key]}: {value} <% new_filters =
@@ -54,6 +80,8 @@
         <a
           href={~p"/search/results?#{URI.encode_query(new_filters)}"}
           class="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+          aria-label={"Remove filter: #{filter_labels[key]} #{value}"}
+          role="button"
         >
           ×
         </a>
@@ -81,14 +109,20 @@
 <% end %>
 
 <%= if @trips != [] do %>
+  <!-- NFR-03: Accessibility - ARIA labels for top picks -->
   <!-- FR-10: Top Picks section (fastest, cheapest, greenest) -->
   <h2 class="mt-4 mb-2 text-lg font-semibold">Top Picks</h2>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div
+    class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+    role="region"
+    aria-label="Recommended trips"
+  >
     <%= if @top_trips && @top_trips.fastest do %>
       <.link
         navigate={~p"/trips/#{@top_trips.fastest.id}"}
         class="top-pick-card block p-4 rounded-lg border bg-sky-50 hover:bg-sky-100"
+        aria-label={"Fastest trip: #{@top_trips.fastest.source_city} to #{@top_trips.fastest.destination_city}, #{@top_trips.fastest.duration_minutes} minutes"}
       >
         <p class="top-pick-label text-xs font-semibold text-sky-700 mb-1">Fastest</p>
 
@@ -104,6 +138,7 @@
       <.link
         navigate={~p"/trips/#{@top_trips.cheapest.id}"}
         class="top-pick-card block p-4 rounded-lg border bg-emerald-50 hover:bg-emerald-100"
+        aria-label={"Cheapest trip: #{@top_trips.cheapest.source_city} to #{@top_trips.cheapest.destination_city}, €#{@top_trips.cheapest.price}"}
       >
         <p class="top-pick-label text-xs font-semibold text-emerald-700 mb-1">Cheapest</p>
 
@@ -119,6 +154,7 @@
       <.link
         navigate={~p"/trips/#{@top_trips.greenest.id}"}
         class="top-pick-card block p-4 rounded-lg border bg-lime-50 hover:bg-lime-100"
+        aria-label={"Greenest trip: #{@top_trips.greenest.source_city} to #{@top_trips.greenest.destination_city}, #{@top_trips.greenest.co2_level} CO₂"}
       >
         <p class="top-pick-label text-xs font-semibold text-lime-700 mb-1">Greenest</p>
 
@@ -279,7 +315,7 @@
 
 <%= if @recent_searches != [] do %>
   <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-200">
-    <h3 class="font-semibold text-sm text-slate-900 mb-2">Recent Searches</h3>
+    <h3 class="font-bold text-base text-slate-900 mb-3">🔍 Recent Searches</h3>
 
     <div class="space-y-1 text-sm">
       <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">

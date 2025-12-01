@@ -98,8 +98,8 @@ defmodule EarthScannerWeb.TripSearchControllerTest do
       )
 
     # Guests are no longer allowed to perform searches (nfr-08)
-    assert redirected_to(guest_conn) == ~p"/"
-    assert get_flash(guest_conn, :error) =~ "Please log in"
+    assert redirected_to(guest_conn) == "/users/login"
+    assert get_flash(guest_conn, :error) =~ "You must be logged in to search trips"
   end
 
   defp create_admin(attrs \\ %{}) do

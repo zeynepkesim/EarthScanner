@@ -28,7 +28,8 @@ defmodule EarthScannerWeb.TripsControllerTest do
   end
 
   # FR-16: User can view full trip details including all instances and pricing
-  test "FR-12: shows trip details", %{conn: conn, trip: trip} do
+  test "FR-12: shows trip details", %{conn: conn, trip: trip, user: user} do
+    conn = log_in_user(conn, user)
     conn = get(conn, ~p"/trips/#{trip.id}")
 
     body = html_response(conn, 200)
@@ -37,10 +38,14 @@ defmodule EarthScannerWeb.TripsControllerTest do
     assert body =~ "Available dates"
   end
 
-  test "FR-16: returns 404 for non-existent trip" do
-    assert_error_sent 404, fn ->
-      get(build_conn(), "/trips/999999")
-    end
+  test "FR-12: shows trip details redirects to login for anonymous", %{trip: trip} do
+    conn = get(build_conn(), ~p"/trips/#{trip.id}")
+    assert redirected_to(conn) == "/users/login"
+  end
+
+  test "FR-16: non-existent trip redirects to login for anonymous" do
+    conn = get(build_conn(), "/trips/999999")
+    assert redirected_to(conn) == "/users/login"
   end
 
   # FR-16: User can see which instances they have already purchased

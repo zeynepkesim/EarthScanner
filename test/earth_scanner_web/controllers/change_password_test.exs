@@ -37,7 +37,7 @@ defmodule EarthScannerWeb.ChangePasswordControllerTest do
       })
 
     assert redirected_to(conn) == "/profile"
-    assert get_flash(conn, :info) =~ "Password changed successfully."
+    assert get_flash(conn, :info) =~ "Password updated successfully"
   end
 
   test "POST /users/change-password with wrong current password shows error", %{conn: conn} do

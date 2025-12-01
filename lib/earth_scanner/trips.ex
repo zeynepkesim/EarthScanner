@@ -173,9 +173,95 @@ defmodule EarthScanner.Trips do
 
   """
   def update_trip(%Trip{} = trip, attrs) do
-    trip
-    |> Trip.changeset(attrs)
-    |> Repo.update()
+    changeset = Trip.changeset(trip, attrs)
+
+    # compute simple diff for changed fields: %{field => {old, new}}
+    watched = Map.keys(changeset.changes)
+
+    diff =
+      watched
+      |> Enum.reduce(%{}, fn key, acc ->
+        old = Map.get(trip, key)
+        new = Map.get(changeset.changes, key)
+        Map.put(acc, to_string(key), {old, new})
+      end)
+
+    case Repo.update(changeset) do
+      {:ok, trip} ->
+        # After successful update, notify purchasers synchronously (no worker)
+        notify_trip_change(trip, diff)
+        {:ok, trip, diff}
+
+      other ->
+        other
+    end
+  end
+
+  defp notify_trip_change(trip, diff) when diff == %{} do
+    :ok
+  end
+
+  defp notify_trip_change(trip, diff) do
+    # find unique purchasers for this trip
+    purchasers = list_purchasers_for_trip(trip.id)
+
+    Enum.each(purchasers, fn user ->
+      # create in-app notification (best-effort)
+      sanitized = sanitize_diff_for_storage(diff)
+
+      attrs = %{
+        "user_id" => user.id,
+        "kind" => "trip_change",
+        "payload" => %{"trip_id" => trip.id, "diff" => sanitized}
+      }
+
+      case EarthScanner.Notifications.create_notification(attrs) do
+        {:ok, notification} ->
+          # build email lazily and synchronously attempt delivery with retries (blocking)
+          EarthScanner.Notifications.send_with_retries(notification, fn ->
+            EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
+          end)
+
+        {:error, _changeset} ->
+          # failed to persist notification; still attempt to send email once
+          try do
+            email = EarthScanner.Notifications.TripUpdateEmail.build(user, trip, diff)
+            EarthScanner.Mailer.deliver(email)
+          rescue
+            _ -> :ok
+          end
+      end
+    end)
+
+    :ok
+  end
+
+  defp sanitize_diff_for_storage(diff) when is_map(diff) do
+    diff
+    |> Enum.map(fn {k, {old, new}} ->
+      {k, %{"old" => old, "new" => new}}
+    end)
+    |> Enum.into(%{})
+  end
+
+  defp sanitize_diff_for_storage(_), do: %{}
+
+  @doc """
+  Lists unique purchasers (users) for a given trip id.
+  Returns a list of `EarthScanner.Accounts.User` structs.
+  """
+  def list_purchasers_for_trip(trip_id) do
+    query =
+      from u in User,
+        join: p in Purchase,
+        on: p.user_id == u.id,
+        join: i in TripInstance,
+        on: p.trip_instance_id == i.id,
+        where: i.trip_id == ^trip_id,
+        distinct: u.id,
+        select: u
+
+    Repo.all(query)
   end
 
   @doc """
@@ -191,6 +277,99 @@ defmodule EarthScanner.Trips do
   def get_trip_instance!(trip_id, id) do
     Repo.get_by!(TripInstance, %{id: id, trip_id: trip_id})
   end
+
+  @doc """
+  Gets a trip instance by id and preloads the associated trip.
+  Returns `nil` if not found.
+  """
+  def get_instance_with_trip(id) do
+    Repo.get(TripInstance, id)
+    |> case do
+      nil ->
+        nil
+
+      instance ->
+        Repo.preload(instance, :trip)
+    end
+  end
+
+  @doc """
+  Lists purchases for a given user with the trip_instance and trip preloaded.
+  """
+  def list_purchases_for_user_with_trip(user_id) do
+    from(p in Purchase, where: p.user_id == ^user_id, preload: [trip_instance: :trip])
+    |> Repo.all()
+  end
+
+  @doc """
+  Partitions a user's purchases into upcoming and past buckets based on the
+  combined departure datetime of the trip + instance date.
+
+  Returns `%{upcoming: [entry], past: [entry]}` where each `entry` contains the
+  purchase, the preloaded trip, the trip instance, and the computed
+  `:departure_at` datetime for easy rendering.
+  """
+  def partition_purchases_by_departure(user_id, opts \\ []) do
+    now = Keyword.get(opts, :now, DateTime.utc_now())
+
+    list_purchases_for_user_with_trip(user_id)
+    |> Enum.reduce(%{upcoming: [], past: []}, fn purchase, acc ->
+      instance = purchase.trip_instance
+      trip = instance && instance.trip
+
+      case build_instance_departure_datetime(trip, instance) do
+        {:ok, departure_at} ->
+          entry = %{
+            purchase: purchase,
+            trip: trip,
+            instance: instance,
+            departure_at: departure_at
+          }
+
+          if DateTime.compare(departure_at, now) == :lt do
+            %{acc | past: [entry | acc.past]}
+          else
+            %{acc | upcoming: [entry | acc.upcoming]}
+          end
+
+        _ ->
+          acc
+      end
+    end)
+    |> sort_partitioned_purchases()
+  end
+
+  defp sort_partitioned_purchases(%{upcoming: upcoming, past: past} = data) do
+    asc = fn a, b -> DateTime.compare(a, b) != :gt end
+    desc = fn a, b -> DateTime.compare(a, b) != :lt end
+
+    %{
+      data
+      | upcoming: Enum.sort_by(upcoming, & &1.departure_at, asc),
+        past: Enum.sort_by(past, & &1.departure_at, desc)
+    }
+  end
+
+  @doc """
+  Derives the actual departure datetime for a trip instance by combining the
+  trip's configured departure_time with the specific instance date.
+  """
+  def build_instance_departure_datetime(
+        %Trip{departure_time: %DateTime{} = dep_dt},
+        %TripInstance{date: %Date{} = date}
+      ) do
+    zone = dep_dt.time_zone || "Etc/UTC"
+
+    with {:ok, time} <- Time.new(dep_dt.hour, dep_dt.minute, dep_dt.second),
+         {:ok, dt, _offset} <- DateTime.new(date, time, zone) do
+      {:ok, dt}
+    else
+      {:ok, dt} -> {:ok, dt}
+      {:error, _} = err -> err
+    end
+  end
+
+  def build_instance_departure_datetime(_, _), do: {:error, :invalid_data}
 
   @doc """
   Updates a single trip instance (e.g. date or available tickets).
@@ -575,6 +754,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.departure_time >= ^dt
+            {:ok, dt} -> from q in base_q, where: q.departure_time >= ^dt
             _ -> base_q
           end
 
@@ -593,6 +773,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.departure_time <= ^dt
+            {:ok, dt} -> from q in base_q, where: q.departure_time <= ^dt
             _ -> base_q
           end
 
@@ -612,6 +793,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.arrival_time >= ^dt
+            {:ok, dt} -> from q in base_q, where: q.arrival_time >= ^dt
             _ -> base_q
           end
 
@@ -630,6 +812,7 @@ defmodule EarthScanner.Trips do
         v when is_binary(v) ->
           case DateTime.from_iso8601(v) do
             {:ok, dt, _} -> from q in base_q, where: q.arrival_time <= ^dt
+            {:ok, dt} -> from q in base_q, where: q.arrival_time <= ^dt
             _ -> base_q
           end
 
@@ -716,6 +899,49 @@ defmodule EarthScanner.Trips do
     )
   end
 
+  @doc """
+  Returns a trip visible to the given user.
+
+  - If `user` is `nil` (anonymous), returns the public trip (future instances only) or `{:error, :not_found}`.
+  - If `user.role == "admin"`, delegates to `get_trip_for_admin/2` (which checks ownership).
+  - If `user.role == "user"`, returns the public trip (future instances only).
+
+  This centralizes authorization so controllers won't accidentally leak admin-only data.
+  """
+  def get_trip_for_user(nil, _id), do: {:error, :unauthorized}
+
+  def get_trip_for_user(%User{role: "admin", id: admin_id}, id) do
+    # FR-24: Admins can ONLY view trips they created
+    case Repo.get(Trip, id) do
+      nil ->
+        {:error, :not_found}
+
+      %Trip{admin_id: ^admin_id} = trip ->
+        # Admin owns this trip
+        trip =
+          Repo.preload(trip, [:admin, instances: from(i in TripInstance, order_by: [asc: i.date])])
+
+        {:ok, trip}
+
+      %Trip{} ->
+        # Admin doesn't own this trip
+        {:error, :unauthorized}
+    end
+  end
+
+  def get_trip_for_user(%User{role: "user"}, id) do
+    # FR-24: Regular users can view ANY trip (for booking purposes)
+    # They see public information only (future instances)
+    case Repo.get(Trip, id) do
+      nil ->
+        {:error, :not_found}
+
+      %Trip{} = trip ->
+        trip = preload_future_instances(trip)
+        {:ok, trip}
+    end
+  end
+
   # ---------------------- Recommendations (similar trips) -----------------------
 
   @doc """
@@ -760,9 +986,6 @@ defmodule EarthScanner.Trips do
     preload_future_instances(results)
   end
 
-  @doc """
-  Simple version: find similar trips given a trip id.
-  """
   def find_similar_trips(trip_id) do
     case get_trip(trip_id) do
       nil -> []
@@ -788,12 +1011,14 @@ defmodule EarthScanner.Trips do
     else
       source = "%#{src}%"
       destination = "%#{dst}%"
+      today = Date.utc_today()
 
+      # Base query: search trips with future instances
       base_q =
         from t in Trip,
-          where:
-            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
-              t.departure_time > ^DateTime.utc_now(),
+          where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
+          join: i in TripInstance,
+          on: i.trip_id == t.id and i.date >= ^today,
           distinct: true
 
       # apply numeric filters
@@ -867,14 +1092,15 @@ defmodule EarthScanner.Trips do
   Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
   `:past_instance`, `:sold_out` or other Repo errors.
   """
-  def purchase_trip_instance(%User{id: user_id} = _user, instance_id) do
+  def purchase_trip_instance(%User{id: user_id} = user, instance_id, opts \\ []) do
     today = Date.utc_today()
+    redeem_points? = Keyword.get(opts, :redeem_points, false)
 
-    case Repo.get(TripInstance, instance_id) do
+    case Repo.get(TripInstance, instance_id) |> Repo.preload(:trip) do
       nil ->
         {:error, :not_found}
 
-      %TripInstance{} = instance ->
+      %TripInstance{trip: trip} = instance ->
         cond do
           Date.compare(instance.date, today) == :lt ->
             {:error, :past_instance}
@@ -887,15 +1113,57 @@ defmodule EarthScanner.Trips do
             {:error, :already_purchased}
 
           true ->
+            # Loyalty Logic
+            price = Decimal.to_float(trip.price)
+
+            {points_redeemed, discount_amount} =
+              if redeem_points? do
+                max_discount_points = round(price * 10)
+                points_available = user.loyalty_points
+
+                points_to_redeem = min(max_discount_points, points_available)
+                discount = points_to_redeem / 10.0
+
+                {points_to_redeem, discount}
+              else
+                {0, 0.0}
+              end
+
+            final_price = max(0.0, price - discount_amount)
+            points_earned = round(final_price)
+
+            new_points_balance = user.loyalty_points - points_redeemed + points_earned
+            net_point_change = points_earned - points_redeemed
+
             Ecto.Multi.new()
             |> Ecto.Multi.insert(
               :purchase,
-              Purchase.changeset(%Purchase{}, %{user_id: user_id, trip_instance_id: instance.id})
+              Purchase.changeset(%Purchase{}, %{
+                user_id: user_id,
+                trip_instance_id: instance.id,
+                points_earned: points_earned,
+                points_redeemed: points_redeemed
+              })
             )
             |> Ecto.Multi.update(
               :decrement,
               TripInstance.changeset(instance, %{
                 available_tickets: instance.available_tickets - 1
+              })
+            )
+            # NFR-09: Points Security & Integrity
+            # Use restricted changeset and log changes within the transaction
+            |> Ecto.Multi.update(
+              :update_user_points,
+              User.loyalty_changeset(user, %{loyalty_points: new_points_balance})
+            )
+            |> Ecto.Multi.insert(
+              :log_points,
+              EarthScanner.Accounts.PointLog.changeset(%EarthScanner.Accounts.PointLog{}, %{
+                user_id: user_id,
+                change_amount: net_point_change,
+                reason: "trip_purchase",
+                balance_after: new_points_balance
               })
             )
             |> Repo.transaction()
