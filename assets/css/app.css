@@ -143,3 +143,93 @@ input:focus-visible {
   background-color: #ffffff;
   color: #1f2937;
 }
+
+/* Aurora background used on the landing page */
+.aurora-background {
+  position: relative;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #0f172a, #020617 60%);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: -35% auto auto -35%;
+  width: 160%;
+  height: 160%;
+  background: conic-gradient(
+      from 120deg,
+      #6366f1 0deg,
+      #8b5cf6 90deg,
+      #34d399 180deg,
+      #06b6d4 270deg,
+      #6366f1 360deg
+    );
+  opacity: 0.6;
+  filter: blur(80px);
+  animation: auroraShift 5s linear infinite;
+  transform-origin: center;
+  mix-blend-mode: screen;
+}
+
+.aurora-layer--accent {
+  inset: auto -35% -35% auto;
+  animation-duration: 6s;
+  animation-direction: reverse;
+  opacity: 0.5;
+}
+
+.aurora-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(transparent 95%, rgba(255, 255, 255, 0.05) 100%),
+    linear-gradient(90deg, transparent 95%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 120px 120px;
+  opacity: 0.25;
+  animation: auroraDrift 5s linear infinite;
+}
+
+.aurora-noise {
+  position: absolute;
+  inset: -2px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: soft-light;
+  opacity: 0.35;
+  animation: auroraPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes auroraShift {
+  0% {
+    transform: rotate(0deg) scale(1);
+    filter: blur(70px);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+    filter: blur(90px);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    filter: blur(70px);
+  }
+}
+
+@keyframes auroraDrift {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 120px 120px, 120px 120px;
+  }
+}
+
+@keyframes auroraPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
