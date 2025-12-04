@@ -4,7 +4,9 @@
       <div class="aurora-background h-full w-full">
         <div class="aurora-layer" aria-hidden="true"></div>
         <div class="aurora-layer aurora-layer--accent" aria-hidden="true"></div>
+
         <div class="aurora-grid" aria-hidden="true"></div>
+
         <div class="aurora-noise" aria-hidden="true"></div>
       </div>
     </div>
@@ -14,6 +16,7 @@
         <h1 class="mb-4 text-3xl font-semibold text-slate-900">Explore upcoming trips</h1>
 
         <p class="mb-8 text-slate-600">Find and book upcoming trips in one place.</p>
+
         <%= if @current_user && @current_user.role != "admin" do %>
           <a
             href={~p"/trips"}
@@ -38,14 +41,16 @@
             </a>
           <% end %>
         <% end %>
-
         <%!-- FR-19: Account access links always visible on homepage --%>
         <div class="mt-12 flex flex-col items-center gap-4 border-t border-slate-200 pt-8">
           <p class="text-sm text-slate-500">Account</p>
 
           <div class="flex gap-4">
             <%= if @current_user do %>
-              <a href={~p"/profile"} class="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+              <a
+                href={~p"/profile"}
+                class="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              >
                 Account Details
               </a>
               <form action={~p"/users/logout"} method="post" class="inline">

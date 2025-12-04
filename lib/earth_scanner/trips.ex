@@ -209,10 +209,32 @@ defmodule EarthScanner.Trips do
       # create in-app notification (best-effort)
       sanitized = sanitize_diff_for_storage(diff)
 
+      trip_name = Map.get(trip, :name) || "#{trip.source_city} → #{trip.destination_city}"
+
+      # build a payload and a compact human message for UI
+      base_payload = %{
+        "trip_id" => trip.id,
+        "trip_name" => trip_name,
+        "from" => trip.source_city,
+        "to" => trip.destination_city,
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+        "diff" => sanitized
+      }
+
+      # Attempt to build a compact, pre-rendered message for older UIs
+      message =
+        try do
+          EarthScanner.Formatters.TripChangeFormatter.format_compact(base_payload)
+        rescue
+          _ -> nil
+        end
+
+      payload = if message, do: Map.put(base_payload, "message", message), else: base_payload
+
       attrs = %{
         "user_id" => user.id,
         "kind" => "trip_change",
-        "payload" => %{"trip_id" => trip.id, "diff" => sanitized}
+        "payload" => payload
       }
 
       case EarthScanner.Notifications.create_notification(attrs) do

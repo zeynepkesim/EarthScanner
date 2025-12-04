@@ -1,7 +1,6 @@
 <div class="min-h-screen bg-white px-6 py-8">
   <div class="mx-auto max-w-4xl">
     <h1 class="text-2xl font-semibold mb-4">Notifications</h1>
-
     <div :if={@reminders == []} class="text-sm text-slate-500">
       No notifications at this time.
     </div>
@@ -11,8 +10,20 @@
 
       <ul class="space-y-3 mt-3">
         <li :for={n <- @notifications} class="p-3 border rounded">
+          <% payload = n.payload || %{} %>
           <div class="flex items-center justify-between">
-            <div class="font-semibold">{n.kind}</div>
+            <div class="font-semibold">
+              <%= if payload["message"] do %>
+                {payload["message"]}
+              <% else %>
+                <%= case n.kind do %>
+                  <% "trip_change" -> %>
+                    Trip update
+                  <% _ -> %>
+                    {n.kind}
+                <% end %>
+              <% end %>
+            </div>
 
             <div class="text-sm text-slate-500">{n.inserted_at}</div>
           </div>
@@ -20,23 +31,21 @@
           <div class="text-sm text-slate-600 mt-2">
             <%= case n.kind do %>
               <% "trip_change" -> %>
-                <% payload = n.payload || %{} %> <% trip_id = payload["trip_id"] %>
-                <div>Trip updated: ID {trip_id}</div>
+                <% payload = n.payload || %{} %> <% trip_name =
+                  payload["trip_name"] ||
+                    (payload["from"] && payload["to"] && "#{payload["from"]} → #{payload["to"]}") %>
+                <div>Trip updated: {trip_name}</div>
+
+                <div class="text-xs text-slate-500">When: {payload["timestamp"]}</div>
 
                 <div class="mt-2 text-xs text-slate-700">
                   <%= for {field, change} <- Map.to_list(payload["diff"] || %{}) do %>
-                    <%= case change do %>
-                      <% {old, new} when is_tuple(change) -> %>
-                        <div>
-                          <strong><%= field %></strong>: {inspect(elem(change, 0))} → {inspect(
-                            elem(change, 1)
-                          )}
-                        </div>
-                      <% %{"old" => old, "new" => new} -> %>
-                        <div><strong><%= field %></strong>: {inspect(old)} → {inspect(new)}</div>
-                      <% _ -> %>
-                        <div><strong><%= field %></strong>: {inspect(change)}</div>
-                    <% end %>
+                    <div>
+                      {EarthScanner.Formatters.TripChangeFormatter.format_field_change(
+                        field,
+                        change
+                      )}
+                    </div>
                   <% end %>
                 </div>
               <% _ -> %>
