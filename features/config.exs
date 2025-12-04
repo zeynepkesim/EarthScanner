@@ -7,6 +7,26 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/"]
   )
 
+  # Calvin - BDD Passed
+  # The system allows to self-register as a regular user (storing, at least: username, password, name,
+  # last name, email, birthdate, nationality, residence address, and phone number).
+  suite(
+    name: "UserRegistration",
+    context: UserRegistrationContext,
+    feature_paths: ["features/user_registration.feature"]
+  )
+
+  # Calvin - BDD Passed
+  # The system allows users to log in and log out.
+  suite(
+    name: "Login",
+    context: LoginContext,
+    feature_paths: ["features/login.feature"]
+  )
+
+  # Calvin - BDD Passed
+  # An admin can view the list of past trips they created (already happened).
+  # An admin can view the list of future trips they created (to take place in the future).
   suite(
     name: "AdminTrips",
     context: AdminTripsContext,
@@ -63,6 +83,10 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/fr23_admin_trip_detail.feature"]
   )
 
+  # Calvin - BDD Passed
+  # An authenticated regular user can “purchase” a ticket for a trip.
+  # An authenticated regular user can also “return” the ticket of a purchased trip.
+  # the trips for which a ticket has been “purchased” are visually highlighted in the result search.
   suite(
     name: "TripPurchase",
     context: TripPurchaseContext,
@@ -100,6 +124,9 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/nfr03_accessibility.feature"]
   )
 
+  # Calvin - BDD Passed
+  # As a user, I want to receive notifications for my upcoming trips before 24 hours
+  # I want to receive alerts if there are changes to my booked trips.
   suite(
     name: "Notifications",
     context: FR27NotificationsContext,
@@ -109,6 +136,8 @@ defmodule WhiteBreadConfig do
     ]
   )
 
+  # Calvin - BDD Passed
+  # Logged-in regular users must be able to access the lists of their past purchased and future purchased trips, always with one click.
   suite(
     name: "FR22UserTrips",
     context: FR22UserTripsContext,
