@@ -26,7 +26,7 @@ defmodule AdminEditTripsContext do
   #
   # ADMIN EXISTS
   #
-  given_ ~r/^an admin user "(?<email>[^"]+)" with password "(?<password>[^"]+)" exists$/,
+  given_ ~r/^an admin user "(?<email>[^\"]+)" with password "(?<password>[^\"]+)" exists$/,
   fn state, %{email: email, password: password} ->
     username = "bddadmin_" <> Base.encode16(:crypto.strong_rand_bytes(3))
 
@@ -47,11 +47,48 @@ defmodule AdminEditTripsContext do
               "phone_number" => "+905551111111",
               "role" => "admin"
             })
+
           user
+
         user -> user
       end
 
     {:ok, Map.put(state, :admin, admin)}
+  end
+
+  # Support the feature's simple phrase: "Given a future trip exists"
+  given_ ~r/^a future trip exists$/, fn state ->
+    admin =
+      Accounts.get_user_by_email("admin@example.com") ||
+        (case Accounts.register_user(%{
+               "username" => "admin",
+               "password" => "Password123!",
+               "password_confirmation" => "Password123!",
+               "name" => "Admin",
+               "last_name" => "User",
+               "email" => "admin@example.com",
+               "birthdate" => "1990-01-01",
+               "nationality" => "ID",
+               "residence_address" => "Admin Street",
+               "phone_number" => "+628111111111",
+               "role" => "admin"
+             }) do
+           {:ok, u} -> u
+           {:error, _} -> Accounts.get_user_by_email("admin@example.com")
+         end)
+
+    {:ok, trip} = Trips.create_trip(admin, %{
+      transport_mode: "plane",
+      source_city: "Tallinn",
+      destination_city: "Helsinki",
+      departure_time: DateTime.utc_now() |> DateTime.add(86400, :second),
+      arrival_time: DateTime.utc_now() |> DateTime.add(90000, :second),
+      price: 10.0,
+      co2_level: 100,
+      available_tickets: 20
+    })
+
+    {:ok, Map.put(state, :trip, trip)}
   end
 
   given_ ~r/^I am logged in as an admin$/, fn state, _ ->
@@ -171,21 +208,32 @@ end
     {:ok, state}
   end
 
+  # Allow navigating to the trip edit page using the trip stored in state
+  when_ ~r/^I navigate to the trip edit page for the future trip$/, fn state ->
+    trip = Map.fetch!(state, :trip)
+    navigate_to("#{@base}/admin/trips/#{trip.id}/edit")
+    :timer.sleep(1000)
+    assert current_url() =~ "/admin/trips/#{trip.id}/edit"
+    {:ok, state}
+  end
+
   #
   # UPDATE FORM
   #
   when_ ~r/^I update the trip with:$/, fn state, %{table: table} ->
     :timer.sleep(500)
     Enum.each(table, fn
-      {"source_city", v} -> fill_field({:name, "trip[source_city]"}, v)
-      {"destination_city", v} -> fill_field({:name, "trip[destination_city]"}, v)
-      {"departure_time", v} -> fill_field({:name, "trip[departure_time]"}, v)
-      {"arrival_time", v} -> fill_field({:name, "trip[arrival_time]"}, v)
-      {"price", v} -> fill_field({:name, "trip[price]"}, v)
-      {"co2_level", v} -> fill_field({:name, "trip[co2_level]"}, v)
-      {"available_tickets", v} -> fill_field({:name, "trip[available_tickets]"}, v)
-      _ -> :ok
-    end)
+        {"picture_url", v} -> fill_field({:name, "trip[picture_url]"}, v)
+        {"transport_mode", v} -> fill_field({:name, "trip[transport_mode]"}, v)
+        {"source_city", v} -> fill_field({:name, "trip[source_city]"}, v)
+        {"destination_city", v} -> fill_field({:name, "trip[destination_city]"}, v)
+        {"departure_time", v} -> fill_field({:name, "trip[departure_time]"}, v)
+        {"arrival_time", v} -> fill_field({:name, "trip[arrival_time]"}, v)
+        {"price", v} -> fill_field({:name, "trip[price]"}, v)
+        {"co2_level", v} -> fill_field({:name, "trip[co2_level]"}, v)
+        {"available_tickets", v} -> fill_field({:name, "trip[available_tickets]"}, v)
+        _ -> :ok
+      end)
     {:ok, state}
   end
 

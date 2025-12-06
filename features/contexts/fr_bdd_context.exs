@@ -7,6 +7,40 @@ defmodule FRBDDContext do
   alias EarthScanner.Trips.Trip
   alias EarthScanner.Searches.SearchHistory
 
+  # Helper functions to safely parse captures
+  defp safe_str(captures, key, default \\ "") do
+    case Map.get(captures, key) do
+      v when is_binary(v) -> v
+      v when is_nil(v) -> default
+      v -> to_string(v)
+    end
+  end
+
+  defp safe_int(captures, key, default \\ 0) do
+    case Map.get(captures, key) do
+      v when is_integer(v) -> v
+      v when is_binary(v) and v != "" ->
+        case Integer.parse(v) do
+          {i, _} -> i
+          :error -> default
+        end
+      _ -> default
+    end
+  end
+
+  defp safe_decimal(text, default_str \\ "0") do
+    cond do
+      is_binary(text) and text != "" ->
+        try do
+          Decimal.new(text)
+        rescue
+          _ -> Decimal.new(default_str)
+        end
+      is_nil(text) -> Decimal.new(default_str)
+      true -> Decimal.new(to_string(text))
+    end
+  end
+
   scenario_starting_state fn _ ->
     Hound.start_session()
     %{}
@@ -17,9 +51,15 @@ defmodule FRBDDContext do
     :ok
   end
 
-  given_ ~r/^a trip exists with source "(?<source>[^"]+)" destination "(?<destination>[^"]+)" transport "(?<transport>[^"]+)" duration_minutes (?<duration>\d+) price "(?<price>[^"]+)"$/, fn state, %{"source" => s, "destination" => d, "transport" => t, "duration" => duration, "price" => price} ->
-    now = DateTime.utc_now()
-    dt = DateTime.add(now, 86_400, :second)
+  given_ ~r/^a trip exists with source "(?<source>[^"]+)" destination "(?<destination>[^"]+)" transport "(?<transport>[^"]+)" duration_minutes (?<duration>\d+) price "(?<price>[^"]+)"$/, fn state, captures ->
+    s = safe_str(captures, "source")
+    d = safe_str(captures, "destination")
+    t = safe_str(captures, "transport")
+    price_text = safe_str(captures, "price", "0")
+    duration = safe_int(captures, "duration", 60)
+
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    dt = NaiveDateTime.add(now, 86_400, :second)
 
     trip = %Trip{
       source_city: s,
@@ -27,8 +67,8 @@ defmodule FRBDDContext do
       transport_mode: t,
       departure_time: dt,
       arrival_time: DateTime.add(dt, 3600, :second),
-      duration_minutes: String.to_integer(duration),
-      price: Decimal.new(price),
+      duration_minutes: duration,
+      price: safe_decimal(price_text, "0"),
       co2_level: 100,
       available_tickets: 10,
       admin_id: 1
@@ -39,24 +79,30 @@ defmodule FRBDDContext do
     {:ok, state}
   end
 
-  given_ ~r/^(?<count>\d+) similar trips exist for "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, %{"count" => count_s, "source" => s, "destination" => d} ->
-    count = String.to_integer(count_s)
-    now = DateTime.utc_now()
-    dt = DateTime.add(now, 86_400, :second)
+  given_ ~r/^(?<count>\d+) similar trips exist for "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, captures ->
+     count = safe_int(captures, "count", 0)
 
-    for _ <- 1..count do
-      Repo.insert!(%Trip{
-        source_city: s,
-        destination_city: d,
-        transport_mode: "bus",
-        departure_time: dt,
-        arrival_time: DateTime.add(dt, 3600, :second),
-        duration_minutes: 60,
-        price: 20,
-        co2_level: 100,
-        available_tickets: 10,
-        admin_id: 1
-      })
+     s = safe_str(captures, "source")
+     d = safe_str(captures, "destination")
+
+    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+    dt = NaiveDateTime.add(now, 86_400, :second)
+
+    if count > 0 do
+      for _ <- 1..count do
+        Repo.insert!(%Trip{
+          source_city: s,
+          destination_city: d,
+          transport_mode: "bus",
+          departure_time: dt,
+          arrival_time: DateTime.add(dt, 3600, :second),
+          duration_minutes: 60,
+          price: Decimal.new("20"),
+          co2_level: 100,
+          available_tickets: 10,
+          admin_id: 1
+        })
+      end
     end
 
     {:ok, state}
@@ -73,20 +119,20 @@ defmodule FRBDDContext do
     end
   end
 
-  when_ ~r/^I visit the trip page for id (?<id>\d+)$/, fn state, %{"id" => id_s} ->
-    id = String.to_integer(id_s)
+  when_ ~r/^I visit the trip page for id (?<id>\d+)$/, fn state, captures ->
+     id = safe_int(captures, "id", 0)
     navigate_to("/trips/#{id}")
     :timer.sleep(500)
     {:ok, state}
   end
 
-  given_ ~r/^I have performed (?<count>\d+) searches$/, fn state, %{"count" => count_s} ->
-    count = String.to_integer(count_s)
-    # create a user
+    given_ ~r/^I have performed (?<count>\d+) searches$/, fn state, captures ->
+      count = safe_int(captures, "count", 0)
+    # create a user with unique email to avoid constraint violations
     unique_id = :erlang.unique_integer([:positive])
     email = "bdd_user_#{unique_id}@example.com"
 
-    {:ok, user} = Accounts.register_user(%{
+    user_result = Accounts.register_user(%{
       "username" => "bdd_user_#{unique_id}",
       "password" => "Password123!",
       "password_confirmation" => "Password123!",
@@ -99,15 +145,23 @@ defmodule FRBDDContext do
       "phone_number" => "+628000000000"
     })
 
-    now = DateTime.utc_now()
+    user = case user_result do
+      {:ok, u} -> u
+      {:error, changeset} ->
+        raise "Failed to register user: #{inspect(changeset.errors)}"
+    end
 
-    for i <- 1..count do
-      Repo.insert!(%SearchHistory{
-        source_city: "City#{i}",
-        destination_city: "Dest#{i}",
-        user_id: user.id,
-        inserted_at: DateTime.add(now, -i, :second)
-      })
+    now = NaiveDateTime.utc_now()
+
+    if count > 0 do
+      for i <- 1..count do
+        Repo.insert!(%SearchHistory{
+          source_city: "City#{i}",
+          destination_city: "Dest#{i}",
+          user_id: user.id,
+          inserted_at: NaiveDateTime.add(now, -i, :second)
+        })
+      end
     end
 
     # login the user in the browser
