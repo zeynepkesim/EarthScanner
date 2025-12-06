@@ -61,12 +61,15 @@
               <% end %>
             </span>
             <a href={~p"/profile"} class="text-sm font-medium">Profile</a>
-            <a
-              href={~p"/my-trips"}
-              class="text-sm font-medium text-blue-700 hover:underline"
-            >
-              My Trips
-            </a>
+            <%= unless assigns.current_user.role == "admin" do %>
+              <a
+                href={~p"/my-trips"}
+                class="text-sm font-medium text-blue-700 hover:underline"
+              >
+                My Trips
+              </a>
+            <% end %>
+
             <%= if assigns.current_user.role == "admin" do %>
               <a
                 href={~p"/admin/my-trips"}
