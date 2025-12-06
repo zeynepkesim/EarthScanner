@@ -114,4 +114,10 @@ defmodule WhiteBreadConfig do
     context: FR22UserTripsContext,
     feature_paths: ["features/fr22_user_trips.feature"]
   )
+
+  suite(
+    name: "DeleteAccount",
+    context: DeleteAccountContext,
+    feature_paths: ["features/fr06_delete_account.feature"]
+  )
 end
