@@ -9,8 +9,7 @@ defmodule EarthScanner.Release do
 
   def migrate do
     IO.puts("Release: loading app...")
-    # Load the application so repos and config are available
-    :ok = Application.load(@app)
+    load_app()
 
     IO.puts("Release: running migrations...")
 
@@ -30,10 +29,22 @@ defmodule EarthScanner.Release do
     IO.puts("Running migrations for #{inspect(repo)} from #{migrations_path}")
 
     # Ensure the repo supervision is started so migrations can run
-    {:ok, _pid} = repo.start_link(pool_size: 2)
+    case repo.start_link(pool_size: 2) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      other -> raise "Failed to start repo #{inspect(repo)}: #{inspect(other)}"
+    end
 
     Ecto.Migrator.with_repo(repo, fn repo_mod ->
       Ecto.Migrator.run(repo_mod, migrations_path, :up, all: true)
     end)
+  end
+
+  defp load_app do
+    case Application.load(@app) do
+      :ok -> :ok
+      {:error, {:already_loaded, ^@app}} -> :ok
+      other -> raise "Failed to load app #{@app}: #{inspect(other)}"
+    end
   end
 end
