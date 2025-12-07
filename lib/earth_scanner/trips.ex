@@ -1160,11 +1160,13 @@ defmodule EarthScanner.Trips do
             {:error, :already_purchased}
 
           true ->
+            # FR-25
             # Loyalty Logic
             price = Decimal.to_float(trip.price)
 
             {points_redeemed, discount_amount} =
               if redeem_points? do
+                # FR-26: Loyalty Point Redemption
                 max_discount_points = round(price * 10)
                 points_available = user.loyalty_points
 
@@ -1177,8 +1179,11 @@ defmodule EarthScanner.Trips do
               end
 
             final_price = max(0.0, price - discount_amount)
+            # FR-25: Earn points based on ticket price (1 point per 1 EUR approx)
+            # FR-25
             points_earned = round(final_price)
 
+            # FR-25
             new_points_balance = user.loyalty_points - points_redeemed + points_earned
             net_point_change = points_earned - points_redeemed
 
@@ -1202,6 +1207,7 @@ defmodule EarthScanner.Trips do
             # Use restricted changeset and log changes within the transaction
             |> Ecto.Multi.update(
               :update_user_points,
+              # FR-25
               User.loyalty_changeset(user, %{loyalty_points: new_points_balance})
             )
             |> Ecto.Multi.insert(

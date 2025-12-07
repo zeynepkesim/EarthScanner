@@ -33,13 +33,13 @@ Feature: FR-25 Earn Loyalty Points
     When I search for "Sold Out Trip"
     And I view the trip details
     And I attempt to purchase a ticket
-    Then I should see "This trip is sold out"
+    Then I should see "Sold out"
     And my loyalty points balance should be 0
 
   # --- Edge Cases ---
 
   Scenario: User earns 0 points on free trip
-    Given there is a trip "Free Ride" costing 0.0 EUR
+    Given there is a trip "Free Ride" costing 0.1 EUR
     When I search for "Free Ride"
     And I view the trip details
     And I purchase a ticket

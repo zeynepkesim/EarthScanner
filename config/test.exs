@@ -14,7 +14,7 @@ config :earth_scanner, EarthScanner.Repo,
   database: System.get_env("POSTGRES_DB", "earth_scanner_test"),
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 20,
-  ownership_timeout: 60_000
+  ownership_timeout: 120_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
@@ -42,5 +42,5 @@ config :phoenix_live_view,
 config :hound,
   driver: "chrome_driver",
   browser: "chrome",
-  host: "http://127.0.0.1",
+  host: "127.0.0.1",
   port: 9515

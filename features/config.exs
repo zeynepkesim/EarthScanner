@@ -122,12 +122,15 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "LoyaltyPoints",
-    context: LoyaltyPointsContext,
-    feature_paths: [
-      "features/fr25_earn_loyalty_points.feature",
-      "features/fr26_redeem_loyalty_points.feature"
-    ]
+    name: "EarnLoyaltyPoints",
+    context: EarnLoyaltyPointsContext,
+    feature_paths: ["features/fr25_earn_loyalty_points.feature"]
+  )
+
+  suite(
+    name: "RedeemLoyaltyPoints",
+    context: RedeemLoyaltyPointsContext,
+    feature_paths: ["features/fr26_redeem_loyalty_points.feature"]
   )
 
   suite(
