@@ -1,5 +1,6 @@
 <div class="min-h-screen bg-white px-6 py-12">
   <div class="mx-auto w-full max-w-3xl">
+    <%!-- FR-03: Edit profile (post-registration) - Display user profile information --%>
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Your profile</h1>
@@ -7,6 +8,7 @@
 
       <div class="flex items-center gap-3">
         <.icon name="hero-user-circle" class="h-12 w-12 text-slate-400" />
+        <%!-- FR-03: Link to edit user profile --%>
         <!-- edit -->
         <.link
           navigate={~p"/profile/edit"}

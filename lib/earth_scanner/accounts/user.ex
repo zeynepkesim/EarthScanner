@@ -61,6 +61,8 @@ defmodule EarthScanner.Accounts.User do
 
   defp maybe_put_password_hash(changeset), do: changeset
 
+  # FR-03: Edit profile (post-registration) - User can edit: name, last name, email, birthdate, nationality, address, phone, username
+  # Role cannot be changed by user
   def profile_changeset(user, attrs) do
     user
     |> cast(attrs, [

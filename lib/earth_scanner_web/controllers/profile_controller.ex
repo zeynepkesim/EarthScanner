@@ -2,6 +2,7 @@ defmodule EarthScannerWeb.ProfileController do
   use EarthScannerWeb, :controller
   alias EarthScanner.Accounts
 
+  # FR-03: Edit profile (post-registration) - Logged-in user can edit basic info
   def show(conn, params) do
     case conn.assigns[:current_user] do
       nil ->
@@ -24,12 +25,14 @@ defmodule EarthScannerWeb.ProfileController do
   end
 
   # --- Teammate's profile edit/update ---
+  # FR-03: Allow user to edit basic profile information
   def edit(conn, _params) do
     user = conn.assigns.current_user
     changeset = Accounts.User.profile_changeset(user, %{})
     render(conn, :edit, form: Phoenix.Component.to_form(changeset), user: user)
   end
 
+  # FR-03: Update user profile with new information
   def update(conn, %{"user" => user_params}) do
     user = conn.assigns[:current_user]
 
