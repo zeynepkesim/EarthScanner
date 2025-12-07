@@ -27,9 +27,7 @@ services:
       DISABLE_EMAILS: "true"
     ports:
       - "4000:4000"
-    command: 
-      - /app/bin/earth_scanner
-      - start
+    # Entrypoint handles waiting for DB, running migrations, and starting the release
 
 volumes:
   db_data:

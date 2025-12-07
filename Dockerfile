@@ -55,13 +55,17 @@ RUN mix release --overwrite
 FROM debian:bookworm-slim AS app
 
 # System deps required at runtime (OpenSSL lib for crypto, etc)
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl-dev openssl && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl-dev openssl postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy the release from the build stage
 COPY --from=build /app/_build/prod/rel/earth_scanner .
+
+# Copy entrypoint script (wait-for-db + migrate + start)
+COPY docker-entrypoint.sh /app/bin/entrypoint.sh
+RUN chmod +x /app/bin/entrypoint.sh
 
 ENV HOME=/app
 ENV LANG=C.UTF-8
@@ -71,5 +75,5 @@ ENV PORT=4000
 
 EXPOSE 4000
 
-# Docker-friendly entrypoint: run the release
-CMD ["/app/bin/earth_scanner", "start"]
+# Use the entrypoint to wait for the DB, run migrations, then start the release
+ENTRYPOINT ["/app/bin/entrypoint.sh"]
