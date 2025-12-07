@@ -135,7 +135,7 @@ defmodule WhiteBreadConfig do
 
   suite(
     name: "PointsSecurity",
-    context: LoyaltyPointsContext,
+    context: PointsSecurityContext,
     feature_paths: ["features/nfr09_points_security.feature"]
   )
 
