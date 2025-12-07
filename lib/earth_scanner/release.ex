@@ -43,7 +43,7 @@ defmodule EarthScanner.Release do
   defp load_app do
     case Application.load(@app) do
       :ok -> :ok
-      {:error, {:already_loaded, ^@app}} -> :ok
+      {:error, {:already_loaded, app}} when app == @app -> :ok
       other -> raise "Failed to load app #{@app}: #{inspect(other)}"
     end
   end
