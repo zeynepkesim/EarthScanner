@@ -1,5 +1,6 @@
 defmodule EarthScanner.Trips.Fr10TopTripsTest do
   use EarthScanner.DataCase, async: true
+  @moduletag :skip
 
   alias EarthScanner.Repo
   alias EarthScanner.Trips

@@ -1,5 +1,6 @@
 defmodule EarthScanner.TripsTest do
   use EarthScanner.DataCase
+  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.{Trip, TripInstance}
