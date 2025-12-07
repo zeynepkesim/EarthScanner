@@ -43,4 +43,4 @@ config :hound,
   driver: "chrome_driver",
   browser: "chrome",
   host: "http://localhost",
-  port: 53533
+  port: 53353
