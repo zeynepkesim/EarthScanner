@@ -90,6 +90,7 @@ defmodule EarthScannerWeb.UserTripsControllerTest do
     departure = DateTime.add(DateTime.utc_now(), 3600, :second)
 
     %{
+      "picture_url" => "https://via.placeholder.com/150",
       "transport_mode" => "train",
       "source_city" => "Tallinn",
       "destination_city" => "Riga",
@@ -106,6 +107,7 @@ defmodule EarthScannerWeb.UserTripsControllerTest do
     departure = DateTime.add(DateTime.utc_now(), 5400, :second)
 
     %{
+      "picture_url" => "https://via.placeholder.com/150",
       "transport_mode" => "plane",
       "source_city" => "Paris",
       "destination_city" => "Berlin",

@@ -40,6 +40,7 @@ defmodule EarthScanner.TripsFR23Test do
       # create a trip by creator
       {:ok, trip} =
         Trips.create_trip(creator, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "CityA",
           "destination_city" => "CityB",

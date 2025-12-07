@@ -37,6 +37,7 @@ defmodule EarthScanner.Notifications.TripChangePayloadTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "bus",
         "source_city" => "CityA",
         "destination_city" => "CityB",

@@ -78,6 +78,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "plane",
           "source_city" => "New York",
           "destination_city" => "London",
@@ -125,6 +126,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, future_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Paris",
           "destination_city" => "Berlin",
@@ -138,6 +140,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, past_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Madrid",
           "destination_city" => "Barcelona",
@@ -203,6 +206,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, trip_with_tickets} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "plane",
           "source_city" => "Tokyo",
           "destination_city" => "Seoul",
@@ -254,6 +258,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "A",
           "destination_city" => "B",
@@ -281,6 +286,7 @@ defmodule EarthScanner.TripsTest do
 
       {:ok, trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "C",
           "destination_city" => "D",

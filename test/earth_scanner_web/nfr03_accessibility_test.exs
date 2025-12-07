@@ -40,12 +40,16 @@ defmodule EarthScanner.AccessibilityTest do
       admin = TripTestHelper.admin_fixture()
       future_date = Date.utc_today() |> Date.add(10) |> Date.to_iso8601()
 
+      future_departure = DateTime.utc_now() |> DateTime.add(3600 * 24 * 10, :second)
+      future_arrival = DateTime.add(future_departure, 7200, :second)
+
       {:ok, _trip} =
         EarthScanner.Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
-          "departure_time" => "2025-12-01T10:00:00Z",
-          "arrival_time" => "2025-12-01T12:00:00Z",
+          "departure_time" => future_departure,
+          "arrival_time" => future_arrival,
           "price" => 50.0,
           "co2_level" => 100,
           "available_tickets" => 10,

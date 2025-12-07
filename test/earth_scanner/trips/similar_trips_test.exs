@@ -27,6 +27,7 @@ defmodule EarthScanner.Trips.SimilarTripsTest do
       admin = admin_fixture()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Paris",
@@ -61,6 +62,7 @@ defmodule EarthScanner.Trips.SimilarTripsTest do
       admin = admin_fixture()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Paris",

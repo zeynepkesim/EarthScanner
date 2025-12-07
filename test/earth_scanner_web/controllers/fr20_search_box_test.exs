@@ -65,6 +65,7 @@ defmodule EarthScannerWeb.FR20SearchBoxTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "source_city" => "Tartu",
         "destination_city" => "Tallinn",
         "departure_time" => departure,
@@ -201,8 +202,9 @@ defmodule EarthScannerWeb.FR20SearchBoxTest do
     past_arrival = DateTime.add(past_departure, 3600, :second)
 
     Trips.create_trip(admin, %{
-      "source_city" => "Tartu",
-      "destination_city" => "Tallinn",
+      "picture_url" => "https://via.placeholder.com/150",
+      "source_city" => "PastCity",
+      "destination_city" => "FutureCity",
       "transport_mode" => "bus",
       "departure_time" => past_departure,
       "arrival_time" => past_arrival,
@@ -217,8 +219,8 @@ defmodule EarthScannerWeb.FR20SearchBoxTest do
 
     conn =
       get(conn, "/search/results", %{
-        "source" => "Tartu",
-        "destination" => "Tallinn"
+        "source" => "PastCity",
+        "destination" => "FutureCity"
       })
 
     html = html_response(conn, 200)
