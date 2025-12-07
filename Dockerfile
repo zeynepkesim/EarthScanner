@@ -24,8 +24,15 @@ COPY config ./config
 
 RUN mix deps.get --only prod
 
+
 # Copy the rest of the app
 COPY . .
+
+# Ensure dependencies are up-to-date and compiled before building assets. Some git/option
+# changes (e.g. heroicons sparse options) can make the lockfile outdated inside the build
+# environment; forcing deps.get and compiling here updates the lock and avoids the
+# "lock is outdated" error during `mix assets.deploy`.
+RUN mix deps.get --force && mix deps.compile --force
 
 # Build assets and digest static files
 # This project uses Tailwind and esbuild via Mix aliases. The alias `assets.deploy` runs the
