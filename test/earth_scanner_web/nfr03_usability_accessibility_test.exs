@@ -1,4 +1,4 @@
-defmodule EarthScanner.AccessibilityTest do
+defmodule EarthScanner.UsabilityAccessibilityTest do
   use EarthScanner.DataCase
   import Phoenix.ConnTest
 

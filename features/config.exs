@@ -135,14 +135,14 @@ defmodule WhiteBreadConfig do
 
   suite(
     name: "PointsSecurity",
-    context: LoyaltyPointsContext,
+    context: PointsSecurityContext,
     feature_paths: ["features/nfr09_points_security.feature"]
   )
 
   suite(
-    name: "Accessibility",
-    context: AccessibilityContext,
-    feature_paths: ["features/nfr03_accessibility.feature"]
+    name: "UsabilityAccessibility",
+    context: UsabilityAccessibilityContext,
+    feature_paths: ["features/nfr03_usability_accessibility.feature"]
   )
 
   # Calvin - BDD Passed

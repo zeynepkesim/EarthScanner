@@ -91,4 +91,20 @@ defmodule EarthScanner.Accounts do
         {:error, :invalid_password}
     end
   end
+
+  # NFR-09: Helper to update loyalty points internally (e.g. for testing or admin adjustments)
+  # Uses the restricted loyalty_changeset to ensure security.
+  def update_user_loyalty_points(%User{} = user, points) when is_integer(points) do
+    user
+    |> User.loyalty_changeset(%{loyalty_points: points})
+    |> Repo.update()
+  end
+
+  # NFR-09: Retrieve audit logs for points
+  def list_point_logs(%User{} = user) do
+    EarthScanner.Accounts.PointLog
+    |> where([l], l.user_id == ^user.id)
+    |> order_by([l], asc: l.inserted_at)
+    |> Repo.all()
+  end
 end
