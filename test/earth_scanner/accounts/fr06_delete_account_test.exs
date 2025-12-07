@@ -1,4 +1,4 @@
-defmodule EarthScanner.Accounts.Fr06DeleteAccountTest do
+defmodule EarthScanner.Accounts.DeleteAccountTest do
   use EarthScanner.DataCase
 
   alias EarthScanner.Accounts
@@ -64,6 +64,7 @@ defmodule EarthScanner.Accounts.Fr06DeleteAccountTest do
 
       # Setup for Purchase (needs a trip instance, which needs a trip)
       trip_attrs = %{
+        picture_url: "https://example.com/trip.jpg",
         source_city: "NYC",
         destination_city: "LON",
         transport_mode: "plane",

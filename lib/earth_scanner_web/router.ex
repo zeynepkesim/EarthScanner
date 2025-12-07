@@ -33,6 +33,8 @@ defmodule EarthScannerWeb.Router do
 
     get "/profile/edit", ProfileController, :edit
     put "/profile", ProfileController, :update
+
+    # FR-06: Delete account & data (regular) routes
     get "/users/delete", ProfileController, :confirm_delete
     post "/users/delete", ProfileController, :delete
 
@@ -56,7 +58,7 @@ defmodule EarthScannerWeb.Router do
     get "/users/new", AdminUserController, :new
     post "/users", AdminUserController, :create
 
-    # FR-29
+    # FR-29: Create Trip & FR-36: Recurring Trip Dates
     get "/trips", TripController, :index
     get "/trips/new", TripController, :new
     post "/trips", TripController, :create
@@ -72,7 +74,7 @@ defmodule EarthScannerWeb.Router do
     get "/trips/:id/confirm-delete", Admin.TripDetailController, :confirm_delete
     post "/trips/:id/force-delete", Admin.TripDetailController, :force_delete
 
-    # FR-36
+    # FR-36: Edit/Delete Trip Instances
     get "/trips/:trip_id/instances/:id/edit", TripInstanceController, :edit
     put "/trips/:trip_id/instances/:id", TripInstanceController, :update
     delete "/trips/:trip_id/instances/:id", TripInstanceController, :delete

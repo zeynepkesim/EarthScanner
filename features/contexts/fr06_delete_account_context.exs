@@ -40,16 +40,20 @@ defmodule DeleteAccountContext do
 
     # Login
     navigate_to "/users/login"
+    :timer.sleep(500)
     fill_field({:name, "session[email]"}, user.email)
     fill_field({:name, "session[password]"}, user.password)
     click({:xpath, "//button[contains(text(), 'Log in')] | //button[contains(text(), 'Sign in')] | //input[@type='submit']"})
+    :timer.sleep(1500)  # Wait for login to complete
+
+    IO.puts("DEBUG: After login, current URL: #{current_url()}")
 
     {:ok, Map.put(state, :user, user)}
   end
 
   given_ ~r/^I navigate to the delete account page$/, fn state ->
     navigate_to "/users/delete"
-    Process.sleep(500)
+    :timer.sleep(1000)  # Increased wait time
     IO.puts("DEBUG: Navigated to delete page. Current URL: #{current_url()}")
     {:ok, state}
   end

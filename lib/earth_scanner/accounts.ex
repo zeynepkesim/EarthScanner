@@ -73,6 +73,9 @@ defmodule EarthScanner.Accounts do
     {:error, :unauthorized}
   end
 
+  # FR-06: Delete account & data (regular)
+  # Requires re-authentication (password prompt)
+  # Deletes user account (irreversible action)
   def delete_user(%User{} = user, password) when is_binary(password) do
     cond do
       is_nil(user.password_hash) ->

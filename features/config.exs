@@ -37,9 +37,15 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "AdminRecurringTrips",
-    context: AdminRecurringTripsContext,
-    feature_paths: ["features/admin_creates_recurring_trip.feature"]
+    name: "CreateTrip",
+    context: CreateTripContext,
+    feature_paths: ["features/fr29_create_trip.feature"]
+  )
+
+  suite(
+    name: "RecurringTripDates",
+    context: RecurringTripDatesContext,
+    feature_paths: ["features/fr36_recurring_trip_dates.feature"]
   )
 
   suite(

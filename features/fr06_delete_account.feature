@@ -3,6 +3,8 @@ Feature: FR-06 Delete account & data (regular)
   I want to delete my account
   So that I can leave the platform
 
+  Context: DeleteAccountContext
+
   Scenario: Successful deletion
     Given a user exists and I am logged in
     And I navigate to the delete account page
