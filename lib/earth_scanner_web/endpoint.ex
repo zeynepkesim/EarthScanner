@@ -4,13 +4,6 @@ defmodule EarthScannerWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
-  session_secure? =
-    case System.get_env("SESSION_SECURE") do
-      val when val in ["0", "false", "False", "FALSE"] -> false
-      val when val in ["1", "true", "True", "TRUE"] -> true
-      _ -> Mix.env() == :prod
-    end
-
   @session_options [
     store: :cookie,
     key: "_earth_scanner_key",
@@ -18,8 +11,8 @@ defmodule EarthScannerWeb.Endpoint do
     signing_salt: System.get_env("SESSION_SIGNING_SALT") || "bUGSMEeH",
     encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT") || "ENCRYPT1234",
     same_site: "Lax",
-    # Allow HTTP-only deployments by toggling via SESSION_SECURE=false
-    secure: session_secure?
+    # Allow HTTP-only deployments; secure cookies are disabled here
+    secure: false
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
