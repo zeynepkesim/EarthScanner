@@ -593,21 +593,25 @@ defmodule EarthScanner.Trips do
   # ---------------------- Public search & helpers -----------------------
 
   @doc """
-  Search for future trips matching source and destination patterns.
-
+  # FR-11: Exclude past trips from search results
+  Searches for trips matching the given source and destination patterns,
+  excluding trips with departure time in the past (strict comparison: exactly now = past).
   Accepts SQL LIKE/ILIKE patterns (e.g. "%Paris%") or plain strings.
   Returns a list of `Trip` structs (not preloaded with instances).
   """
   def search_future_trips(source_pattern, destination_pattern) do
-    today = Date.utc_today()
+    # FR-11: Use DateTime.utc_now() to check departure_time, not just instance dates
+    now = DateTime.utc_now()
 
     query =
       from t in Trip,
         where:
           ilike(t.source_city, ^source_pattern) and
-            ilike(t.destination_city, ^destination_pattern),
+            ilike(t.destination_city, ^destination_pattern) and
+            t.departure_time > ^now,
+        # FR-11: Strict comparison - trips departing exactly now are treated as past
         join: i in TripInstance,
-        on: i.trip_id == t.id and i.date >= ^today,
+        on: i.trip_id == t.id,
         distinct: true,
         order_by: [asc: t.departure_time]
 

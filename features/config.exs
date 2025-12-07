@@ -110,6 +110,12 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
+    name: "ExcludePastTrips",
+    context: ExcludePastTripsContext,
+    feature_paths: ["features/fr11_exclude_past_trips.feature"]
+  )
+
+  suite(
     name: "LoyaltyPoints",
     context: LoyaltyPointsContext,
     feature_paths: [

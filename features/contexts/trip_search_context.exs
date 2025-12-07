@@ -325,39 +325,6 @@ defmodule TripSearchContext do
   end
 
   ##########################################################################
-  # FR-11 — Edge case: trip departing exactly now
-  ##########################################################################
-
-  given_ ~r/^a trip departing exactly now exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/, fn state, %{source: source, dest: dest} ->
-    now =
-      DateTime.utc_now()
-      |> DateTime.truncate(:second)
-
-    Repo.insert!(%Trip{
-      source_city: source,
-      destination_city: dest,
-      transport_mode: "bus",
-      departure_time: now,
-      arrival_time: DateTime.add(now, 3600, :second),
-      duration_minutes: 60,
-      price: 20,
-      co2_level: 150,
-      available_tickets: 10,
-      admin_id: get_or_create_test_admin().id
-      # We rely on source/destination + time to identify this in tests if needed
-    })
-
-    {:ok, state}
-  end
-
-  then_ ~r/^I should not see the "NowTrip" in the results$/, fn state ->
-    html = visible_page_text()
-    # This step is a placeholder: UI does not label "NowTrip" explicitly yet.
-    refute String.contains?(html, "NowTrip")
-    {:ok, state}
-  end
-
-  ##########################################################################
   # FR-15 — Sold-out trips highlighted and purchase disabled
   ##########################################################################
 
