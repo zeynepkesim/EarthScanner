@@ -24,6 +24,7 @@ services:
       URL_SCHEME: "http"
       URL_PORT: 80
       PORT: 4000
+      SESSION_SECURE: "false"
       # Swoosh / Mail config for dev testing
       SENDER_EMAIL: "no-reply@earthscanner.test"
       # Disable outbound email deliveries in this container
