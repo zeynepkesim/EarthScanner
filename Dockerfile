@@ -32,7 +32,15 @@ COPY . .
 # changes (e.g. heroicons sparse options) can make the lockfile outdated inside the build
 # environment; forcing deps.get and compiling here updates the lock and avoids the
 # "lock is outdated" error during `mix assets.deploy`.
-RUN mix deps.get --force && mix deps.compile --force
+RUN mix deps.get --force && mix deps.compile --force && mix compile
+
+# If Phoenix LiveView colocated JS was emitted into the build path ("_build/prod/phoenix-colocated"),
+# make it available to the JS bundler by copying it into `assets/node_modules/phoenix-colocated`.
+# This mirrors what a local dev environment does (where phoenix-colocated is symlinked into node_modules).
+RUN if [ -d _build/prod/phoenix-colocated ]; then \
+            mkdir -p assets/node_modules/phoenix-colocated && \
+            cp -r _build/prod/phoenix-colocated/* assets/node_modules/phoenix-colocated/; \
+        fi
 
 # Build assets and digest static files
 # This project uses Tailwind and esbuild via Mix aliases. The alias `assets.deploy` runs the
