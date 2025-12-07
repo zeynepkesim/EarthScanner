@@ -46,5 +46,10 @@ defmodule EarthScanner.Release do
       {:error, {:already_loaded, app}} when app == @app -> :ok
       other -> raise "Failed to load app #{@app}: #{inspect(other)}"
     end
+
+    case Application.ensure_all_started(@app) do
+      {:ok, _started} -> :ok
+      {:error, reason} -> raise "Failed to start app #{@app}: #{inspect(reason)}"
+    end
   end
 end

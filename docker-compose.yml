@@ -20,6 +20,7 @@ services:
       DATABASE_URL: "ecto://postgres:postgres@db/earth_scanner_dev"
       SECRET_KEY_BASE: "g1a8NRdhoU3t1m60WXUqgZzurOt+t5wId4igf4OL7Bs1gneKh0HS+1hvBuDnzdhu"
       PHX_HOST: "localhost"
+      PHX_SERVER: "true"
       PORT: 4000
       # Swoosh / Mail config for dev testing
       SENDER_EMAIL: "no-reply@earthscanner.test"
