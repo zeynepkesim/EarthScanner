@@ -25,6 +25,8 @@ services:
       URL_PORT: 80
       PORT: 4000
       SESSION_SECURE: "false"
+      SESSION_SIGNING_SALT: "p0fKx1V6Y7cRJ8z3u2QdLwB5nAsTiMhG"
+      SESSION_ENCRYPTION_SALT: "V9rLmC6sQ2eJ4kTa0nYxPbG8wHfUdZqN"
       # Swoosh / Mail config for dev testing
       SENDER_EMAIL: "no-reply@earthscanner.test"
       # Disable outbound email deliveries in this container
