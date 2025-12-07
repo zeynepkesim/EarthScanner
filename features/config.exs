@@ -37,9 +37,15 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "AdminRecurringTrips",
-    context: AdminRecurringTripsContext,
-    feature_paths: ["features/admin_creates_recurring_trip.feature"]
+    name: "CreateTrip",
+    context: CreateTripContext,
+    feature_paths: ["features/fr29_create_trip.feature"]
+  )
+
+  suite(
+    name: "RecurringTripDates",
+    context: RecurringTripDatesContext,
+    feature_paths: ["features/fr36_recurring_trip_dates.feature"]
   )
 
   suite(
@@ -98,18 +104,33 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "TopTrips",
-    context: TopTripsContext,
+    name: "HighlightTopTrips",
+    context: HighlightTopTripsContext,
     feature_paths: ["features/fr10_highlight_top_trips.feature"]
   )
 
   suite(
-    name: "LoyaltyPoints",
-    context: LoyaltyPointsContext,
-    feature_paths: [
-      "features/fr25_earn_loyalty_points.feature",
-      "features/fr26_redeem_loyalty_points.feature"
-    ]
+    name: "ExcludePastTrips",
+    context: ExcludePastTripsContext,
+    feature_paths: ["features/fr11_exclude_past_trips.feature"]
+  )
+
+  suite(
+    name: "HighlightSoldOutTrips",
+    context: HighlightSoldOutTripsContext,
+    feature_paths: ["features/fr15_highlight_sold_out_trips.feature"]
+  )
+
+  suite(
+    name: "EarnLoyaltyPoints",
+    context: EarnLoyaltyPointsContext,
+    feature_paths: ["features/fr25_earn_loyalty_points.feature"]
+  )
+
+  suite(
+    name: "RedeemLoyaltyPoints",
+    context: RedeemLoyaltyPointsContext,
+    feature_paths: ["features/fr26_redeem_loyalty_points.feature"]
   )
 
   suite(
@@ -142,5 +163,11 @@ defmodule WhiteBreadConfig do
     name: "FR22UserTrips",
     context: FR22UserTripsContext,
     feature_paths: ["features/fr22_user_trips.feature"]
+  )
+
+  suite(
+    name: "DeleteAccount",
+    context: DeleteAccountContext,
+    feature_paths: ["features/fr06_delete_account.feature"]
   )
 end

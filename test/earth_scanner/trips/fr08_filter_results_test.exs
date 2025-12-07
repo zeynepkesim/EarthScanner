@@ -15,6 +15,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, cheap_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -28,6 +29,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, medium_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -41,6 +43,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, expensive_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "plane",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -119,6 +122,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, short_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -133,6 +137,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, medium_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -147,6 +152,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, long_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -205,6 +211,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, low_co2} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -218,6 +225,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, medium_co2} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -231,6 +239,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, high_co2} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "plane",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -289,6 +298,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, early_departure} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -302,6 +312,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, mid_departure} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -315,6 +326,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, late_departure} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -388,6 +400,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, early_arrival} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -401,6 +414,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, mid_arrival} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -414,6 +428,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
       {:ok, late_arrival} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -478,6 +493,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
       # Trip matching all criteria
       {:ok, matching_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -492,6 +508,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
       # Trip outside price range
       {:ok, wrong_price} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "plane",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -506,6 +523,7 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
       # Trip outside duration range
       {:ok, wrong_duration} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",

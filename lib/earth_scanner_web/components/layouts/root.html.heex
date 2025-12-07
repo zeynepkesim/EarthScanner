@@ -60,6 +60,14 @@
                 ({assigns.current_user.role})
               <% end %>
             </span>
+            <!-- FR-25: Show Loyalty Points -->
+            <span
+              class="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20"
+              title="Loyalty Points"
+            >
+              <.icon name="hero-star" class="h-3 w-3 mr-1 text-yellow-600" />
+              {assigns.current_user.loyalty_points} pts
+            </span>
             <a href={~p"/profile"} class="text-sm font-medium">Profile</a>
             <%= unless assigns.current_user.role == "admin" do %>
               <a

@@ -3,7 +3,11 @@ Feature: FR-10 Highlight top trips
   I want a special section showing the fastest, cheapest, and least-polluting trips
   So that I can quickly identify the best options
 
-  Context: TopTripsContext
+  Context: HighlightTopTripsContext
+
+  Background:
+    Given I am logged in as a regular user
+    And the database is clean for this test
 
   # Positive Scenarios
 

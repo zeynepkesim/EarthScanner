@@ -44,6 +44,8 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Show confirmation page
+  # Requires user to be logged in
   def confirm_delete(conn, _params) do
     case conn.assigns[:current_user] do
       nil ->
@@ -57,6 +59,9 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Process deletion
+  # Requires re-authentication (password) and explicit confirmation
+  # Action is irreversible
   def delete(conn, %{"delete" => %{"password" => password, "confirm" => confirm}}) do
     case conn.assigns[:current_user] do
       nil ->
@@ -66,12 +71,14 @@ defmodule EarthScannerWeb.ProfileController do
 
       user ->
         cond do
+          # FR-06: Confirmation check - user must explicitly confirm deletion
           confirm != "yes" ->
             conn
             |> put_flash(:error, "Please confirm account deletion.")
             |> redirect(to: ~p"/users/delete")
 
           true ->
+            # FR-06: Re-authentication check and account deletion
             case EarthScanner.Accounts.delete_user(user, password) do
               {:ok, :deleted} ->
                 # drop the entire session to ensure the user is logged out immediately

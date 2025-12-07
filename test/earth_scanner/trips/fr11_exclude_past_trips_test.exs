@@ -1,3 +1,5 @@
+# FR-11: Exclude Past Trips - TDD Tests
+# Tests for ensuring past trips are excluded from search results
 defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
   use EarthScanner.DataCase, async: false
 
@@ -25,7 +27,14 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
     admin
   end
 
+  # FR-11: Clean database before each test
+  setup do
+    Repo.delete_all(Trip)
+    :ok
+  end
+
   @tag :fr11
+  # FR-11: Positive scenario - mix of past and future trips
   test "search_future_trips/2 excludes trips with departure time in the past" do
     admin = admin_fixture()
 
@@ -47,6 +56,7 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
         price: 10,
         co2_level: 100,
         available_tickets: 10,
+        picture_url: "https://via.placeholder.com/150",
         admin_id: admin.id
       })
 
@@ -61,6 +71,7 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
         price: 20,
         co2_level: 150,
         available_tickets: 10,
+        picture_url: "https://via.placeholder.com/150",
         admin_id: admin.id
       })
 
@@ -77,6 +88,7 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
   end
 
   @tag :fr11
+  # FR-11: Edge case - trip departing exactly now
   test "trip with departure exactly equal to now is treated as past" do
     admin = admin_fixture()
 
@@ -95,6 +107,7 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
         price: 15,
         co2_level: 120,
         available_tickets: 10,
+        picture_url: "https://via.placeholder.com/150",
         admin_id: admin.id
       })
 
@@ -105,5 +118,51 @@ defmodule EarthScanner.Trips.Fr11ExcludePastTripsTest do
     refute Enum.any?(results, fn trip ->
              DateTime.compare(trip.departure_time, now) == :eq
            end)
+  end
+
+  @tag :fr11
+  # FR-11: Negative scenario - only past trips exist
+  test "returns empty list when only past trips exist" do
+    admin = admin_fixture()
+
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
+    # Create only past trips (2 hours ago)
+    _past_trip1 =
+      Repo.insert!(%Trip{
+        source_city: "Tartu",
+        destination_city: "Tallinn",
+        transport_mode: "bus",
+        departure_time: DateTime.add(now, -7200, :second),
+        arrival_time: DateTime.add(now, -3600, :second),
+        duration_minutes: 60,
+        price: 10,
+        co2_level: 100,
+        available_tickets: 10,
+        picture_url: "https://via.placeholder.com/150",
+        admin_id: admin.id
+      })
+
+    # Create another past trip (1 hour ago)
+    _past_trip2 =
+      Repo.insert!(%Trip{
+        source_city: "Tartu",
+        destination_city: "Tallinn",
+        transport_mode: "train",
+        departure_time: DateTime.add(now, -3600, :second),
+        arrival_time: DateTime.add(now, -1800, :second),
+        duration_minutes: 30,
+        price: 15,
+        co2_level: 80,
+        available_tickets: 5,
+        picture_url: "https://via.placeholder.com/150",
+        admin_id: admin.id
+      })
+
+    # Search should return empty list (no future trips)
+    results = Trips.search_future_trips("Tartu", "Tallinn")
+    assert results == []
   end
 end

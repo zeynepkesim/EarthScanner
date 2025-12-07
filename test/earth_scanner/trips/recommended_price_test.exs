@@ -10,6 +10,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Paris",
@@ -30,6 +31,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "train",
         "source_city" => "Tallinn",
         "destination_city" => "Riga",
@@ -50,6 +52,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "bus",
         "source_city" => "Berlin",
         "destination_city" => "Prague",

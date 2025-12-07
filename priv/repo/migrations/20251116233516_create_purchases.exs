@@ -3,6 +3,7 @@ defmodule EarthScanner.Repo.Migrations.CreatePurchases do
 
   def change do
     create table(:purchases) do
+      # FR-06: Cascade delete purchases when user is deleted
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :trip_instance_id, references(:trip_instances, on_delete: :delete_all), null: false
 
