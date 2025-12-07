@@ -116,4 +116,17 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Req
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  # Allow disabling email delivery at runtime by setting DISABLE_EMAILS=true.
+  # When disabled, we set the Swoosh adapter to Local so outgoing emails are
+  # captured in-memory and never sent to external SMTP/APIs. This is useful
+  # for deployments where email should be suppressed (staging, temporary
+  # maintenance, etc.). To enable sending again, unset DISABLE_EMAILS or set
+  # it to "false".
+  disable_emails = System.get_env("DISABLE_EMAILS") in ["1", "true", "yes"]
+
+  if disable_emails do
+    config :earth_scanner, EarthScanner.Mailer,
+      adapter: Swoosh.Adapters.Local
+  end
 end

@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: earth_scanner_dev
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      MIX_ENV: prod
+      DATABASE_URL: "ecto://postgres:postgres@db/earth_scanner_prod"
+      SECRET_KEY_BASE: "REPLACE_WITH_SECRET"
+      PHX_HOST: "localhost"
+      PORT: 4000
+      # Swoosh / Mail config for dev testing
+      SENDER_EMAIL: "no-reply@earthscanner.test"
+      # Disable outbound email deliveries in this container
+      DISABLE_EMAILS: "true"
+    ports:
+      - "4000:4000"
+    command: 
+      - /app/bin/earth_scanner
+      - start
+
+volumes:
+  db_data:
