@@ -1,14 +1,55 @@
+<%= if @changeset.action do %>
+  <div class="mb-4 rounded-md bg-red-50 px-4 py-2 text-red-800 border border-red-200">
+    <strong>There were problems with your submission:</strong>
+    <ul class="mt-2 list-disc ml-5">
+      <%= for {_field, {msg, _opts}} <- @changeset.errors do %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+
 <.form :let={f} for={@changeset} action={~p"/admin/users"} method="post">
-  <div><label>Username</label> <.input field={f[:username]} /></div>
-
-  <div><label>Email</label> <.input field={f[:email]} /></div>
-
-  <div><label>Phone Number</label> <.input field={f[:phone_number]} /></div>
-
-  <div><label>Password</label> <.input field={f[:password]} type="password" /></div>
+  <div>
+    <label>Username</label>
+    <.input field={f[:username]} />
+    <%= for err <- Keyword.get_values(@changeset.errors, :username) do %>
+      <p class="text-sm text-red-700"><%= err |> elem(0) %></p>
+    <% end %>
+  </div>
 
   <div>
-    <label>Confirm Password</label> <.input field={f[:password_confirmation]} type="password" />
+    <label>Email</label>
+    <.input field={f[:email]} />
+    <%= for err <- Keyword.get_values(@changeset.errors, :email) do %>
+      <p class="text-sm text-red-700"><%= err |> elem(0) %></p>
+    <% end %>
   </div>
-  <button>Create Admin</button>
+
+  <div>
+    <label>Phone Number</label>
+    <.input field={f[:phone_number]} />
+    <%= for err <- Keyword.get_values(@changeset.errors, :phone_number) do %>
+      <p class="text-sm text-red-700"><%= err |> elem(0) %></p>
+    <% end %>
+  </div>
+
+  <div>
+    <label>Password</label>
+    <.input field={f[:password]} type="password" />
+    <%= for err <- Keyword.get_values(@changeset.errors, :password) do %>
+      <p class="text-sm text-red-700"><%= err |> elem(0) %></p>
+    <% end %>
+  </div>
+
+  <div>
+    <label>Confirm Password</label>
+    <.input field={f[:password_confirmation]} type="password" />
+    <%= for err <- Keyword.get_values(@changeset.errors, :password_confirmation) do %>
+      <p class="text-sm text-red-700"><%= err |> elem(0) %></p>
+    <% end %>
+  </div>
+
+  <button type="submit">Create Admin</button>
 </.form>

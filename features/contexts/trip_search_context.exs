@@ -115,6 +115,34 @@ defmodule TripSearchContext do
     {:ok, state}
   end
 
+  # Negative test steps for search features
+
+  when_ ~r/^I search without providing source$/, fn state ->
+    navigate_to("/search/results?source=&destination=Tallinn")
+    :timer.sleep(1000)
+    {:ok, state}
+  end
+
+  when_ ~r/^I search without providing destination$/, fn state ->
+    navigate_to("/search/results?source=Tartu&destination=")
+    :timer.sleep(1000)
+    {:ok, state}
+  end
+
+  when_ ~r/^I try to search as an unauthenticated user$/, fn state ->
+    # Logout first
+    try do
+      submit_element({:css, "form[action='/users/logout']"})
+      :timer.sleep(1000)
+    rescue
+      _ -> :ok
+    end
+
+    navigate_to("/search/results?source=Tartu&destination=Tallinn")
+    :timer.sleep(1000)
+    {:ok, state}
+  end
+
   ##########################################################################
   # THEN STEPS — Assertions
   ##########################################################################
@@ -182,6 +210,18 @@ defmodule TripSearchContext do
   end
 
   then_ ~r/^results should appear in ascending duration order$/, fn state ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should be blocked with authentication error$/, fn state ->
+    current = current_url()
+    page_text = visible_page_text()
+
+    assert String.contains?(current, "/login") or
+          String.contains?(page_text, "log in") or
+          String.contains?(page_text, "Please log in"),
+      "Unauthenticated users should not be able to search"
+
     {:ok, state}
   end
 

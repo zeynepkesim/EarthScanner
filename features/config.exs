@@ -7,6 +7,34 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/"]
   )
 
+  # FR-02: Admin Creation
+  suite(
+    name: "AdminCreation",
+    context: AdminCreationContext,
+    feature_paths: ["features/admin_creation.feature"]
+  )
+
+  # FR-05: Change Password
+  suite(
+    name: "ChangePassword",
+    context: ChangePasswordContext,
+    feature_paths: ["features/change_password.feature"]
+  )
+
+  # FR-33: Delete Trip
+  suite(
+    name: "DeleteTrip",
+    context: DeleteTripContext,
+    feature_paths: ["features/fr33_delete_trip.feature"]
+  )
+
+  # FR-35: View Trip Details
+  suite(
+    name: "ViewTripDetails",
+    context: ViewTripDetailsContext,
+    feature_paths: ["features/fr35_view_trip_details.feature"]
+  )
+
   # Calvin - BDD Passed
   # The system allows to self-register as a regular user (storing, at least: username, password, name,
   # last name, email, birthdate, nationality, residence address, and phone number).
@@ -48,6 +76,7 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/admin_edit_trip.feature"]
   )
 
+  # FR-07, FR-08, FR-09, FR-11, FR-15: Trip Search Features
   suite(
     name: "TripSearch",
     context: TripSearchContext,
@@ -77,16 +106,37 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/fr19_account_access_links.feature"]
   )
 
+  # FR-20: Regular User Trip Search
+  suite(
+    name: "FR20",
+    context: FR20RegularUserTripSearchContext,
+    feature_paths: ["features/fr20_regular_user_trip_search.feature"]
+  )
+
+  # FR-21: Admin Access to Created Trips
+  suite(
+    name: "FR21AdminAccessTrips",
+    context: FR21AdminAccessTripsContext,
+    feature_paths: ["features/fr21_admin_access_trips.feature"]
+  )
+
   suite(
     name: "FR23AdminTripDetail",
     context: FR23Context,
     feature_paths: ["features/fr23_admin_trip_detail.feature"]
   )
 
+  # FR-24: User Data Privacy
+  suite(
+    name: "FR24UserDataPrivacy",
+    context: FR24UserDataPrivacyContext,
+    feature_paths: ["features/fr24_user_data_privacy.feature"]
+  )
+
   # Calvin - BDD Passed
-  # An authenticated regular user can “purchase” a ticket for a trip.
-  # An authenticated regular user can also “return” the ticket of a purchased trip.
-  # the trips for which a ticket has been “purchased” are visually highlighted in the result search.
+  # An authenticated regular user can "purchase" a ticket for a trip.
+  # An authenticated regular user can also "return" the ticket of a purchased trip.
+  # the trips for which a ticket has been "purchased" are visually highlighted in the result search.
   suite(
     name: "TripPurchase",
     context: TripPurchaseContext,
@@ -142,5 +192,12 @@ defmodule WhiteBreadConfig do
     name: "FR22UserTrips",
     context: FR22UserTripsContext,
     feature_paths: ["features/fr22_user_trips.feature"]
+  )
+
+  # NFR-07: Secure Authentication
+  suite(
+    name: "NFR07SecureAuth",
+    context: NFR07SecureAuthenticationContext,
+    feature_paths: ["features/nfr07_secure_authentication.feature"]
   )
 end
