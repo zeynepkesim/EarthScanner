@@ -104,8 +104,8 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "TopTrips",
-    context: TopTripsContext,
+    name: "HighlightTopTrips",
+    context: HighlightTopTripsContext,
     feature_paths: ["features/fr10_highlight_top_trips.feature"]
   )
 
