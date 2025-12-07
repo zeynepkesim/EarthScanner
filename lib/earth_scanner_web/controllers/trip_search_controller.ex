@@ -96,7 +96,7 @@ defmodule EarthScannerWeb.TripSearchController do
           purchase_summary = Trips.purchase_summary_for_user(current_user)
           recent_searches = Searches.get_recent_searches(current_user) || []
 
-          # FR-15: compute sold-out trip ids for highlighting in the view
+          # FR-15: Compute sold-out trip IDs for UI highlighting
           sold_out_trip_ids =
             trips
             |> Enum.filter(fn trip ->

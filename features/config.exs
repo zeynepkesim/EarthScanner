@@ -116,6 +116,12 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
+    name: "HighlightSoldOutTrips",
+    context: HighlightSoldOutTripsContext,
+    feature_paths: ["features/fr15_highlight_sold_out_trips.feature"]
+  )
+
+  suite(
     name: "LoyaltyPoints",
     context: LoyaltyPointsContext,
     feature_paths: [

@@ -1129,6 +1129,7 @@ defmodule EarthScanner.Trips do
   end
 
   @doc """
+  # FR-15: Sold-Out Trips - Server-Side Purchase Prevention
   Purchases a trip instance for the given user.
 
   Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
@@ -1147,6 +1148,7 @@ defmodule EarthScanner.Trips do
           Date.compare(instance.date, today) == :lt ->
             {:error, :past_instance}
 
+          # FR-15: Prevent purchase if sold out (no tickets remaining)
           instance.available_tickets <= 0 ->
             {:error, :sold_out}
 
