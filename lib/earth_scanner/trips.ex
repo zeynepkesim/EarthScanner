@@ -221,6 +221,38 @@ defmodule EarthScanner.Trips do
         "diff" => sanitized
       }
 
+      # Expose old/new pairs on the top-level payload for the compact formatter
+      base_payload =
+        Enum.reduce(sanitized, base_payload, fn {field, %{"old" => old, "new" => new}}, acc ->
+          case field do
+            f when f in ["recommended_price", "price"] ->
+              acc
+              |> Map.put("recommended_price_old", old)
+              |> Map.put("recommended_price_new", new)
+
+            f when f in ["co2_level", "co2"] ->
+              acc
+              |> Map.put("co2_old", old)
+              |> Map.put("co2_new", new)
+
+            f when f in ["available_tickets"] ->
+              acc
+              |> Map.put("available_tickets_old", old)
+              |> Map.put("available_tickets_new", new)
+
+            _ ->
+              acc
+          end
+        end)
+
+      # Build a compact title (trip name or route) for the notification header
+      title =
+        try do
+          EarthScanner.Formatters.TripChangeFormatter.compact_title(base_payload)
+        rescue
+          _ -> nil
+        end
+
       # Attempt to build a compact, pre-rendered message for older UIs
       message =
         try do
@@ -229,7 +261,10 @@ defmodule EarthScanner.Trips do
           _ -> nil
         end
 
-      payload = if message, do: Map.put(base_payload, "message", message), else: base_payload
+      payload =
+        base_payload
+        |> (fn p -> if title, do: Map.put(p, "title", title), else: p end).()
+        |> (fn p -> if message, do: Map.put(p, "message", message), else: p end).()
 
       attrs = %{
         "user_id" => user.id,

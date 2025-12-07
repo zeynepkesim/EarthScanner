@@ -1,6 +1,7 @@
 <div class="min-h-screen bg-white px-6 py-8">
   <div class="mx-auto max-w-4xl">
     <h1 class="text-2xl font-semibold mb-4">Notifications</h1>
+
     <div :if={@reminders == []} class="text-sm text-slate-500">
       No notifications at this time.
     </div>
@@ -13,15 +14,18 @@
           <% payload = n.payload || %{} %>
           <div class="flex items-center justify-between">
             <div class="font-semibold">
-              <%= if payload["message"] do %>
-                {payload["message"]}
-              <% else %>
-                <%= case n.kind do %>
-                  <% "trip_change" -> %>
-                    Trip update
-                  <% _ -> %>
-                    {n.kind}
-                <% end %>
+              <%= cond do %>
+                <% Map.get(payload, "title") -> %>
+                  {Map.get(payload, "title")}
+                <% Map.get(payload, "message") -> %>
+                  {Map.get(payload, "message")}
+                <% true -> %>
+                  <%= case n.kind do %>
+                    <% "trip_change" -> %>
+                      Trip update
+                    <% _ -> %>
+                      {n.kind}
+                  <% end %>
               <% end %>
             </div>
 
@@ -32,8 +36,9 @@
             <%= case n.kind do %>
               <% "trip_change" -> %>
                 <% payload = n.payload || %{} %> <% trip_name =
-                  payload["trip_name"] ||
-                    (payload["from"] && payload["to"] && "#{payload["from"]} → #{payload["to"]}") %>
+                  Map.get(payload, "trip_name") ||
+                    (Map.get(payload, "from") && Map.get(payload, "to") &&
+                       "#{Map.get(payload, "from")} → #{Map.get(payload, "to")}") %>
                 <div>Trip updated: {trip_name}</div>
 
                 <div class="text-xs text-slate-500">When: {payload["timestamp"]}</div>

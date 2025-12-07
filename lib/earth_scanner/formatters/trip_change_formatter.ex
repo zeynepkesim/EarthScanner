@@ -44,8 +44,32 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
     co2_diff = co2_new - co2_old
     co2_pct = pct(co2_old, co2_diff)
 
-    price_diff = price_new - price_old
-    price_pct = pct_float(price_old, price_diff)
+    price_diff =
+      case {price_old, price_new} do
+        {p1, p2} when is_number(p1) and is_number(p2) -> p2 - p1
+        _ -> nil
+      end
+
+    price_pct =
+      case {price_old, price_diff} do
+        {p, d} when is_number(p) and is_number(d) -> pct_float(p, d)
+        _ -> "N/A"
+      end
+
+    price_line =
+      cond do
+        is_number(price_old) and is_number(price_new) ->
+          "- Recommended price: #{format_price(price_old)} → #{format_price(price_new)} (#{sign_symbol(price_diff)}#{format_price(abs(price_diff))}; #{price_pct})"
+
+        is_number(price_new) ->
+          "- Recommended price: #{format_price(price_new)}"
+
+        is_number(price_old) ->
+          "- Recommended price: #{format_price(price_old)}"
+
+        true ->
+          "- Recommended price: N/A"
+      end
 
     """
     Trip updated — #{trip_name}
@@ -53,7 +77,7 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
     When: #{time}
     Changes:
     - CO2 level: #{co2_old} → #{co2_new} (#{sign_word(co2_diff)} by #{abs(co2_diff)}; #{co2_pct})
-    - Recommended price: #{format_price(price_old)} → #{format_price(price_new)} (#{sign_symbol(price_diff)}#{format_price(abs(price_diff))}; #{price_pct})
+    #{price_line}
     """
   end
 
@@ -86,13 +110,40 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
     co2_diff = co2_new - co2_old
     co2_pct = pct(co2_old, co2_diff)
 
-    price_diff = price_new - price_old
-    price_pct = pct_float(price_old, price_diff)
+    price_diff =
+      case {price_old, price_new} do
+        {p1, p2} when is_number(p1) and is_number(p2) -> p2 - p1
+        _ -> nil
+      end
+
+    price_pct =
+      case {price_old, price_diff} do
+        {p, d} when is_number(p) and is_number(d) -> pct_float(p, d)
+        _ -> "N/A"
+      end
 
     compact_price_old = format_price(price_old)
     compact_price_new = format_price(price_new)
 
-    "#{trip_name} (#{from} → #{to}) updated (#{time}): CO2 #{sign_symbol(co2_diff)}#{abs(co2_diff)} (#{co2_pct}); Price #{compact_price_old} → #{compact_price_new} (#{price_pct})."
+    price_part =
+      cond do
+        is_number(price_old) and is_number(price_new) ->
+          "Price #{compact_price_old} → #{compact_price_new} (#{price_pct})"
+
+        is_number(price_new) ->
+          "Price #{compact_price_new}"
+
+        is_number(price_old) ->
+          "Price #{compact_price_old}"
+
+        true ->
+          ""
+      end
+
+    base =
+      "#{trip_name} (#{from} → #{to}) updated (#{time}): CO2 #{sign_symbol(co2_diff)}#{abs(co2_diff)} (#{co2_pct})"
+
+    if price_part != "", do: base <> "; " <> price_part <> ".", else: base <> "."
   end
 
   defp format_time(data) do
@@ -138,7 +189,10 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
     end
   end
 
-  defp to_float(nil), do: 0.0
+  # Distinguish missing numeric values (nil) from zero.
+  # Returning nil for missing values allows the formatter to omit
+  # arrows like "$0.00 → $2.25" when the old value was absent.
+  defp to_float(nil), do: nil
   defp to_float(f) when is_float(f), do: f
   defp to_float(i) when is_integer(i), do: i / 1
 
@@ -150,7 +204,7 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
       :error ->
         case Integer.parse(s) do
           {i, _} -> i / 1
-          :error -> 0.0
+          :error -> nil
         end
     end
   end
@@ -162,9 +216,9 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
     "#{Float.round(pct, 1)}%"
   end
 
-  defp pct_float(0.0, _), do: "N/A"
+  defp pct_float(base, _diff) when base in [0.0, 0, nil], do: "N/A"
 
-  defp pct_float(base, diff) do
+  defp pct_float(base, diff) when is_number(base) and is_number(diff) do
     pct = diff / base * 100
     "#{Float.round(pct, 1)}%"
   end
@@ -172,6 +226,8 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
   defp format_price(n) when is_number(n) do
     "$" <> :erlang.float_to_binary(Float.round(n, 2), decimals: 2)
   end
+
+  defp format_price(nil), do: "N/A"
 
   defp sign_word(n) when n >= 0, do: "increase"
   defp sign_word(_), do: "decrease"
@@ -216,13 +272,56 @@ defmodule EarthScanner.Formatters.TripChangeFormatter do
   defp format_field_change_pair("recommended_price", old, new) do
     old_f = to_float(old)
     new_f = to_float(new)
-    diff = new_f - old_f
-    pct = pct_float(old_f, diff)
 
-    "Price: #{format_price(old_f)} → #{format_price(new_f)} (#{sign_symbol(diff)}#{format_price(abs(diff))}; #{pct})"
+    cond do
+      is_number(old_f) and is_number(new_f) ->
+        diff = new_f - old_f
+        pct = pct_float(old_f, diff)
+
+        "Price: #{format_price(old_f)} → #{format_price(new_f)} (#{sign_symbol(diff)}#{format_price(abs(diff))}; #{pct})"
+
+      is_number(new_f) ->
+        "Price: #{format_price(new_f)}"
+
+      is_number(old_f) ->
+        "Price: #{format_price(old_f)}"
+
+      true ->
+        "Price: N/A"
+    end
   end
 
   defp format_field_change_pair(_field, old, new) do
     "#{_field}: #{inspect(old)} → #{inspect(new)}"
+  end
+
+  @doc "Compact title used for notification headers: prefer trip name, otherwise route 'From → To'."
+  def compact_title(payload) when is_map(payload) do
+    name = get_any(payload, ["trip_name", :trip_name, "name", :name]) || ""
+    from = get_any(payload, ["from", :from, "from_city", :from_city]) || ""
+    to = get_any(payload, ["to", :to, "to_city", :to_city]) || ""
+
+    name_s = to_string_if_present(name)
+    from_s = to_string_if_present(from)
+    to_s = to_string_if_present(to)
+
+    cond do
+      name_s != "" and route_in_name?(name_s, from_s, to_s) -> name_s
+      name_s != "" and from_s != "" and to_s != "" -> "#{name_s} (#{from_s} → #{to_s})"
+      name_s != "" -> name_s
+      from_s != "" and to_s != "" -> "#{from_s} → #{to_s}"
+      true -> "Trip updated"
+    end
+  end
+
+  defp to_string_if_present(nil), do: ""
+  defp to_string_if_present(val) when is_binary(val), do: val
+  defp to_string_if_present(val), do: to_string(val)
+
+  defp route_in_name?(_name, "", ""), do: false
+
+  defp route_in_name?(name, from, to) do
+    route = "#{from} → #{to}"
+    String.contains?(name, route)
   end
 end
