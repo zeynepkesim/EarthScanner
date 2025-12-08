@@ -1,5 +1,5 @@
 <h1>Search Trips</h1>
-<.flash kind={:error} />
+ <.flash kind={:error} />
 <div class="mb-6">
   <form method="get" action={~p"/search/results"}>
     <label>Source:</label>
@@ -16,7 +16,7 @@
       class="border rounded-md px-3 py-2 w-full mb-3"
     />
     <h2 class="text-lg font-semibold mt-4">Filters (optional)</h2>
-    <label>Min Price:</label>
+     <label>Min Price:</label>
     <input type="number" name="min_price" class="border rounded-md px-3 py-2 w-full mb-3" />
     <label>Max Price:</label>
     <input type="number" name="max_price" class="border rounded-md px-3 py-2 w-full mb-3" />
@@ -50,7 +50,7 @@
 
 <div :if={@recent_searches != []} class="mt-8 p-4 bg-slate-50 rounded-lg">
   <h2 class="text-lg font-semibold text-slate-900 mb-3">Recent Searches</h2>
-
+  
   <div class="space-y-2">
     <div
       :for={search <- @recent_searches}

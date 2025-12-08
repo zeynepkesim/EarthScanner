@@ -119,7 +119,6 @@ defmodule EarthScannerWeb.ProfileController do
     case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
       {:ok, _updated_user} ->
         conn
-        # rotate session after password change
         |> configure_session(renew: true)
         |> put_session(:user_id, user.id)
         |> put_flash(:info, "Password updated successfully")
