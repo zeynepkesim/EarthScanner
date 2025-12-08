@@ -37,6 +37,7 @@ defmodule EarthScanner.Notifications.FR28TripChangeAlertsTest do
     # Create a trip with one instance
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Riga",
@@ -92,6 +93,7 @@ defmodule EarthScanner.Notifications.FR28TripChangeAlertsTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "train",
         "source_city" => "Vilnius",
         "destination_city" => "Kaunas",

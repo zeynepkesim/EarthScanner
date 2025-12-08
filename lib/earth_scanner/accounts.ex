@@ -27,6 +27,7 @@ defmodule EarthScanner.Accounts do
     end
   end
 
+  # FR-03: Edit profile (post-registration) - Update user profile information
   def update_user(%User{} = user, attrs) do
     user
     |> User.profile_changeset(attrs)
@@ -73,6 +74,9 @@ defmodule EarthScanner.Accounts do
     {:error, :unauthorized}
   end
 
+  # FR-06: Delete account & data (regular)
+  # Requires re-authentication (password prompt)
+  # Deletes user account (irreversible action)
   def delete_user(%User{} = user, password) when is_binary(password) do
     cond do
       is_nil(user.password_hash) ->
@@ -87,5 +91,21 @@ defmodule EarthScanner.Accounts do
       true ->
         {:error, :invalid_password}
     end
+  end
+
+  # NFR-09: Helper to update loyalty points internally (e.g. for testing or admin adjustments)
+  # Uses the restricted loyalty_changeset to ensure security.
+  def update_user_loyalty_points(%User{} = user, points) when is_integer(points) do
+    user
+    |> User.loyalty_changeset(%{loyalty_points: points})
+    |> Repo.update()
+  end
+
+  # NFR-09: Retrieve audit logs for points
+  def list_point_logs(%User{} = user) do
+    EarthScanner.Accounts.PointLog
+    |> where([l], l.user_id == ^user.id)
+    |> order_by([l], asc: l.inserted_at)
+    |> Repo.all()
   end
 end

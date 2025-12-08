@@ -174,36 +174,120 @@ defmodule WhiteBreadContext do
     {:ok, state}
   end
 
-  given_ ~r/^I navigate to the delete account page$/, fn state, _ ->
-    navigate_to("http://localhost:4002/users/delete")
+  # --- ADMIN CREATION (FR-02) ---
+
+  given_ ~r/^I am logged in as an admin$/, fn state, _ ->
+    {:ok, admin} =
+      EarthScanner.Accounts.register_user(%{
+        "username" => "bdd_admin",
+        "password" => "Password123!",
+        "password_confirmation" => "Password123!",
+        "name" => "Admin",
+        "last_name" => "BDD",
+        "email" => "bdd_admin@example.com",
+        "birthdate" => "1990-01-01",
+        "nationality" => "ID",
+        "residence_address" => "Admin Street 1",
+        "phone_number" => "+628111111111",
+        "role" => "admin"
+      })
+
+    navigate_to("http://localhost:4002/users/login")
+
+    fill_field({:css, "input[name='session[email]']"}, admin.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+
+    {:ok, Map.put(state, :admin, admin)}
+  end
+
+  when_ ~r/^I visit the admin creation page$/, fn state, _ ->
+    navigate_to("http://localhost:4002/admin/users/new")
     {:ok, state}
   end
 
-  when_ ~r/^I submit deletion with a wrong password$/, fn state, _ ->
-    fill_field({:css, "input[name='delete[password]']"}, "Wrong123!")
-    click({:css, "input[name='delete[confirm]']"})
-    submit_element({:id, "delete-account-form"})
+  when_ ~r/^I fill the admin creation form with valid data$/, fn state, _ ->
+    fill_field({:css, "input[name='user[username]']"}, "new_admin_bdd")
+    fill_field({:css, "input[name='user[email]']"}, "new_admin_bdd@example.com")
+    fill_field({:css, "input[name='user[phone_number]']"}, "+628222222222")
+    fill_field({:css, "input[name='user[password]']"}, "Password123!")
+    fill_field({:css, "input[name='user[password_confirmation]']"}, "Password123!")
     {:ok, state}
   end
 
-  then_ ~r/^I should see a delete error$/, fn state, _ ->
+  when_ ~r/^I submit the admin creation form$/, fn state, _ ->
+    submit_element({:css, "form"})
+    {:ok, state}
+  end
+
+  when_ ~r/^I submit the admin creation form with incomplete data$/, fn state, _ ->
+    fill_field({:css, "input[name='user[email]']"}, "")
+    submit_element({:css, "form"})
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see an admin creation error$/, fn state, _ ->
     text = visible_page_text()
-    assert String.contains?(text, "Invalid password") or String.contains?(text, "Please confirm")
+    assert String.contains?(text, "error") or String.contains?(text, "can't be blank")
     {:ok, state}
   end
 
-  then_ ~r/^I should see an irreversible warning$/, fn state, _ ->
+  then_ ~r/^I should see a success message "([^"]+)"$/, fn state, %{matches: [message]} ->
     text = visible_page_text()
-    # check for a short substring to be resilient to wording
-    assert String.contains?(String.downcase(text), "irreversible")
+    assert String.contains?(text, message)
     {:ok, state}
   end
 
-  when_ ~r/^I submit deletion with the correct password$/, fn state, _ ->
-    # state.password is set in the login step
-    fill_field({:css, "input[name='delete[password]']"}, state.password)
-    click({:css, "input[name='delete[confirm]']"})
-    submit_element({:id, "delete-account-form"})
+  # --- CHANGE PASSWORD (FR-05) ---
+
+  given_ ~r/^I am logged in as a normal user$/, fn state, _ ->
+    {:ok, user} =
+      EarthScanner.Accounts.register_user(%{
+        "username" => "bdd_user_pw",
+        "password" => "Password123!",
+        "password_confirmation" => "Password123!",
+        "name" => "John",
+        "last_name" => "Doe",
+        "email" => "bdd_user_pw@example.com",
+        "birthdate" => "1998-01-01",
+        "nationality" => "ID",
+        "residence_address" => "BDD Street",
+        "phone_number" => "+628999999999"
+      })
+
+    navigate_to("http://localhost:4002/users/login")
+
+    fill_field({:css, "input[name='session[email]']"}, user.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+
+    {:ok, Map.put(state, :user, user)}
+  end
+
+  when_ ~r/^I visit the change password page$/, fn state, _ ->
+    navigate_to("http://localhost:4002/users/change-password")
+    {:ok, state}
+  end
+
+  when_ ~r/^I submit valid password change information$/, fn state, _ ->
+    fill_field({:css, "input[name='current_password']"}, "Password123!")
+    fill_field({:css, "input[name='new_password']"}, "NewPassword456!")
+    fill_field({:css, "input[name='new_password_confirmation']"}, "NewPassword456!")
+    submit_element({:css, "form"})
+    {:ok, state}
+  end
+
+  when_ ~r/^I submit an invalid current password$/, fn state, _ ->
+    fill_field({:css, "input[name='current_password']"}, "Wrong123!")
+    fill_field({:css, "input[name='new_password']"}, "NewPassword456!")
+    fill_field({:css, "input[name='new_password_confirmation']"}, "NewPassword456!")
+    submit_element({:css, "form"})
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see "([^"]+)"$/, fn state, %{matches: [expected]} ->
+    text = visible_page_text()
+    assert String.contains?(text, expected)
     {:ok, state}
   end
 end

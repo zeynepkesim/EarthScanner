@@ -67,6 +67,7 @@ defmodule EarthScannerWeb.FR21AdminAccessTripsTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "source_city" => "Tartu",
         "destination_city" => "Tallinn",
         "departure_time" => departure,

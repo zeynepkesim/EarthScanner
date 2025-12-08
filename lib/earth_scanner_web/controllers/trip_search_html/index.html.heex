@@ -248,6 +248,19 @@
           >
             <input type="hidden" name="trip_instance_id" value={first_available_instance.id} />
             <input type="hidden" name="redirect_to" value={@return_path} />
+
+            <div class="mb-2">
+              <label class="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="redeem_points"
+                  value="true"
+                  class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span class="ml-2 text-sm text-gray-700">Use points for discount</span>
+              </label>
+            </div>
+
             <button
               type="submit"
               class="inline-flex items-center rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700"

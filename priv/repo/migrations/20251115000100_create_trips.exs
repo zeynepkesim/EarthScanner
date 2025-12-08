@@ -1,6 +1,7 @@
 defmodule EarthScanner.Repo.Migrations.CreateTrips do
   use Ecto.Migration
 
+  # FR-29: Create trips table with all required fields
   def change do
     create table(:trips) do
       add :picture_url, :string

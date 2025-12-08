@@ -3,6 +3,7 @@ defmodule EarthScannerWeb.ProfileControllerTest do
 
   alias EarthScanner.Accounts
 
+  # FR-03: Edit profile (post-registration) - Tests for user profile viewing and editing
   test "redirects to login when not authenticated", %{conn: conn} do
     conn = get(conn, ~p"/profile")
     assert redirected_to(conn) == ~p"/users/login"
@@ -42,6 +43,7 @@ defmodule EarthScannerWeb.ProfileControllerTest do
   end
 
   describe "GET /profile/edit" do
+    # FR-03: Test that logged-in user can access the edit profile form
     test "renders edit profile page for logged-in user", %{conn: conn} do
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "edit" <> uniq <> "@example.com"
@@ -74,8 +76,10 @@ defmodule EarthScannerWeb.ProfileControllerTest do
   #
   # ✅ ОДИН describe "PUT /profile"
   # — здесь теперь оба теста: успешный и неуспешный.
+  # FR-03: Tests for updating user profile with valid and invalid data
   #
   describe "PUT /profile" do
+    # FR-03: Test successful profile update with valid data
     test "updates user profile successfully", %{conn: conn} do
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "update" <> uniq <> "@example.com"
@@ -122,6 +126,7 @@ defmodule EarthScannerWeb.ProfileControllerTest do
     end
 
     test "does not update when input is invalid", %{conn: conn} do
+      # FR-03: Verify that validation errors prevent profile updates
       uniq = Integer.to_string(System.unique_integer([:positive]))
       email = "invalid" <> uniq <> "@example.com"
 

@@ -65,9 +65,15 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "AdminRecurringTrips",
-    context: AdminRecurringTripsContext,
-    feature_paths: ["features/admin_creates_recurring_trip.feature"]
+    name: "CreateTrip",
+    context: CreateTripContext,
+    feature_paths: ["features/fr29_create_trip.feature"]
+  )
+
+  suite(
+    name: "RecurringTripDates",
+    context: RecurringTripDatesContext,
+    feature_paths: ["features/fr36_recurring_trip_dates.feature"]
   )
 
   suite(
@@ -148,30 +154,45 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "TopTrips",
-    context: TopTripsContext,
+    name: "HighlightTopTrips",
+    context: HighlightTopTripsContext,
     feature_paths: ["features/fr10_highlight_top_trips.feature"]
   )
 
   suite(
-    name: "LoyaltyPoints",
-    context: LoyaltyPointsContext,
-    feature_paths: [
-      "features/fr25_earn_loyalty_points.feature",
-      "features/fr26_redeem_loyalty_points.feature"
-    ]
+    name: "ExcludePastTrips",
+    context: ExcludePastTripsContext,
+    feature_paths: ["features/fr11_exclude_past_trips.feature"]
+  )
+
+  suite(
+    name: "HighlightSoldOutTrips",
+    context: HighlightSoldOutTripsContext,
+    feature_paths: ["features/fr15_highlight_sold_out_trips.feature"]
+  )
+
+  suite(
+    name: "EarnLoyaltyPoints",
+    context: EarnLoyaltyPointsContext,
+    feature_paths: ["features/fr25_earn_loyalty_points.feature"]
+  )
+
+  suite(
+    name: "RedeemLoyaltyPoints",
+    context: RedeemLoyaltyPointsContext,
+    feature_paths: ["features/fr26_redeem_loyalty_points.feature"]
   )
 
   suite(
     name: "PointsSecurity",
-    context: LoyaltyPointsContext,
+    context: PointsSecurityContext,
     feature_paths: ["features/nfr09_points_security.feature"]
   )
 
   suite(
-    name: "Accessibility",
-    context: AccessibilityContext,
-    feature_paths: ["features/nfr03_accessibility.feature"]
+    name: "UsabilityAccessibility",
+    context: UsabilityAccessibilityContext,
+    feature_paths: ["features/nfr03_usability_accessibility.feature"]
   )
 
   # Calvin - BDD Passed
@@ -194,10 +215,9 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/fr22_user_trips.feature"]
   )
 
-  # NFR-07: Secure Authentication
   suite(
-    name: "NFR07SecureAuth",
-    context: NFR07SecureAuthenticationContext,
-    feature_paths: ["features/nfr07_secure_authentication.feature"]
+    name: "DeleteAccount",
+    context: DeleteAccountContext,
+    feature_paths: ["features/fr06_delete_account.feature"]
   )
 end

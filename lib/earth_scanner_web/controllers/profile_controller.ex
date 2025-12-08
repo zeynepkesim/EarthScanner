@@ -2,6 +2,7 @@ defmodule EarthScannerWeb.ProfileController do
   use EarthScannerWeb, :controller
   alias EarthScanner.Accounts
 
+  # FR-03: Edit profile (post-registration) - Logged-in user can edit basic info
   def show(conn, params) do
     case conn.assigns[:current_user] do
       nil ->
@@ -24,12 +25,14 @@ defmodule EarthScannerWeb.ProfileController do
   end
 
   # --- Teammate's profile edit/update ---
+  # FR-03: Allow user to edit basic profile information
   def edit(conn, _params) do
     user = conn.assigns.current_user
     changeset = Accounts.User.profile_changeset(user, %{})
     render(conn, :edit, form: Phoenix.Component.to_form(changeset), user: user)
   end
 
+  # FR-03: Update user profile with new information
   def update(conn, %{"user" => user_params}) do
     user = conn.assigns[:current_user]
 
@@ -44,6 +47,8 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Show confirmation page
+  # Requires user to be logged in
   def confirm_delete(conn, _params) do
     case conn.assigns[:current_user] do
       nil ->
@@ -57,6 +62,9 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Process deletion
+  # Requires re-authentication (password) and explicit confirmation
+  # Action is irreversible
   def delete(conn, %{"delete" => %{"password" => password, "confirm" => confirm}}) do
     case conn.assigns[:current_user] do
       nil ->
@@ -66,12 +74,14 @@ defmodule EarthScannerWeb.ProfileController do
 
       user ->
         cond do
+          # FR-06: Confirmation check - user must explicitly confirm deletion
           confirm != "yes" ->
             conn
             |> put_flash(:error, "Please confirm account deletion.")
             |> redirect(to: ~p"/users/delete")
 
           true ->
+            # FR-06: Re-authentication check and account deletion
             case EarthScanner.Accounts.delete_user(user, password) do
               {:ok, :deleted} ->
                 # drop the entire session to ensure the user is logged out immediately

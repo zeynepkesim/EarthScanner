@@ -1,4 +1,4 @@
-defmodule LoyaltyPointsContext do
+defmodule RedeemLoyaltyPointsContext do
   use WhiteBread.Context
   use Hound.Helpers
 
@@ -8,31 +8,6 @@ defmodule LoyaltyPointsContext do
   import Ecto.Query
 
   @base "http://localhost:4002"
-
-  # ===================================================================
-  # LOYALTY POINTS CONTEXT (FR-25 & FR-26)
-  # ===================================================================
-  #
-  # This context implements the steps for the following scenarios:
-  #
-  # --- FR-25: Earn Loyalty Points ---
-  # Positive:
-  #   - "User earns points on standard purchase"
-  #   - "User earns points on expensive trip"
-  # Negative:
-  #   - "No points earned on failed purchase (Sold Out)" (Uses "that trip is sold out" step)
-  # Edge Cases:
-  #   - "User earns 0 points on free trip"
-  #
-  # --- FR-26: Redeem Loyalty Points ---
-  # Positive:
-  #   - "User redeems points for partial discount" (Uses "I choose to redeem my points" step)
-  #   - "User redeems points for full discount"
-  # Negative:
-  #   - "User with 0 points cannot get discount"
-  # Edge Cases:
-  #   - "User has exactly enough points for max discount"
-  # ===================================================================
 
   scenario_starting_state fn _ ->
     Hound.start_session()
@@ -78,35 +53,22 @@ defmodule LoyaltyPointsContext do
     {:ok, state}
   end
 
-  when_ ~r/^I purchase a ticket$/, fn %{trip: trip} = state, _ ->
-    submit_purchase_form(trip.id)
-    {:ok, state}
-  end
 
-  # --- FR-26 Specific Steps (Redemption) ---
 
   when_ ~r/^I choose to redeem my points$/, fn state, _ ->
-    # Click checkbox
-    # Using name attribute
-    click({:name, "redeem_points"})
+    # Small wait for UI
+    Process.sleep(500)
+    # Check the checkbox
+    Hound.Helpers.Element.click({:css, "input[name='redeem_points']"})
     {:ok, state}
   end
 
-  when_ ~r/^I confirm the purchase$/, fn %{trip: trip} = state, _ ->
-    submit_purchase_form(trip.id)
-    {:ok, state}
-  end
-
-  # --- Negative Scenario Steps ---
-
-  given_ ~r/^that trip is sold out$/, fn %{trip: trip} = state, _ ->
-    instance = hd(trip.instances)
-    instance |> Changeset.change(available_tickets: 0) |> Repo.update!()
-    {:ok, state}
-  end
-
-  when_ ~r/^I attempt to purchase a ticket$/, fn %{trip: trip} = state, _ ->
-    submit_purchase_form(trip.id)
+  when_ ~r/^I attempt to redeem points$/, fn state ->
+    # Check the checkbox and submit
+    Hound.Helpers.Element.click({:css, "input[name='redeem_points']"})
+    Hound.Helpers.Element.click({:css, "button[type='submit']"})
+    # Handle the "Confirm purchase?" alert
+    Hound.Helpers.Dialog.accept_dialog()
     {:ok, state}
   end
 
@@ -124,12 +86,7 @@ defmodule LoyaltyPointsContext do
     {:ok, state}
   end
 
-  then_ ~r/^my loyalty points balance should increase by (?<amount>\d+)$/, fn %{user: user} = state, %{amount: amount} ->
-    reloaded_user = Repo.get!(Accounts.User, user.id)
-    # user.loyalty_points is the OLD balance (from state)
-    assert reloaded_user.loyalty_points == user.loyalty_points + String.to_integer(amount)
-    {:ok, state}
-  end
+  # --- Audit Log Steps ---
 
   then_ ~r/^an audit log should exist for my point change$/, fn %{user: user} = state, _ ->
     log = Repo.one!(EarthScanner.Accounts.PointLog)
@@ -146,22 +103,10 @@ defmodule LoyaltyPointsContext do
     {:ok, state}
   end
 
-  then_ ~r/^an audit log should exist showing a change of 0 points$/, fn %{user: user} = state, _ ->
-    log = Repo.one!(EarthScanner.Accounts.PointLog)
-    assert log.user_id == user.id
-    assert log.change_amount == 0
-    {:ok, state}
-  end
-
-  then_ ~r/^no audit log should exist for this user$/, fn %{user: user} = state, _ ->
-    count = Repo.aggregate(from(l in EarthScanner.Accounts.PointLog, where: l.user_id == ^user.id), :count, :id)
-    assert count == 0
-    {:ok, state}
-  end
-
   # Helpers
   defp create_user(name) do
-    suffix = System.unique_integer([:positive]) |> Integer.to_string()
+    unique_num = System.unique_integer([:positive, :monotonic])
+    suffix = Integer.to_string(unique_num) <> "_#{System.os_time(:nanosecond)}"
     email = "loyal_#{suffix}@example.com"
     password = "Password123!"
     {:ok, user} = Accounts.register_user(%{
@@ -198,13 +143,15 @@ defmodule LoyaltyPointsContext do
       "co2_level" => 100,
       "available_tickets" => 10,
       "transport_mode" => "plane",
-      "dates" => future_date
+      "dates" => future_date,
+      "picture_url" => "https://example.com/pic.jpg"
     })
     Repo.preload(trip, :instances)
   end
 
   defp ensure_admin do
-    suffix = System.unique_integer([:positive]) |> Integer.to_string()
+    unique_num = System.unique_integer([:positive, :monotonic])
+    suffix = Integer.to_string(unique_num) <> "_#{System.os_time(:nanosecond)}"
     {:ok, user} = Accounts.register_user(%{
       "username" => "admin_#{suffix}",
       "password" => "Password123!",
@@ -220,9 +167,13 @@ defmodule LoyaltyPointsContext do
     user |> Changeset.change(role: "admin") |> Repo.update!()
   end
 
-  defp submit_purchase_form(trip_id) do
-    form = find_element(:xpath, "(//form[@action='/trips/#{trip_id}/purchase'])[1]")
-    submit_element(form)
-    Process.sleep(1000)
+  when_ ~r/^I purchase a ticket.*$/, fn state ->
+    # Small wait for UI to render instances
+    Process.sleep(500)
+    # Click the first available "Purchase ticket" button
+    Hound.Helpers.Element.click({:css, "button[type='submit']"})
+    # Handle the "Confirm purchase?" alert
+    Hound.Helpers.Dialog.accept_dialog()
+    {:ok, state}
   end
 end
