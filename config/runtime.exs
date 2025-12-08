@@ -53,6 +53,7 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
   scheme = System.get_env("URL_SCHEME") || "https"
+
   url_port =
     System.get_env("URL_PORT") ||
       case scheme do
@@ -133,7 +134,6 @@ if config_env() == :prod do
   disable_emails = System.get_env("DISABLE_EMAILS") in ["1", "true", "yes"]
 
   if disable_emails do
-    config :earth_scanner, EarthScanner.Mailer,
-      adapter: Swoosh.Adapters.Local
+    config :earth_scanner, EarthScanner.Mailer, adapter: Swoosh.Adapters.Local
   end
 end
