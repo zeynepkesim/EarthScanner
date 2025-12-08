@@ -50,6 +50,7 @@ defmodule TripSearchContext do
       price: 10,
       co2_level: 100,
       available_tickets: 10,
+      picture_url: "https://pics.example.com/search-default.jpg",
       admin_id: get_or_create_test_admin().id
     }
 

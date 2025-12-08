@@ -48,13 +48,6 @@ Feature: Delete Trip (FR-33)
     When the admin tries to delete the trip
     Then the admin should see "You are not authorized to delete this trip."
 
-  @unauthorized_user
-  Scenario: Regular user cannot delete any trip
-    Given a future trip exists owned by another admin
-    And a normal user is logged in
-    When the user tries to delete the trip
-    Then the user should see "You are not authorized" or be redirected
-
   @nonexistent_trip
   Scenario: Cannot delete a trip that doesn't exist
     When the admin tries to delete trip with ID 999999

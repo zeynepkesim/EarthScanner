@@ -86,6 +86,7 @@ defmodule AdminEditTripsContext do
        "price" => "10.0",
        "co2_level" => "100",
       "available_tickets" => "20",
+      "picture_url" => "https://pics.example.com/edit-future.jpg",
       "dates" => "2025-12-09"
      })
 
@@ -139,6 +140,7 @@ end
       "price" => "50.0",
       "co2_level" => "120",
       "available_tickets" => "5",
+      "picture_url" => "https://pics.example.com/edit-sold.jpg",
       "dates" => "2025-12-09"
     })
 
@@ -174,7 +176,8 @@ end
       arrival_time: DateTime.utc_now() |> DateTime.add(90000, :second),
       price: 10.0,
       co2_level: 100,
-      available_tickets: 20
+      available_tickets: 20,
+      picture_url: "https://pics.example.com/edit-by-email.jpg"
     })
 
     {:ok, Map.put(state, :trip, trip)}
@@ -192,6 +195,7 @@ end
        "price" => "20.0",
        "co2_level" => "150",
       "available_tickets" => "10",
+      "picture_url" => "https://pics.example.com/edit-past.jpg",
       "dates" => "2025-12-05"
      })
 
