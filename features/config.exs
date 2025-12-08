@@ -7,6 +7,26 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/"]
   )
 
+  # Calvin - BDD Passed
+  # The system allows to self-register as a regular user (storing, at least: username, password, name,
+  # last name, email, birthdate, nationality, residence address, and phone number).
+  suite(
+    name: "UserRegistration",
+    context: UserRegistrationContext,
+    feature_paths: ["features/user_registration.feature"]
+  )
+
+  # Calvin - BDD Passed
+  # The system allows users to log in and log out.
+  suite(
+    name: "Login",
+    context: LoginContext,
+    feature_paths: ["features/login.feature"]
+  )
+
+  # Calvin - BDD Passed
+  # An admin can view the list of past trips they created (already happened).
+  # An admin can view the list of future trips they created (to take place in the future).
   suite(
     name: "AdminTrips",
     context: AdminTripsContext,
@@ -17,9 +37,15 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "AdminRecurringTrips",
-    context: AdminRecurringTripsContext,
-    feature_paths: ["features/admin_creates_recurring_trip.feature"]
+    name: "CreateTrip",
+    context: CreateTripContext,
+    feature_paths: ["features/fr29_create_trip.feature"]
+  )
+
+  suite(
+    name: "RecurringTripDates",
+    context: RecurringTripDatesContext,
+    feature_paths: ["features/fr36_recurring_trip_dates.feature"]
   )
 
   suite(
@@ -63,6 +89,10 @@ defmodule WhiteBreadConfig do
     feature_paths: ["features/fr23_admin_trip_detail.feature"]
   )
 
+  # Calvin - BDD Passed
+  # An authenticated regular user can “purchase” a ticket for a trip.
+  # An authenticated regular user can also “return” the ticket of a purchased trip.
+  # the trips for which a ticket has been “purchased” are visually highlighted in the result search.
   suite(
     name: "TripPurchase",
     context: TripPurchaseContext,
@@ -74,32 +104,50 @@ defmodule WhiteBreadConfig do
   )
 
   suite(
-    name: "TopTrips",
-    context: TopTripsContext,
+    name: "HighlightTopTrips",
+    context: HighlightTopTripsContext,
     feature_paths: ["features/fr10_highlight_top_trips.feature"]
   )
 
   suite(
-    name: "LoyaltyPoints",
-    context: LoyaltyPointsContext,
-    feature_paths: [
-      "features/fr25_earn_loyalty_points.feature",
-      "features/fr26_redeem_loyalty_points.feature"
-    ]
+    name: "ExcludePastTrips",
+    context: ExcludePastTripsContext,
+    feature_paths: ["features/fr11_exclude_past_trips.feature"]
+  )
+
+  suite(
+    name: "HighlightSoldOutTrips",
+    context: HighlightSoldOutTripsContext,
+    feature_paths: ["features/fr15_highlight_sold_out_trips.feature"]
+  )
+
+  suite(
+    name: "EarnLoyaltyPoints",
+    context: EarnLoyaltyPointsContext,
+    feature_paths: ["features/fr25_earn_loyalty_points.feature"]
+  )
+
+  suite(
+    name: "RedeemLoyaltyPoints",
+    context: RedeemLoyaltyPointsContext,
+    feature_paths: ["features/fr26_redeem_loyalty_points.feature"]
   )
 
   suite(
     name: "PointsSecurity",
-    context: LoyaltyPointsContext,
+    context: PointsSecurityContext,
     feature_paths: ["features/nfr09_points_security.feature"]
   )
 
   suite(
-    name: "Accessibility",
-    context: AccessibilityContext,
-    feature_paths: ["features/nfr03_accessibility.feature"]
+    name: "UsabilityAccessibility",
+    context: UsabilityAccessibilityContext,
+    feature_paths: ["features/nfr03_usability_accessibility.feature"]
   )
 
+  # Calvin - BDD Passed
+  # As a user, I want to receive notifications for my upcoming trips before 24 hours
+  # I want to receive alerts if there are changes to my booked trips.
   suite(
     name: "Notifications",
     context: FR27NotificationsContext,
@@ -109,9 +157,17 @@ defmodule WhiteBreadConfig do
     ]
   )
 
+  # Calvin - BDD Passed
+  # Logged-in regular users must be able to access the lists of their past purchased and future purchased trips, always with one click.
   suite(
     name: "FR22UserTrips",
     context: FR22UserTripsContext,
     feature_paths: ["features/fr22_user_trips.feature"]
+  )
+
+  suite(
+    name: "DeleteAccount",
+    context: DeleteAccountContext,
+    feature_paths: ["features/fr06_delete_account.feature"]
   )
 end

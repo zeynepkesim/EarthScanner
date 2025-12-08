@@ -13,20 +13,27 @@ defmodule EarthScanner.Trips do
   alias EarthScanner.Accounts.User
   alias EarthScanner.Purchases.Purchase
 
-  # ---------- FR-29: create trip with all details + FR-36 dates ----------
+  # ---------- FR-29: Create Trip & FR-36: Recurring Trip Dates ----------
 
   @doc """
-  Creates a trip for the given admin with one or more date instances.
+  FR-29: Creates a trip for the given admin with all required details
+  FR-36: Supports one or more recurring date instances
+
+  ## Parameters
+    * admin - The admin user creating the trip
+    * attrs - Map containing trip attributes including:
+      - picture_url, transport_mode, source_city, destination_city
+      - departure_time, arrival_time, price, co2_level, available_tickets
+      - dates (FR-36): newline or comma-separated list of dates
 
   ## Returns
-
     * `{:ok, %Trip{}}` on success (preloaded with instances)
     * `{:error, %Ecto.Changeset{}}` on validation error
-
   """
   def create_trip(%User{id: admin_id}, attrs) do
     raw_dates = Map.get(attrs, "dates", "") || ""
 
+    # FR-36: Parse and validate recurring dates
     case parse_dates(raw_dates) do
       {:error, :no_dates} ->
         changeset =
@@ -47,6 +54,8 @@ defmodule EarthScanner.Trips do
       {:ok, dates} ->
         trip_attrs = Map.put(attrs, "admin_id", admin_id)
 
+        # FR-29: Create trip with all details
+        # FR-36: Create trip instances for each date
         Multi.new()
         |> Multi.insert(:trip, Trip.changeset(%Trip{}, trip_attrs))
         |> Multi.run(:instances, fn repo, %{trip: trip} ->
@@ -79,7 +88,9 @@ defmodule EarthScanner.Trips do
     end
   end
 
-  # FR-29 / FR-36: parse multi-line (or comma-separated) dates
+  # FR-36: Parse multi-line (or comma-separated) recurring dates
+  # Supports formats: "2025-11-21\n2025-11-28" or "2025-11-21, 2025-11-28"
+  # Automatically deduplicates dates
   defp parse_dates(raw) when is_binary(raw) do
     parts =
       raw
@@ -105,7 +116,7 @@ defmodule EarthScanner.Trips do
     end
   end
 
-  # ---------- FR-29: list future trips for admin ----------
+  # ---------- FR-29: List trips for admin ----------
 
   @doc """
   Lists trips created by the given admin that still have at least one future instance.
@@ -209,10 +220,32 @@ defmodule EarthScanner.Trips do
       # create in-app notification (best-effort)
       sanitized = sanitize_diff_for_storage(diff)
 
+      trip_name = Map.get(trip, :name) || "#{trip.source_city} → #{trip.destination_city}"
+
+      # build a payload and a compact human message for UI
+      base_payload = %{
+        "trip_id" => trip.id,
+        "trip_name" => trip_name,
+        "from" => trip.source_city,
+        "to" => trip.destination_city,
+        "timestamp" => DateTime.utc_now() |> DateTime.to_iso8601(),
+        "diff" => sanitized
+      }
+
+      # Attempt to build a compact, pre-rendered message for older UIs
+      message =
+        try do
+          EarthScanner.Formatters.TripChangeFormatter.format_compact(base_payload)
+        rescue
+          _ -> nil
+        end
+
+      payload = if message, do: Map.put(base_payload, "message", message), else: base_payload
+
       attrs = %{
         "user_id" => user.id,
         "kind" => "trip_change",
-        "payload" => %{"trip_id" => trip.id, "diff" => sanitized}
+        "payload" => payload
       }
 
       case EarthScanner.Notifications.create_notification(attrs) do
@@ -371,12 +404,15 @@ defmodule EarthScanner.Trips do
 
   def build_instance_departure_datetime(_, _), do: {:error, :invalid_data}
 
+  # FR-36: Instance Management - Edit trip instance
   @doc """
   Updates a single trip instance (e.g. date or available tickets).
+  Allows administrators to manage individual date instances.
 
   ## Examples
 
       update_trip_instance(instance, %{available_tickets: 30})
+      update_trip_instance(instance, %{date: ~D[2025-12-15]})
 
   """
   def update_trip_instance(%TripInstance{} = instance, attrs) do
@@ -385,8 +421,10 @@ defmodule EarthScanner.Trips do
     |> Repo.update()
   end
 
+  # FR-36: Instance Management - Delete trip instance
   @doc """
   Deletes a single trip instance.
+  Allows administrators to cancel a specific date without affecting other dates.
 
   """
   def delete_trip_instance(%TripInstance{} = instance) do
@@ -555,21 +593,25 @@ defmodule EarthScanner.Trips do
   # ---------------------- Public search & helpers -----------------------
 
   @doc """
-  Search for future trips matching source and destination patterns.
-
+  # FR-11: Exclude past trips from search results
+  Searches for trips matching the given source and destination patterns,
+  excluding trips with departure time in the past (strict comparison: exactly now = past).
   Accepts SQL LIKE/ILIKE patterns (e.g. "%Paris%") or plain strings.
   Returns a list of `Trip` structs (not preloaded with instances).
   """
   def search_future_trips(source_pattern, destination_pattern) do
-    today = Date.utc_today()
+    # FR-11: Use DateTime.utc_now() to check departure_time, not just instance dates
+    now = DateTime.utc_now()
 
     query =
       from t in Trip,
         where:
           ilike(t.source_city, ^source_pattern) and
-            ilike(t.destination_city, ^destination_pattern),
+            ilike(t.destination_city, ^destination_pattern) and
+            t.departure_time > ^now,
+        # FR-11: Strict comparison - trips departing exactly now are treated as past
         join: i in TripInstance,
-        on: i.trip_id == t.id and i.date >= ^today,
+        on: i.trip_id == t.id,
         distinct: true,
         order_by: [asc: t.departure_time]
 
@@ -1012,11 +1054,14 @@ defmodule EarthScanner.Trips do
       source = "%#{src}%"
       destination = "%#{dst}%"
       today = Date.utc_today()
+      now = DateTime.utc_now()
 
       # Base query: search trips with future instances
       base_q =
         from t in Trip,
-          where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
+          where:
+            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
+              t.departure_time > ^now,
           join: i in TripInstance,
           on: i.trip_id == t.id and i.date >= ^today,
           distinct: true
@@ -1087,6 +1132,7 @@ defmodule EarthScanner.Trips do
   end
 
   @doc """
+  # FR-15: Sold-Out Trips - Server-Side Purchase Prevention
   Purchases a trip instance for the given user.
 
   Returns `{:ok, purchase}` on success or `{:error, reason}` where reason is
@@ -1105,6 +1151,7 @@ defmodule EarthScanner.Trips do
           Date.compare(instance.date, today) == :lt ->
             {:error, :past_instance}
 
+          # FR-15: Prevent purchase if sold out (no tickets remaining)
           instance.available_tickets <= 0 ->
             {:error, :sold_out}
 
@@ -1113,11 +1160,13 @@ defmodule EarthScanner.Trips do
             {:error, :already_purchased}
 
           true ->
+            # FR-25
             # Loyalty Logic
             price = Decimal.to_float(trip.price)
 
             {points_redeemed, discount_amount} =
               if redeem_points? do
+                # FR-26: Loyalty Point Redemption
                 max_discount_points = round(price * 10)
                 points_available = user.loyalty_points
 
@@ -1130,8 +1179,11 @@ defmodule EarthScanner.Trips do
               end
 
             final_price = max(0.0, price - discount_amount)
+            # FR-25: Earn points based on ticket price (1 point per 1 EUR approx)
+            # FR-25
             points_earned = round(final_price)
 
+            # FR-25
             new_points_balance = user.loyalty_points - points_redeemed + points_earned
             net_point_change = points_earned - points_redeemed
 
@@ -1155,6 +1207,7 @@ defmodule EarthScanner.Trips do
             # Use restricted changeset and log changes within the transaction
             |> Ecto.Multi.update(
               :update_user_points,
+              # FR-25
               User.loyalty_changeset(user, %{loyalty_points: new_points_balance})
             )
             |> Ecto.Multi.insert(

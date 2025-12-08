@@ -20,7 +20,7 @@ defmodule EarthScannerWeb.TripController do
     end
   end
 
-  # FR-29: show admin's all trips (past and future)
+  # FR-29: List all trips created by admin
   def index(conn, _params) do
     admin = conn.assigns.current_user
     trips = Trips.list_all_trips_for_admin(admin)
@@ -28,11 +28,14 @@ defmodule EarthScannerWeb.TripController do
     render(conn, :index, trips: trips)
   end
 
+  # FR-29: Show trip creation form
   def new(conn, _params) do
     changeset = Trip.changeset(%Trip{}, %{})
     render(conn, :new, form: to_form(changeset))
   end
 
+  # FR-29: Create trip with all details
+  # FR-36: Process recurring dates
   def create(conn, %{"trip" => trip_params}) do
     admin = conn.assigns.current_user
 

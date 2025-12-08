@@ -52,6 +52,27 @@ document.addEventListener("DOMContentLoaded", initTripForms);
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket;
 
+// Remove duplicate aurora background elements that may get re-inserted
+// during full-page redirects or LiveView navigations. This prevents the
+// aurora animation from appearing to run "twice" when the same markup
+// ends up duplicated in the DOM.
+function dedupeAurora() {
+  try {
+    const nodes = document.querySelectorAll('.aurora-background');
+    if (nodes.length > 1) {
+      nodes.forEach((n, i) => {
+        if (i > 0) n.remove();
+      });
+    }
+  } catch (e) {
+    // defensive: don't crash the app if DOM APIs aren't available
+    console.debug('dedupeAurora error', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', dedupeAurora);
+window.addEventListener('phx:page-loading-stop', dedupeAurora);
+
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //

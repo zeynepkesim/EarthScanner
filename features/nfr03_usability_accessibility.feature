@@ -5,21 +5,22 @@ Feature: NFR-03 Usability & Accessibility
 
   Background:
     Given there are trips available from "Tallinn" to "Tartu"
+    And I am logged in as a normal user
 
-  # NFR-03: Positive Scenario - Keyboard Navigation
+  # Positive Scenario - Keyboard Navigation
   Scenario: User can navigate sort dropdown with keyboard
     When I visit the search results page
     And I press Tab to focus on the sort dropdown
     Then the sort dropdown should be focused
     And I should be able to change sorting with arrow keys
 
-  # NFR-03: Positive Scenario - ARIA Labels
+  # Positive Scenario - ARIA Labels
   Scenario: Screen reader announces sort dropdown properly
     When I visit the search results page
     Then the sort dropdown should have an accessible label
     And the sort dropdown should have a description for screen readers
 
-  # NFR-03: Positive Scenario - Filter Removal
+  # Positive Scenario - Filter Removal
   Scenario: User can remove filters with keyboard
     Given I have applied a price filter
     When I visit the search results page
@@ -27,13 +28,13 @@ Feature: NFR-03 Usability & Accessibility
     And I press Enter
     Then the filter should be removed
 
-  # NFR-03: Negative Scenario - Missing Focus
+  # Negative Scenario - Missing Focus
   Scenario: Elements without proper focus indicators fail accessibility
     When I visit the search results page
     And I tab through interactive elements
     Then all interactive elements should have visible focus indicators
 
-  # NFR-03: Edge Case - High Contrast Mode
+  # Edge Case - High Contrast Mode
   Scenario: Interface maintains readability in high contrast
     When I visit the search results page with high contrast mode
     Then all text should have sufficient contrast ratio
