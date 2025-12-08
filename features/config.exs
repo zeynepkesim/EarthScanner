@@ -220,4 +220,10 @@ defmodule WhiteBreadConfig do
     context: DeleteAccountContext,
     feature_paths: ["features/fr06_delete_account.feature"]
   )
+
+  suite(
+    name: "SecureAuthentication",
+    context: NFR07SecureAuthenticationContext,
+    feature_paths: ["features/nfr07_secure_authentication.feature"]
+  )
 end

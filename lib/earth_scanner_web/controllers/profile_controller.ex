@@ -109,36 +109,50 @@ defmodule EarthScannerWeb.ProfileController do
     render(conn, :edit_password, changeset: %{})
   end
 
-  def update_password(conn, %{
-        "current_password" => current,
-        "new_password" => new_pass,
-        "new_password_confirmation" => confirm
-      }) do
+  def update_password(conn, params) do
     user = conn.assigns.current_user
 
-    case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
-      {:ok, _updated_user} ->
-        conn
-        |> configure_session(renew: true)
-        |> put_session(:user_id, user.id)
-        |> put_flash(:info, "Password updated successfully")
-        |> redirect(to: ~p"/profile")
+    current = params["current_password"] || ""
+    new_pass = params["new_password"] || ""
+    confirm = params["new_password_confirmation"] || ""
 
-      {:error, :invalid_current_password} ->
-        render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
+    # Validate required fields first
+    cond do
+      String.trim(current) == "" ->
+        render(conn, :edit_password, changeset: %{error: "Current password is required"})
 
-      {:error, :password_confirmation_mismatch} ->
-        render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
+      String.trim(new_pass) == "" ->
+        render(conn, :edit_password, changeset: %{error: "New password is required"})
 
-      {:error, :password_too_short} ->
-        render(conn, :edit_password,
-          changeset: %{error: "Password must be at least 8 characters"}
-        )
+      String.trim(confirm) == "" ->
+        render(conn, :edit_password, changeset: %{error: "Password confirmation is required"})
 
-      {:error, reason} ->
-        render(conn, :edit_password,
-          changeset: %{error: "Could not change password: #{inspect(reason)}"}
-        )
+      true ->
+        # Proceed with password change
+        case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
+          {:ok, _updated_user} ->
+            conn
+            |> configure_session(renew: true)
+            |> put_session(:user_id, user.id)
+            |> put_flash(:info, "Password updated successfully")
+            |> redirect(to: ~p"/profile")
+
+          {:error, :invalid_current_password} ->
+            render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
+
+          {:error, :password_confirmation_mismatch} ->
+            render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
+
+          {:error, :password_too_short} ->
+            render(conn, :edit_password,
+              changeset: %{error: "Password must be at least 8 characters"}
+            )
+
+          {:error, reason} ->
+            render(conn, :edit_password,
+              changeset: %{error: "Could not change password: #{inspect(reason)}"}
+            )
+        end
     end
   end
 end
