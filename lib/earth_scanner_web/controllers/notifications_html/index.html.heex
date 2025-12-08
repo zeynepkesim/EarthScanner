@@ -12,17 +12,22 @@
       <ul class="space-y-3 mt-3">
         <li :for={n <- @notifications} class="p-3 border rounded">
           <% payload = n.payload || %{} %>
+          <% trip_title =
+            payload["trip_name"] ||
+              (payload["from"] && payload["to"] && "#{payload["from"]} → #{payload["to"]}") ||
+              "Trip update"
+          %>
           <div class="flex items-center justify-between">
             <div class="font-semibold">
-              <%= if payload["message"] do %>
-                {payload["message"]}
-              <% else %>
-                <%= case n.kind do %>
-                  <% "trip_change" -> %>
-                    Trip update
-                  <% _ -> %>
+              <%= case n.kind do %>
+                <% "trip_change" -> %>
+                  {trip_title}
+                <% _ -> %>
+                  <%= if payload["message"] do %>
+                    {payload["message"]}
+                  <% else %>
                     {n.kind}
-                <% end %>
+                  <% end %>
               <% end %>
             </div>
 
@@ -37,8 +42,19 @@
                     (payload["from"] && payload["to"] && "#{payload["from"]} → #{payload["to"]}") %>
                 <div>Trip updated: {trip_name}</div>
 
-                <div class="text-xs text-slate-500">When: {payload["timestamp"]}</div>
+                <% when_text =
+                  case payload["timestamp"] do
+                    nil -> nil
+                    ts ->
+                      case DateTime.from_iso8601(ts) do
+                        {:ok, dt, _} -> Calendar.strftime(dt, "%b %d, %Y %H:%M UTC")
+                        {:error, _} -> ts
+                      end
+                  end
+                %>
 
+                <div :if={when_text} class="text-xs text-slate-500">When: {when_text}</div>
+                
                 <div class="mt-2 text-xs text-slate-700">
                   <%= for {field, change} <- Map.to_list(payload["diff"] || %{}) do %>
                     <div>
