@@ -40,6 +40,7 @@ defmodule EarthScanner.Trips.Trip do
     co2_level
     available_tickets
     admin_id
+    picture_url
   )a
 
   @optional_fields ~w(
