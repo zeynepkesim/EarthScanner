@@ -10,16 +10,7 @@ Feature: FR-29 Create Trip
   Scenario: Successful creation of a basic trip
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | Tallinn                      |
-      | destination_city    | Paris                        |
-      | departure_time      | 2025-11-20T10:00:00Z         |
-      | arrival_time        | 2025-11-20T13:00:00Z         |
-      | price               | 150.0                        |
-      | co2_level           | 200                          |
-      | available_tickets   | 50                           |
-      | dates               | 2025-11-21                   |
+    And I fill in a valid plane trip
     And I submit the trip form
     Then I should see a confirmation that the trip was created
     And I should see the trip listed in my future trips
@@ -28,16 +19,7 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with bus transport mode
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | bus                          |
-      | source_city         | Tartu                        |
-      | destination_city    | Tallinn                      |
-      | departure_time      | 2025-12-01T08:00:00Z         |
-      | arrival_time        | 2025-12-01T10:30:00Z         |
-      | price               | 25.0                         |
-      | co2_level           | 50                           |
-      | available_tickets   | 40                           |
-      | dates               | 2025-12-05                   |
+    And I fill in a valid bus trip
     And I submit the trip form
     Then I should see a confirmation that the trip was created
 
@@ -45,16 +27,7 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with train transport mode
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | train                        |
-      | source_city         | Berlin                       |
-      | destination_city    | Munich                       |
-      | departure_time      | 2025-12-10T14:00:00Z         |
-      | arrival_time        | 2025-12-10T18:00:00Z         |
-      | price               | 80.0                         |
-      | co2_level           | 30                           |
-      | available_tickets   | 100                          |
-      | dates               | 2025-12-15                   |
+    And I fill in a valid train trip
     And I submit the trip form
     Then I should see a confirmation that the trip was created
 
@@ -62,16 +35,7 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with minimum valid values
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | bus                          |
-      | source_city         | A                            |
-      | destination_city    | B                            |
-      | departure_time      | 2025-12-20T10:00:00Z         |
-      | arrival_time        | 2025-12-20T10:01:00Z         |
-      | price               | 0.01                         |
-      | co2_level           | 0                            |
-      | available_tickets   | 1                            |
-      | dates               | 2025-12-25                   |
+    And I fill in a trip with minimum values
     And I submit the trip form
     Then I should see a confirmation that the trip was created
 
@@ -146,16 +110,7 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with very long duration
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | New York                     |
-      | destination_city    | Sydney                       |
-      | departure_time      | 2025-12-01T10:00:00Z         |
-      | arrival_time        | 2025-12-03T10:00:00Z         |
-      | price               | 1500.0                       |
-      | co2_level           | 500                          |
-      | available_tickets   | 200                          |
-      | dates               | 2025-12-10                   |
+    And I fill in a trip with long duration
     And I submit the trip form
     Then I should see a confirmation that the trip was created
 
@@ -163,16 +118,7 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with special characters in city names
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | São Paulo                    |
-      | destination_city    | Zürich                       |
-      | departure_time      | 2025-12-05T09:00:00Z         |
-      | arrival_time        | 2025-12-05T21:00:00Z         |
-      | price               | 800.0                        |
-      | co2_level           | 300                          |
-      | available_tickets   | 150                          |
-      | dates               | 2025-12-10                   |
+    And I fill in a trip with special city names
     And I submit the trip form
     Then I should see a confirmation that the trip was created
 
@@ -180,15 +126,6 @@ Feature: FR-29 Create Trip
   Scenario: Create trip with large values
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | London                       |
-      | destination_city    | Tokyo                        |
-      | departure_time      | 2025-12-15T06:00:00Z         |
-      | arrival_time        | 2025-12-15T18:00:00Z         |
-      | price               | 9999.99                      |
-      | co2_level           | 99999                        |
-      | available_tickets   | 5000                         |
-      | dates               | 2025-12-20                   |
+    And I fill in a trip with large values
     And I submit the trip form
     Then I should see a confirmation that the trip was created
