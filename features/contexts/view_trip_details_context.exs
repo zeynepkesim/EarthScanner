@@ -66,6 +66,7 @@ defmodule ViewTripDetailsContext do
       "available_tickets" => 50,
       "co2_level" => 100,
       "transport_mode" => "bus",
+      "picture_url" => "https://pics.example.com/view-future.jpg",
       "dates" => Date.to_iso8601(tomorrow)
     })
 
@@ -85,6 +86,7 @@ defmodule ViewTripDetailsContext do
       "available_tickets" => 30,
       "co2_level" => 80,
       "transport_mode" => "train",
+      "picture_url" => "https://pics.example.com/view-past.jpg",
       "dates" => Date.to_iso8601(yesterday)
     })
 
@@ -118,6 +120,7 @@ defmodule ViewTripDetailsContext do
       "available_tickets" => 40,
       "co2_level" => 120,
       "transport_mode" => "plane",
+      "picture_url" => "https://pics.example.com/view-other.jpg",
       "dates" => Date.to_iso8601(tomorrow)
     })
 
