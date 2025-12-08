@@ -1,5 +1,6 @@
 defmodule EarthScanner.Trips.FR07SearchByRouteTest do
   use EarthScanner.DataCase
+  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip

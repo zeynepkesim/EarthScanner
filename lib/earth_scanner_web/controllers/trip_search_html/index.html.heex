@@ -23,7 +23,7 @@
       <%= for {k, v} <- @filters do %>
         <input type="hidden" name={k} value={v} />
       <% end %>
-      <label for="sort-select" class="font-medium">Sort by:</label>
+       <label for="sort-select" class="font-medium">Sort by:</label>
       <select
         id="sort-select"
         name="sort"
@@ -33,19 +33,19 @@
         aria-describedby="sort-description"
       >
         <option value="">Default (Departure time)</option>
-
+        
         <option value="price_asc" selected={@filters["sort"] == "price_asc"}>Price ↑</option>
-
+        
         <option value="price_desc" selected={@filters["sort"] == "price_desc"}>Price ↓</option>
-
+        
         <option value="co2_asc" selected={@filters["sort"] == "co2_asc"}>CO₂ ↑</option>
-
+        
         <option value="co2_desc" selected={@filters["sort"] == "co2_desc"}>CO₂ ↓</option>
-
+        
         <option value="duration_asc" selected={@filters["sort"] == "duration_asc"}>
           Duration ↑
         </option>
-
+        
         <option value="duration_desc" selected={@filters["sort"] == "duration_desc"}>
           Duration ↓
         </option>
@@ -112,7 +112,7 @@
   <!-- NFR-03: Accessibility - ARIA labels for top picks -->
   <!-- FR-10: Top Picks section (fastest, cheapest, greenest) -->
   <h2 class="mt-4 mb-2 text-lg font-semibold">Top Picks</h2>
-
+  
   <div
     class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
     role="region"
@@ -125,15 +125,15 @@
         aria-label={"Fastest trip: #{@top_trips.fastest.source_city} to #{@top_trips.fastest.destination_city}, #{@top_trips.fastest.duration_minutes} minutes"}
       >
         <p class="top-pick-label text-xs font-semibold text-sky-700 mb-1">Fastest</p>
-
+        
         <p class="font-medium">
           {@top_trips.fastest.source_city} → {@top_trips.fastest.destination_city}
         </p>
-
+        
         <p class="text-xs text-slate-600">Duration: {@top_trips.fastest.duration_minutes} min</p>
       </.link>
     <% end %>
-
+    
     <%= if @top_trips && @top_trips.cheapest do %>
       <.link
         navigate={~p"/trips/#{@top_trips.cheapest.id}"}
@@ -141,15 +141,15 @@
         aria-label={"Cheapest trip: #{@top_trips.cheapest.source_city} to #{@top_trips.cheapest.destination_city}, €#{@top_trips.cheapest.price}"}
       >
         <p class="top-pick-label text-xs font-semibold text-emerald-700 mb-1">Cheapest</p>
-
+        
         <p class="font-medium">
           {@top_trips.cheapest.source_city} → {@top_trips.cheapest.destination_city}
         </p>
-
+        
         <p class="text-xs text-slate-600">Price: €{@top_trips.cheapest.price}</p>
       </.link>
     <% end %>
-
+    
     <%= if @top_trips && @top_trips.greenest do %>
       <.link
         navigate={~p"/trips/#{@top_trips.greenest.id}"}
@@ -157,11 +157,11 @@
         aria-label={"Greenest trip: #{@top_trips.greenest.source_city} to #{@top_trips.greenest.destination_city}, #{@top_trips.greenest.co2_level} CO₂"}
       >
         <p class="top-pick-label text-xs font-semibold text-lime-700 mb-1">Greenest</p>
-
+        
         <p class="font-medium">
           {@top_trips.greenest.source_city} → {@top_trips.greenest.destination_city}
         </p>
-
+        
         <p class="text-xs text-slate-600">CO₂: {@top_trips.greenest.co2_level}</p>
       </.link>
     <% end %>
@@ -197,8 +197,7 @@
           class="text-sm text-slate-500"
         >
           Not purchased yet
-        </span>
-        <% first_available_instance =
+        </span> <% first_available_instance =
           Enum.find(trip.instances, fn instance -> instance.available_tickets > 0 end) %>
         <div class="mt-3 space-y-2 text-sm">
           <div :if={trip.instances != []}>
@@ -239,7 +238,7 @@
               </div>
             <% end %>
           </div>
-
+          
           <.form
             :if={first_available_instance}
             for={%{}}
@@ -288,7 +287,7 @@
     <% end %>
   </ul>
 <% end %>
-<hr class="my-4" />
+ <hr class="my-4" />
 <div class="flex justify-between items-center">
   <%= if @page > 1 do %>
     <a
@@ -302,7 +301,7 @@
   <% else %>
     <span></span>
   <% end %>
-
+  
   <%= if @page * @per_page < @total do %>
     <a
       class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"
@@ -329,7 +328,7 @@
 <%= if @recent_searches != [] do %>
   <div class="mt-6 p-3 bg-slate-50 rounded-lg border border-slate-200">
     <h3 class="font-bold text-base text-slate-900 mb-3">🔍 Recent Searches</h3>
-
+    
     <div class="space-y-1 text-sm">
       <div :for={search <- @recent_searches} class="hover:bg-slate-100 rounded px-2 py-1">
         <.link

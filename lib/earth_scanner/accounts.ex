@@ -27,6 +27,7 @@ defmodule EarthScanner.Accounts do
     end
   end
 
+  # FR-03: Edit profile (post-registration) - Update user profile information
   def update_user(%User{} = user, attrs) do
     user
     |> User.profile_changeset(attrs)

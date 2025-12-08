@@ -95,7 +95,7 @@ defmodule FR23Context do
 
     {:ok, trip} =
       Trips.create_trip(creator, %{
-        "transport_mode" => "ferry",
+        "transport_mode" => "bus",
         "source_city" => "OtherCityA",
         "destination_city" => "OtherCityB",
         "departure_time" => "2026-03-01T09:00:00Z",
