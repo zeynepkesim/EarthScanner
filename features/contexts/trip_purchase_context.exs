@@ -82,6 +82,7 @@ defmodule TripPurchaseContext do
         "available_tickets" => 15,
         "co2_level" => 120,
         "transport_mode" => "train",
+        "picture_url" => "https://pics.example.com/purchase.jpg",
         "dates" => Date.to_iso8601(future_date)
       })
 
