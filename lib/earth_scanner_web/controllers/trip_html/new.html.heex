@@ -72,6 +72,7 @@
             name="trip[departure_time]"
             value={@form[:departure_time].value}
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            max="9999-12-31T23:59"
           />
           <.error :for={err <- @form[:departure_time].errors}>{translate_error(err)}</.error>
         </div>
@@ -83,6 +84,7 @@
             name="trip[arrival_time]"
             value={@form[:arrival_time].value}
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+            max="9999-12-31T23:59"
           />
           <.error :for={err <- @form[:arrival_time].errors}>{translate_error(err)}</.error>
         </div>
