@@ -52,6 +52,7 @@ defmodule AdminTripsContext do
       "available_tickets" => 50,
       "co2_level" => 200,
       "transport_mode" => "plane",
+      "picture_url" => "https://pics.example.com/admin-past.jpg",
       "dates" => Date.to_iso8601(past_date)
     })
 
@@ -65,6 +66,7 @@ defmodule AdminTripsContext do
       "available_tickets" => 100,
       "co2_level" => 300,
       "transport_mode" => "plane",
+      "picture_url" => "https://pics.example.com/admin-future.jpg",
       "dates" => Date.to_iso8601(future_date)
     })
 

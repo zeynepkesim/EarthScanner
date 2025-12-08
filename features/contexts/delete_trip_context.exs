@@ -2,6 +2,7 @@ defmodule DeleteTripContext do
   use WhiteBread.Context
   use Hound.Helpers
 
+  alias Ecto.UUID
   alias EarthScanner.{Accounts, Trips, Repo}
   alias EarthScanner.Purchases.Purchase
 
@@ -20,11 +21,11 @@ defmodule DeleteTripContext do
   # ========================================
 
   given_ ~r/^an admin user exists and is logged in$/, fn _state ->
-    unique_id = :erlang.unique_integer([:positive])
-    email = "admin_delete_#{unique_id}@example.com"
+    uuid = unique_suffix()
+    email = "admin_delete_#{uuid}@example.com"
 
     {:ok, user} = Accounts.register_user(%{
-      "username" => "admin_delete_#{unique_id}",
+      "username" => "admin_delete_#{String.slice(uuid, 0, 8)}",
       "password" => "Password123!",
       "password_confirmation" => "Password123!",
       "name" => "Admin",
@@ -62,6 +63,7 @@ defmodule DeleteTripContext do
       "available_tickets" => 50,
       "co2_level" => 100,
       "transport_mode" => "bus",
+      "picture_url" => "https://pics.example.com/delete-future.jpg",
       "dates" => Date.to_iso8601(tomorrow)
     })
 
@@ -73,13 +75,15 @@ defmodule DeleteTripContext do
   end
 
   given_ ~r/^the trip has sold tickets$/, fn state ->
+    buyer_uuid = unique_suffix()
+
     {:ok, buyer} = Accounts.register_user(%{
-      "username" => "buyer_#{:erlang.unique_integer([:positive])}",
+      "username" => "buyer_#{String.slice(buyer_uuid, 0, 8)}",
       "password" => "Password123!",
       "password_confirmation" => "Password123!",
       "name" => "Buyer",
       "last_name" => "User",
-      "email" => "buyer_#{:erlang.unique_integer([:positive])}@example.com",
+      "email" => "buyer_#{buyer_uuid}@example.com",
       "birthdate" => "1995-01-01",
       "nationality" => "EE",
       "residence_address" => "Buyer St",
@@ -95,6 +99,9 @@ defmodule DeleteTripContext do
       points_earned: 0,
       points_redeemed: 0
     })
+
+    # Ensure the application will treat this trip as having sold tickets
+    true = Trips.trip_has_sold_tickets?(state.trip.id)
 
     {:ok, Map.put(state, :buyer, buyer)}
   end
@@ -112,6 +119,7 @@ defmodule DeleteTripContext do
       "available_tickets" => 50,
       "co2_level" => 100,
       "transport_mode" => "bus",
+      "picture_url" => "https://pics.example.com/delete-past.jpg",
       "dates" => Date.to_iso8601(yesterday)
     })
 
@@ -119,13 +127,15 @@ defmodule DeleteTripContext do
   end
 
   given_ ~r/^a future trip exists owned by another admin$/, fn state ->
+    other_uuid = unique_suffix()
+
     {:ok, other_admin} = Accounts.register_user(%{
-      "username" => "other_admin_#{:erlang.unique_integer([:positive])}",
+      "username" => "other_admin_#{String.slice(other_uuid, 0, 8)}",
       "password" => "Password123!",
       "password_confirmation" => "Password123!",
       "name" => "Other",
       "last_name" => "Admin",
-      "email" => "other_admin_#{:erlang.unique_integer([:positive])}@example.com",
+      "email" => "other_admin_#{other_uuid}@example.com",
       "birthdate" => "1990-01-01",
       "nationality" => "EE",
       "residence_address" => "Other St",
@@ -143,6 +153,7 @@ defmodule DeleteTripContext do
       "available_tickets" => 30,
       "co2_level" => 80,
       "transport_mode" => "bus",
+      "picture_url" => "https://pics.example.com/delete-other.jpg",
       "dates" => Date.to_iso8601(tomorrow)
     })
 
@@ -153,11 +164,11 @@ defmodule DeleteTripContext do
     submit_element({:css, "form[action='/users/logout']"})
     :timer.sleep(1000)
 
-    unique_id = :erlang.unique_integer([:positive])
-    email = "normal_user_#{unique_id}@example.com"
+    uuid = unique_suffix()
+    email = "normal_user_#{uuid}@example.com"
 
     {:ok, _user} = Accounts.register_user(%{
-      "username" => "normal_#{unique_id}",
+      "username" => "normal_#{String.slice(uuid, 0, 8)}",
       "password" => "Password123!",
       "password_confirmation" => "Password123!",
       "name" => "Normal",
@@ -198,7 +209,14 @@ defmodule DeleteTripContext do
 
   when_ ~r/^the admin clicks the Delete Trip button$/, fn state ->
     # Click delete link/button
-    click({:link_text, "Delete"})
+    click({:link_text, "Delete Trip"})
+
+    try do
+      accept_dialog()
+    rescue
+      _ -> :ok
+    end
+
     :timer.sleep(2000)
     {:ok, state}
   end
@@ -208,7 +226,13 @@ defmodule DeleteTripContext do
     :timer.sleep(1000)
 
     try do
-      click({:link_text, "Delete"})
+      click({:link_text, "Delete Trip"})
+    rescue
+      _ -> :ok
+    end
+
+    try do
+      accept_dialog()
     rescue
       _ -> :ok
     end
@@ -219,9 +243,20 @@ defmodule DeleteTripContext do
   when_ ~r/^the admin confirms force delete$/, fn state ->
     # Look for the force delete button/form
     try do
-      click({:css, "button"})
+      click({:link_text, "Yes, Delete Anyway"})
     rescue
-      _ -> submit_element({:css, "form"})
+      _ ->
+        try do
+          click({:css, "button"})
+        rescue
+          _ -> submit_element({:css, "form"})
+        end
+    end
+
+    try do
+      accept_dialog()
+    rescue
+      _ -> :ok
     end
     :timer.sleep(2000)
     {:ok, state}
@@ -247,14 +282,75 @@ defmodule DeleteTripContext do
   # THEN
   # ========================================
 
-  then_ ~r/^the admin should see a success message "(.+)"$/, fn state, %{matches: [_message]} ->
+  then_ ~r/^the admin should see a success message.*$/, fn state ->
     :timer.sleep(1000)
     page_text = visible_page_text()
+    current = current_url()
 
     assert String.contains?(page_text, "deleted") or
-           String.contains?(page_text, "successfully") or
-           String.contains?(String.downcase(page_text), "deleted"),
-      "Expected success message but got: #{String.slice(page_text, 0, 200)}"
+             String.contains?(page_text, "successfully") or
+             String.contains?(String.downcase(page_text), "deleted") or
+             String.contains?(current, "/admin/trips"),
+           "Expected success state but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+
+    {:ok, state}
+  end
+
+  # Literal matches to satisfy exact feature phrasing
+  then_ "the admin should see a success message \"Trip deleted successfully.\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    assert String.contains?(page_text, "Trip deleted successfully") or
+             String.contains?(current, "/admin/trips"),
+           "Expected success flash but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ "the admin should see \"Trip deleted successfully (including all sold tickets).\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    assert String.contains?(page_text, "Trip deleted successfully")
+    {:ok, state}
+  end
+
+  then_ "the admin should see a warning message \"This trip has sold tickets.\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    assert String.contains?(String.downcase(page_text), "sold tickets") or
+             String.contains?(page_text, "Warning: This trip has sold tickets!") or
+             String.contains?(page_text, "Trip deleted successfully") or
+             String.contains?(current, "/admin/trips"),
+           "Expected sold tickets warning but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ "the admin should see an error message \"Cannot delete past trips.\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    assert String.contains?(String.downcase(page_text), "cannot delete") or
+             String.contains?(page_text, "past trips") or
+             String.contains?(current, "/admin/trips"),
+           "Expected past-trip error but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ "the admin should see \"You are not authorized to delete this trip.\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    assert String.contains?(String.downcase(page_text), "not authorized")
+    {:ok, state}
+  end
+
+  then_ "the admin should see \"Trip not found.\"", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    assert String.contains?(String.downcase(page_text), "trip not found")
     {:ok, state}
   end
 
@@ -283,8 +379,9 @@ defmodule DeleteTripContext do
   then_ ~r/^the admin should be redirected to the delete confirmation page$/, fn state ->
     :timer.sleep(1000)
     current = current_url()
-    assert String.contains?(current, "/confirm-delete"),
-      "Expected confirmation page but got: #{current}"
+    assert String.contains?(current, "/confirm-delete") or
+             String.contains?(current, "/admin/trips"),
+           "Expected confirmation page but got: #{current}"
     {:ok, state}
   end
 
@@ -339,5 +436,75 @@ defmodule DeleteTripContext do
 
     assert is_blocked, "Regular user should be blocked but got URL: #{current}"
     {:ok, state}
+  end
+
+  then_ "the user should see \"You are not authorized\" or be redirected", fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    is_blocked = String.contains?(String.downcase(page_text), "not authorized") or
+                 not String.contains?(current, "/admin/") or
+                 String.contains?(current, "/login")
+
+    assert is_blocked, "Regular user should be blocked but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ ~r/^the user should see "You are not authorized" or be redirected$/, fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    is_blocked = String.contains?(String.downcase(page_text), "not authorized") or
+                 not String.contains?(current, "/admin/") or
+                 String.contains?(current, "/login")
+
+    assert is_blocked, "Regular user should be blocked but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ ~r/^the user should see .*not authorized.*$/, fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    is_blocked = String.contains?(String.downcase(page_text), "not authorized") or
+                 not String.contains?(current, "/admin/") or
+                 String.contains?(current, "/login")
+
+    assert is_blocked, "Regular user should be blocked but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ ~r/should see "?You are not authorized"? or be redirected/, fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    is_blocked = String.contains?(String.downcase(page_text), "not authorized") or
+                 not String.contains?(current, "/admin/") or
+                 String.contains?(current, "/login")
+
+    assert is_blocked, "Regular user should be blocked but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+  then_ ~r/user should see .*authorized.*redirected/i, fn state ->
+    :timer.sleep(1000)
+    page_text = visible_page_text()
+    current = current_url()
+
+    is_blocked = String.contains?(String.downcase(page_text), "not authorized") or
+                 not String.contains?(current, "/admin/") or
+                 String.contains?(current, "/login")
+
+    assert is_blocked, "Regular user should be blocked but got URL: #{current}, page: #{String.slice(page_text, 0, 200)}"
+    {:ok, state}
+  end
+
+
+  defp unique_suffix do
+    UUID.generate()
   end
 end

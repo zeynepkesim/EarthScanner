@@ -33,6 +33,7 @@ defmodule FR27NotificationsContext do
         "price" => "20.00",
         "co2_level" => "50",
         "available_tickets" => "10",
+        "picture_url" => "https://pics.example.com/bus-a.jpg",
         "dates" => Date.utc_today() |> Date.to_iso8601()
       })
 
@@ -60,6 +61,7 @@ defmodule FR27NotificationsContext do
         "price" => "25.00",
         "co2_level" => "60",
         "available_tickets" => "10",
+        "picture_url" => "https://pics.example.com/bus-b.jpg",
         "dates" => Date.to_iso8601(tomorrow)
       })
 
@@ -159,6 +161,7 @@ defmodule FR27NotificationsContext do
         "price" => "30.00",
         "co2_level" => "40",
         "available_tickets" => "5",
+        "picture_url" => "https://pics.example.com/bus-c.jpg",
         "dates" => Date.utc_today() |> Date.to_iso8601()
       })
 

@@ -39,6 +39,7 @@ defmodule FR23Context do
         "transport_mode" => "train",
         "source_city" => "ContextCityA",
         "destination_city" => "ContextCityB",
+        "picture_url" => "https://example.com/train-a.jpg",
         "departure_time" => "2026-02-01T09:00:00Z",
         "arrival_time" => "2026-02-01T11:00:00Z",
         "price" => "15.00",
@@ -103,6 +104,7 @@ defmodule FR23Context do
         "price" => "30.00",
         "co2_level" => "10",
         "available_tickets" => "5",
+        "picture_url" => "https://example.com/bus-b.jpg",
         "dates" => "2026-03-01"
       })
 
