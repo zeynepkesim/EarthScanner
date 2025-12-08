@@ -19,7 +19,8 @@ defmodule ChangePasswordContext do
   # ========================================
 
   given_ ~r/^I am logged in as a normal user$/, fn _state ->
-    unique_id = :erlang.unique_integer([:positive])
+    # Use both unique_integer AND microsecond timestamp to ensure uniqueness
+    unique_id = "#{:erlang.unique_integer([:positive])}_#{System.system_time(:microsecond)}"
     email = "pwchange_user_#{unique_id}@example.com"
     username = "pwchange_#{unique_id}"
     password = "OldPassword123!"
@@ -204,21 +205,62 @@ defmodule ChangePasswordContext do
   end
 
   # ========================================
-  # THEN
+  # THEN - Multiple variations to handle WhiteBread quirks
   # ========================================
 
-  then_ ~r/^I should see "([^"]+)"$/, fn state, %{matches: [expected]} ->
+  # Specific error messages as literal strings
+  then_ "I should see \"Current password is incorrect\"", fn state ->
     :timer.sleep(500)
     page_text = visible_page_text()
 
-    IO.puts("\n----- DEBUG: Checking for message '#{expected}' -----\n")
+    IO.puts("\n----- Looking for: Current password is incorrect -----")
     IO.puts(page_text)
     IO.puts("\n-----------------------------------------------\n")
 
-    lower_page = String.downcase(page_text)
-    lower_expected = String.downcase(expected)
+    assert String.contains?(page_text, "Current password is incorrect"),
+      "Expected 'Current password is incorrect' in page"
 
-    assert String.contains?(lower_page, lower_expected),
+    {:ok, state}
+  end
+
+  then_ "I should see \"Password confirmation does not match\"", fn state ->
+    :timer.sleep(500)
+    page_text = visible_page_text()
+
+    IO.puts("\n----- Looking for: Password confirmation does not match -----")
+    IO.puts(page_text)
+    IO.puts("\n-----------------------------------------------\n")
+
+    assert String.contains?(page_text, "Password confirmation does not match"),
+      "Expected 'Password confirmation does not match' in page"
+
+    {:ok, state}
+  end
+
+  then_ "I should see \"Password must be at least 8 characters\"", fn state ->
+    :timer.sleep(500)
+    page_text = visible_page_text()
+
+    IO.puts("\n----- Looking for: Password must be at least 8 characters -----")
+    IO.puts(page_text)
+    IO.puts("\n-----------------------------------------------\n")
+
+    assert String.contains?(page_text, "Password must be at least 8 characters"),
+      "Expected 'Password must be at least 8 characters' in page"
+
+    {:ok, state}
+  end
+
+  # Generic regex pattern with proper match extraction
+  then_ ~r/^I should see "(.+)"$/, fn state, %{matches: [expected]} ->
+    :timer.sleep(500)
+    page_text = visible_page_text()
+
+    IO.puts("\n----- Looking for (regex): #{expected} -----")
+    IO.puts(page_text)
+    IO.puts("\n-----------------------------------------------\n")
+
+    assert String.contains?(page_text, expected),
       "Expected to see '#{expected}' but got:\n\n#{page_text}"
 
     {:ok, state}
@@ -281,7 +323,8 @@ defmodule ChangePasswordContext do
            String.contains?(page_text, "incorrect") or
            String.contains?(page_text, "does not match") or
            String.contains?(page_text, "must be at least") or
-           String.contains?(page_text, "password"),
+           String.contains?(page_text, "required") or
+           String.contains?(page_text, "can't be blank"),
       "Expected some error message"
 
     {:ok, state}

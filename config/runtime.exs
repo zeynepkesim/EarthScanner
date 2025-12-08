@@ -134,6 +134,11 @@ if config_env() == :prod do
   disable_emails = System.get_env("DISABLE_EMAILS") in ["1", "true", "yes"]
 
   if disable_emails do
-    config :earth_scanner, EarthScanner.Mailer, adapter: Swoosh.Adapters.Local
+    # In prod, fall back to non-sending adapter to avoid crashes when email infra is unavailable.
+    config :earth_scanner, EarthScanner.Mailer, adapter: Swoosh.Adapters.Test
+    # Re-enable local storage for the Test adapter so deliveries no-op cleanly.
+    config :swoosh, local: true
+    # Avoid requiring an API client for the Test adapter.
+    config :swoosh, :api_client, false
   end
 end
