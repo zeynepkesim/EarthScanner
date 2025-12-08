@@ -29,4 +29,4 @@ Feature: FR-24 User data privacy
   Scenario: Admin can access other users' data (positive control)
     Given I am logged in as an admin
     When I visit the admin creation page
-    Then I should see a success message "New admin"
+    Then I should see "Create Admin"
