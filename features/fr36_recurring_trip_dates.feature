@@ -1,22 +1,15 @@
 Feature: FR-36 Recurring Trip Dates
-    Given an admin user "admin@example.com" with password "Password123!" exists
 
   Context: RecurringTripDatesContext
+
+  Background:
+    Given an admin user "admin@example.com" with password "Password123!" exists
 
   @happy_path @positive
   Scenario: Successful creation of a trip with two dates
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | Tallinn                      |
-      | destination_city    | Paris                        |
-      | departure_time      | 2025-11-20T10:00:00Z         |
-      | arrival_time        | 2025-11-20T13:00:00Z         |
-      | price               | 150.0                        |
-      | co2_level           | 200                          |
-      | available_tickets   | 50                           |
-      | dates               | 2025-11-21, 2025-11-28       |
+    And I fill in a trip with two dates
     And I submit the trip form
     Then I should see a confirmation that the trip was created
     And I should see the trip listed in my future trips
@@ -26,16 +19,7 @@ Feature: FR-36 Recurring Trip Dates
   Scenario: Create trip with multiple comma-separated dates
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | bus                          |
-      | source_city         | Tartu                        |
-      | destination_city    | Tallinn                      |
-      | departure_time      | 2025-12-01T08:00:00Z         |
-      | arrival_time        | 2025-12-01T10:30:00Z         |
-      | price               | 25.0                         |
-      | co2_level           | 50                           |
-      | available_tickets   | 40                           |
-      | dates               | 2025-12-05, 2025-12-12, 2025-12-19 |
+    And I fill in a trip with three comma separated dates
     And I submit the trip form
     Then I should see a confirmation that the trip was created
     And I should see 3 dates for that trip
@@ -52,17 +36,7 @@ Feature: FR-36 Recurring Trip Dates
   Scenario: Failing to create a trip without dates
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the admin trip creation page
-    And I fill in a valid trip with:
-      | transport_mode      | plane                        |
-      | source_city         | Tallinn                      |
-      | destination_city    | Paris                        |
-      | departure_time      | 2025-11-20T10:00:00Z         |
-      | arrival_time        | 2025-11-20T13:00:00Z         |
-      | price               | 150.0                        |
-      | co2_level           | 200                          |
-      | available_tickets   | 50                           |
-      | dates               |                              |
-    And I clear the trip dates
+    And I fill in a trip without dates
     And I submit the trip form
     Then I should see an error about missing trip dates
 
@@ -107,7 +81,7 @@ Feature: FR-36 Recurring Trip Dates
     When I log in as "admin@example.com" with password "Password123!"
     And I navigate to the trip instances list
     And I select the first instance to edit
-    And I change the instance date to "2025-12-20"
+    And I change the instance date to "2025-12-25"
     And I submit the instance update
     Then I should see a confirmation that the instance was updated
     And the instance should have the new date

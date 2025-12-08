@@ -33,58 +33,70 @@ defmodule EarthScanner.Trips do
   def create_trip(%User{id: admin_id}, attrs) do
     raw_dates = Map.get(attrs, "dates", "") || ""
 
-    # FR-36: Parse and validate recurring dates
-    case parse_dates(raw_dates) do
-      {:error, :no_dates} ->
-        changeset =
-          %Trip{}
-          |> Trip.changeset(Map.put(attrs, "admin_id", admin_id))
-          |> Ecto.Changeset.add_error(:base, "at least one trip date is required")
+    # FR-36: Explicit check for blank dates (extra safety)
+    trimmed_dates = String.trim(raw_dates)
 
-        {:error, changeset}
+    if trimmed_dates == "" do
+      changeset =
+        %Trip{}
+        |> Trip.changeset(Map.put(attrs, "admin_id", admin_id))
+        |> Ecto.Changeset.add_error(:base, "at least one trip date is required")
 
-      {:error, {:invalid_date, value}} ->
-        changeset =
-          %Trip{}
-          |> Trip.changeset(Map.put(attrs, "admin_id", admin_id))
-          |> Ecto.Changeset.add_error(:base, "invalid date: #{value}")
+      {:error, changeset}
+    else
+      # FR-36: Parse and validate recurring dates
+      case parse_dates(raw_dates) do
+        {:error, :no_dates} ->
+          changeset =
+            %Trip{}
+            |> Trip.changeset(Map.put(attrs, "admin_id", admin_id))
+            |> Ecto.Changeset.add_error(:base, "at least one trip date is required")
 
-        {:error, changeset}
+          {:error, changeset}
 
-      {:ok, dates} ->
-        trip_attrs = Map.put(attrs, "admin_id", admin_id)
+        {:error, {:invalid_date, value}} ->
+          changeset =
+            %Trip{}
+            |> Trip.changeset(Map.put(attrs, "admin_id", admin_id))
+            |> Ecto.Changeset.add_error(:base, "invalid date: #{value}")
 
-        # FR-29: Create trip with all details
-        # FR-36: Create trip instances for each date
-        Multi.new()
-        |> Multi.insert(:trip, Trip.changeset(%Trip{}, trip_attrs))
-        |> Multi.run(:instances, fn repo, %{trip: trip} ->
-          instances =
-            Enum.map(dates, fn date ->
-              TripInstance.changeset(%TripInstance{}, %{
-                "trip_id" => trip.id,
-                "date" => date,
-                "available_tickets" => trip.available_tickets
-              })
-            end)
+          {:error, changeset}
 
-          case Enum.split_with(instances, & &1.valid?) do
-            {valid, []} ->
-              Enum.each(valid, &repo.insert!/1)
-              {:ok, valid}
+        {:ok, dates} ->
+          trip_attrs = Map.put(attrs, "admin_id", admin_id)
 
-            {_, invalid} ->
-              {:error, hd(invalid)}
+          # FR-29: Create trip with all details
+          # FR-36: Create trip instances for each date
+          Multi.new()
+          |> Multi.insert(:trip, Trip.changeset(%Trip{}, trip_attrs))
+          |> Multi.run(:instances, fn repo, %{trip: trip} ->
+            instances =
+              Enum.map(dates, fn date ->
+                TripInstance.changeset(%TripInstance{}, %{
+                  "trip_id" => trip.id,
+                  "date" => date,
+                  "available_tickets" => trip.available_tickets
+                })
+              end)
+
+            case Enum.split_with(instances, & &1.valid?) do
+              {valid, []} ->
+                Enum.each(valid, &repo.insert!/1)
+                {:ok, valid}
+
+              {_, invalid} ->
+                {:error, hd(invalid)}
+            end
+          end)
+          |> Repo.transaction()
+          |> case do
+            {:ok, %{trip: trip}} ->
+              {:ok, Repo.preload(trip, :instances)}
+
+            {:error, _op, changeset, _} ->
+              {:error, changeset}
           end
-        end)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{trip: trip}} ->
-            {:ok, Repo.preload(trip, :instances)}
-
-          {:error, _op, changeset, _} ->
-            {:error, changeset}
-        end
+      end
     end
   end
 
@@ -607,13 +619,16 @@ defmodule EarthScanner.Trips do
       from t in Trip,
         where:
           ilike(t.source_city, ^source_pattern) and
-            ilike(t.destination_city, ^destination_pattern) and
-            t.departure_time > ^now,
+            ilike(t.destination_city, ^destination_pattern),
         # FR-11: Strict comparison - trips departing exactly now are treated as past
         join: i in TripInstance,
         on: i.trip_id == t.id,
         distinct: true,
-        order_by: [asc: t.departure_time]
+        order_by: [asc: t.departure_time],
+        preload: [
+          instances:
+            ^from(i in TripInstance, where: i.date >= ^Date.utc_today(), order_by: [asc: i.date])
+        ]
 
     Repo.all(query)
   end
@@ -1059,12 +1074,13 @@ defmodule EarthScanner.Trips do
       # Base query: search trips with future instances
       base_q =
         from t in Trip,
-          where:
-            ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination) and
-              t.departure_time > ^now,
+          where: ilike(t.source_city, ^source) and ilike(t.destination_city, ^destination),
           join: i in TripInstance,
           on: i.trip_id == t.id and i.date >= ^today,
-          distinct: true
+          distinct: true,
+          preload: [
+            instances: ^from(i in TripInstance, where: i.date >= ^today, order_by: [asc: i.date])
+          ]
 
       # apply numeric filters
       base_q =

@@ -2,10 +2,10 @@
   <div class="mx-auto max-w-5xl space-y-6 px-4">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <h1 class="text-3xl font-semibold text-slate-900">My Trips</h1>
-      
+
       <p class="text-sm text-slate-500">Review or manage every booking in one place.</p>
     </div>
-    
+
     <div role="tablist" class="flex flex-wrap gap-2" aria-label="Trip filters">
       <a
         id="upcoming-tab"
@@ -32,7 +32,7 @@
         Past trips ({length(@past_entries)})
       </a>
     </div>
-    
+
     <section
       id="upcoming-list"
       aria-labelledby="upcoming-tab"
@@ -43,14 +43,14 @@
       ]}
     >
       <h2 class="text-xl font-semibold text-slate-900">Upcoming trips</h2>
-      
+
       <p
         :if={@upcoming_entries == []}
         class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
       >
         You have no upcoming trips yet. Browse trips and book your next journey!
       </p>
-      
+
       <div
         :for={entry <- @upcoming_entries}
         class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -60,39 +60,39 @@
             <p class="text-base font-semibold text-slate-900">
               {entry.trip.source_city} &rarr; {entry.trip.destination_city}
             </p>
-            
+
             <p class="text-sm text-slate-500">
               Instance date: {format_instance_date(entry.instance.date)}
             </p>
           </div>
-          
+
           <span class="text-xs font-medium uppercase tracking-wide text-emerald-600">
             Upcoming
           </span>
         </div>
-        
+
         <dl class="mt-4 grid gap-4 text-sm text-slate-600 md:grid-cols-3">
           <div>
             <dt class="font-medium text-slate-500">Departure</dt>
-            
+
             <dd class="text-slate-900">{format_departure(entry.departure_at)}</dd>
           </div>
-          
+
           <div>
             <dt class="font-medium text-slate-500">Tickets</dt>
-            
+
             <dd>1 seat reserved</dd>
           </div>
-          
+
           <div>
             <dt class="font-medium text-slate-500">Purchase ID</dt>
-            
+
             <dd>{"#" <> to_string(entry.purchase.id)}</dd>
           </div>
         </dl>
       </div>
     </section>
-    
+
     <section
       id="past-list"
       aria-labelledby="past-tab"
@@ -103,14 +103,14 @@
       ]}
     >
       <h2 class="text-xl font-semibold text-slate-900">Past trips</h2>
-      
+
       <p
         :if={@past_entries == []}
         class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
       >
         Completed trips will appear here after their departure time passes.
       </p>
-      
+
       <div
         :for={entry <- @past_entries}
         class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -120,33 +120,33 @@
             <p class="text-base font-semibold text-slate-900">
               {entry.trip.source_city} &rarr; {entry.trip.destination_city}
             </p>
-            
+
             <p class="text-sm text-slate-500">
               Instance date: {format_instance_date(entry.instance.date)}
             </p>
           </div>
-          
+
           <span class="text-xs font-medium uppercase tracking-wide text-slate-400">
             Completed
           </span>
         </div>
-        
+
         <dl class="mt-4 grid gap-4 text-sm text-slate-600 md:grid-cols-3">
           <div>
             <dt class="font-medium text-slate-500">Departure</dt>
-            
+
             <dd class="text-slate-900">{format_departure(entry.departure_at)}</dd>
           </div>
-          
+
           <div>
             <dt class="font-medium text-slate-500">Tickets</dt>
-            
+
             <dd>1 seat reserved</dd>
           </div>
-          
+
           <div>
             <dt class="font-medium text-slate-500">Purchase ID</dt>
-            
+
             <dd>{"#" <> to_string(entry.purchase.id)}</dd>
           </div>
         </dl>

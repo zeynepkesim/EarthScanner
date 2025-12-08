@@ -141,7 +141,9 @@ defmodule EarthScannerWeb.ProfileController do
             render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
 
           {:error, :password_confirmation_mismatch} ->
-            render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
+            render(conn, :edit_password,
+              changeset: %{error: "Password confirmation does not match"}
+            )
 
           {:error, :password_too_short} ->
             render(conn, :edit_password,

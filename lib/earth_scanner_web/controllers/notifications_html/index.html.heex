@@ -1,14 +1,14 @@
 <div class="min-h-screen bg-white px-6 py-8">
   <div class="mx-auto max-w-4xl">
     <h1 class="text-2xl font-semibold mb-4">Notifications</h1>
-    
+
     <div :if={@reminders == []} class="text-sm text-slate-500">
       No notifications at this time.
     </div>
-    
+
     <div :if={@notifications != []} class="mb-6">
       <h2 class="text-lg font-semibold">In-app Notifications</h2>
-      
+
       <ul class="space-y-3 mt-3">
         <li :for={n <- @notifications} class="p-3 border rounded">
           <% payload = n.payload || %{} %>
@@ -25,10 +25,10 @@
                 <% end %>
               <% end %>
             </div>
-            
+
             <div class="text-sm text-slate-500">{n.inserted_at}</div>
           </div>
-          
+
           <div class="text-sm text-slate-600 mt-2">
             <%= case n.kind do %>
               <% "trip_change" -> %>
@@ -36,9 +36,9 @@
                   payload["trip_name"] ||
                     (payload["from"] && payload["to"] && "#{payload["from"]} → #{payload["to"]}") %>
                 <div>Trip updated: {trip_name}</div>
-                
+
                 <div class="text-xs text-slate-500">When: {payload["timestamp"]}</div>
-                
+
                 <div class="mt-2 text-xs text-slate-700">
                   <%= for {field, change} <- Map.to_list(payload["diff"] || %{}) do %>
                     <div>
@@ -56,18 +56,18 @@
         </li>
       </ul>
     </div>
-    
+
     <div :if={@reminders != []}>
       <h2 class="text-lg font-semibold">Reminders</h2>
-      
+
       <ul class="space-y-3 mt-3">
         <li :for={r <- @reminders} class="p-3 border rounded">
           <div class="font-semibold">{r.trip.source_city} → {r.trip.destination_city}</div>
-          
+
           <div class="text-sm text-slate-600">Instance date: {r.instance.date}</div>
-          
+
           <div class="text-sm text-slate-600">Departure: {r.departure}</div>
-          
+
           <div class="mt-2 text-sm text-gray-700">
             You purchased this trip. Reminder: departs within 24 hours.
           </div>

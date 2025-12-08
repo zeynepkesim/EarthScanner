@@ -300,9 +300,9 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
       assert {:error, changeset} =
                Trips.update_trip_instance(first_instance, %{"date" => second_date})
 
-      # Composite unique constraint error appears on trip_id field
+      # Composite unique constraint error appears on date field
       errors = errors_on(changeset)
-      assert "has already been taken" in (errors[:trip_id] || [])
+      assert "has already been taken" in (errors[:date] || [])
     end
 
     test "fails when updating to invalid date format" do
@@ -444,6 +444,31 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
       # Verify trip still exists
       assert Repo.get(Trip, trip.id)
+    end
+  end
+
+  describe "FR-36: Search with Preloaded Instances" do
+    test "search_future_trips returns trips with preloaded future instances" do
+      admin = admin_fixture()
+      today = Date.utc_today()
+      tomorrow = Date.add(today, 1)
+      next_week = Date.add(today, 7)
+
+      dates = "#{tomorrow}\n#{next_week}"
+      attrs = valid_trip_attrs() |> Map.put("dates", dates)
+
+      {:ok, trip} = Trips.create_trip(admin, attrs)
+
+      # Ensure search matches the trip
+      results = Trips.search_future_trips("Tallinn", "Paris")
+
+      assert length(results) == 1
+      found_trip = hd(results)
+      assert found_trip.id == trip.id
+      assert Ecto.assoc_loaded?(found_trip.instances)
+      assert length(found_trip.instances) == 2
+      assert Enum.at(found_trip.instances, 0).date == tomorrow
+      assert Enum.at(found_trip.instances, 1).date == next_week
     end
   end
 end

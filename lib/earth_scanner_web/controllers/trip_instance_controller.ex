@@ -42,6 +42,7 @@ defmodule EarthScannerWeb.TripInstanceController do
         |> redirect(to: ~p"/admin/trips")
 
       {:error, changeset} ->
+        changeset = Map.put(changeset, :action, :update)
         form = to_form(changeset)
         render(conn, :edit_instance, instance: instance, form: form)
     end

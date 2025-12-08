@@ -1,7 +1,7 @@
 <div class="min-h-screen bg-gray-50 px-6 py-8">
   <div class="mx-auto max-w-3xl bg-white rounded-lg shadow-sm p-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-8">Create New Trip</h1>
-    
+
     <.form
       for={@form}
       action={~p"/admin/trips"}
@@ -12,6 +12,8 @@
       phx-hook="TripFormHook"
     >
       <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+
+      <.error :for={err <- @form[:base].errors}>{translate_error(err)}</.error>
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Picture URL</label>
         <input
@@ -22,7 +24,7 @@
         />
         <.error :for={err <- @form[:picture_url].errors}>{translate_error(err)}</.error>
       </div>
-      
+
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Transport Mode</label>
         <select
@@ -30,16 +32,16 @@
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
         >
           <option value="">Select mode</option>
-          
+
           <option value="plane">Plane</option>
-          
+
           <option value="bus">Bus</option>
-          
+
           <option value="train">Train</option>
         </select>
         <.error :for={err <- @form[:transport_mode].errors}>{translate_error(err)}</.error>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Source City</label>
@@ -51,7 +53,7 @@
           />
           <.error :for={err <- @form[:source_city].errors}>{translate_error(err)}</.error>
         </div>
-        
+
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Destination City</label>
           <input
@@ -63,7 +65,7 @@
           <.error :for={err <- @form[:destination_city].errors}>{translate_error(err)}</.error>
         </div>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Departure Time</label>
@@ -76,7 +78,7 @@
           />
           <.error :for={err <- @form[:departure_time].errors}>{translate_error(err)}</.error>
         </div>
-        
+
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Arrival Time</label>
           <input
@@ -89,7 +91,7 @@
           <.error :for={err <- @form[:arrival_time].errors}>{translate_error(err)}</.error>
         </div>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Price (€)</label>
@@ -102,7 +104,7 @@
           />
           <.error :for={err <- @form[:price].errors}>{translate_error(err)}</.error>
         </div>
-        
+
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">
             Recommended Price (€)
@@ -116,7 +118,7 @@
             class="w-full px-4 py-2 border border-gray-300 bg-gray-100 rounded-lg text-gray-600"
           />
         </div>
-        
+
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">CO₂ Level (kg)</label>
           <input
@@ -127,7 +129,7 @@
           />
           <.error :for={err <- @form[:co2_level].errors}>{translate_error(err)}</.error>
         </div>
-        
+
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Available Tickets</label>
           <input
@@ -139,20 +141,20 @@
           <.error :for={err <- @form[:available_tickets].errors}>{translate_error(err)}</.error>
         </div>
       </div>
-      
+
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-2">Trip Dates</label>
         <p class="text-sm text-gray-500 mb-2">
           Enter one date per line, in format YYYY-MM-DD (e.g., 2025-12-20)
         </p>
-         <textarea
+        <textarea
           name="trip[dates]"
           rows="4"
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900"
         ></textarea>
         <.error :for={err <- @form[:dates].errors}>{translate_error(err)}</.error>
       </div>
-      
+
       <div class="flex items-center justify-between pt-4 border-t">
         <a
           href={~p"/admin/trips"}

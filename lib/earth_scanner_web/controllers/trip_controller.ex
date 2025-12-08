@@ -46,6 +46,7 @@ defmodule EarthScannerWeb.TripController do
         |> redirect(to: ~p"/admin/trips")
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        changeset = Map.put(changeset, :action, :insert)
         render(conn, :new, form: to_form(changeset))
     end
   end
