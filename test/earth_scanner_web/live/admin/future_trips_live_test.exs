@@ -1,6 +1,5 @@
 defmodule EarthScannerWeb.Admin.FutureTripsLiveTest do
   use EarthScannerWeb.ConnCase
-
   @moduletag :skip
 
   # This LiveView test is intentionally skipped for now — TDD placeholder

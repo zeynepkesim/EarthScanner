@@ -619,7 +619,8 @@ defmodule EarthScanner.Trips do
       from t in Trip,
         where:
           ilike(t.source_city, ^source_pattern) and
-            ilike(t.destination_city, ^destination_pattern),
+            ilike(t.destination_city, ^destination_pattern) and
+            t.departure_time > ^now,
         # FR-11: Strict comparison - trips departing exactly now are treated as past
         join: i in TripInstance,
         on: i.trip_id == t.id,

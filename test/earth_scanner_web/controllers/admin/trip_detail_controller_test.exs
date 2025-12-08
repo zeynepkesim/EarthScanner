@@ -1,6 +1,5 @@
 defmodule EarthScannerWeb.Admin.TripDetailControllerTest do
   use EarthScannerWeb.ConnCase
-  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Accounts

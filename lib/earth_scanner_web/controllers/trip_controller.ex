@@ -54,27 +54,59 @@ defmodule EarthScannerWeb.TripController do
   def edit(conn, %{"id" => id}) do
     trip = Trips.get_trip!(id)
     changeset = Trip.changeset(trip, %{})
-    render(conn, :edit, form: to_form(changeset), trip: trip)
+    read_only = DateTime.compare(trip.departure_time, DateTime.utc_now()) == :lt
+    render(conn, :edit, form: to_form(changeset), trip: trip, read_only: read_only)
   end
 
   def update(conn, %{"id" => id, "trip" => trip_params}) do
     trip = Trips.get_trip!(id)
 
+    # FR-32: Check for critical changes on trips with sold tickets
+    has_purchases =
+      Ecto.assoc(trip, :purchases)
+      |> EarthScanner.Repo.exists?()
+
+    critical_fields = [
+      "departure_time",
+      "dates",
+      "source_city",
+      "destination_city",
+      "arrival_time"
+    ]
+
+    is_critical_change =
+      Enum.any?(critical_fields, fn field -> Map.has_key?(trip_params, field) end)
+
     case Trips.update_trip(trip, trip_params) do
       {:ok, _trip} ->
+        msg =
+          if has_purchases and is_critical_change do
+            "Trip updated. WARNING: This trip has sold tickets. Please notify affected users."
+          else
+            "Trip updated successfully."
+          end
+
         conn
-        |> put_flash(:info, "Trip updated successfully.")
+        |> put_flash(:info, msg)
         |> redirect(to: ~p"/admin/trips")
 
       {:ok, _trip, _diff} ->
         # The Trips context may return a diff of changes as a 3-tuple.
-        # Preserve existing behavior while accepting the new return shape.
+        msg =
+          if has_purchases and is_critical_change do
+            "Trip updated. WARNING: This trip has sold tickets. Please notify affected users."
+          else
+            "Trip updated successfully."
+          end
+
         conn
-        |> put_flash(:info, "Trip updated successfully.")
+        |> put_flash(:info, msg)
         |> redirect(to: ~p"/admin/trips")
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, :edit, form: to_form(changeset), trip: trip)
+        trip = Trips.get_trip!(id)
+        read_only = DateTime.compare(trip.departure_time, DateTime.utc_now()) == :lt
+        render(conn, :edit, form: to_form(changeset), trip: trip, read_only: read_only)
     end
   end
 

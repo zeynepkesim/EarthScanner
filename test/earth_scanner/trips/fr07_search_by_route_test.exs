@@ -1,6 +1,5 @@
 defmodule EarthScanner.Trips.FR07SearchByRouteTest do
   use EarthScanner.DataCase
-  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
@@ -11,6 +10,8 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
 
   describe "search_future_trips/3 - FR-07: Search by Route (Basic)" do
     setup do
+      Repo.delete_all(Trip)
+      Repo.delete_all(EarthScanner.Accounts.User)
       admin = create_admin_user()
       now = DateTime.utc_now()
 

@@ -1,6 +1,5 @@
 defmodule EarthScanner.EarnLoyaltyPointsTest do
   use EarthScanner.DataCase
-  @moduletag :skip
 
   alias EarthScanner.{Accounts, Trips, Repo}
   alias EarthScanner.Accounts.{User, PointLog}

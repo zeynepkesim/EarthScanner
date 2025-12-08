@@ -3,7 +3,6 @@
 
 defmodule EarthScanner.Trips.HighlightTopTripsTest do
   use EarthScanner.DataCase, async: true
-  @moduletag :skip
 
   alias EarthScanner.Repo
   alias EarthScanner.Trips

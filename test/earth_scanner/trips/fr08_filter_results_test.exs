@@ -1,6 +1,5 @@
 defmodule EarthScanner.Trips.FR08FilterResultsTest do
   use EarthScanner.DataCase
-  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
@@ -207,6 +206,8 @@ defmodule EarthScanner.Trips.FR08FilterResultsTest do
 
   describe "search_future_trips_paginated/3 - FR-08: Filter by CO2 Level" do
     setup do
+      Repo.delete_all(Trip)
+      Repo.delete_all(EarthScanner.Accounts.User)
       admin = create_admin_user()
       now = DateTime.utc_now()
 

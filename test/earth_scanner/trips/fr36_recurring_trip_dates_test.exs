@@ -33,23 +33,32 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
   end
 
   defp valid_trip_attrs do
+    tomorrow = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
+    next_week = Date.utc_today() |> Date.add(8) |> Date.to_iso8601()
+    future_time = DateTime.utc_now() |> DateTime.add(3600, :second) |> DateTime.to_iso8601()
+    # Ensure arrival is after departure
+    arrival = DateTime.utc_now() |> DateTime.add(7200, :second) |> DateTime.to_iso8601()
+
     %{
       "picture_url" => "https://example.com/pic.jpg",
       "transport_mode" => "plane",
       "source_city" => "Tallinn",
       "destination_city" => "Paris",
-      "departure_time" => "2025-11-20T10:00:00Z",
-      "arrival_time" => "2025-11-20T13:00:00Z",
+      "departure_time" => future_time,
+      "arrival_time" => arrival,
       "price" => "150.0",
       "co2_level" => "200",
       "available_tickets" => "50",
-      "dates" => "2025-11-21\n2025-11-28"
+      "dates" => "#{tomorrow}\n#{next_week}"
     }
   end
 
   describe "FR-36: create_trip/2 - Recurring Trip Dates" do
     test "creates instances for each given date, with their own ticket inventory" do
       admin = admin_fixture()
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
 
       {:ok, %Trip{} = trip} = Trips.create_trip(admin, valid_trip_attrs())
 
@@ -60,8 +69,8 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
       assert length(instances) == 2
 
-      assert Enum.any?(instances, &(&1.date == ~D[2025-11-21] and &1.available_tickets == 50))
-      assert Enum.any?(instances, &(&1.date == ~D[2025-11-28] and &1.available_tickets == 50))
+      assert Enum.any?(instances, &(&1.date == d1 and &1.available_tickets == 50))
+      assert Enum.any?(instances, &(&1.date == d2 and &1.available_tickets == 50))
     end
 
     test "fails when no dates are provided" do
@@ -88,7 +97,9 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
     test "successfully creates trip with single date" do
       admin = admin_fixture()
-      attrs = valid_trip_attrs() |> Map.put("dates", "2025-11-21")
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      attrs = valid_trip_attrs() |> Map.put("dates", "#{d1}")
 
       assert {:ok, %Trip{} = trip} = Trips.create_trip(admin, attrs)
 
@@ -98,12 +109,16 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
         |> Repo.all()
 
       assert length(instances) == 1
-      assert hd(instances).date == ~D[2025-11-21]
+      assert hd(instances).date == d1
     end
 
     test "successfully creates trip with comma-separated dates" do
       admin = admin_fixture()
-      attrs = valid_trip_attrs() |> Map.put("dates", "2025-11-21, 2025-11-28, 2025-12-05")
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
+      d3 = Date.add(today, 15)
+      attrs = valid_trip_attrs() |> Map.put("dates", "#{d1}, #{d2}, #{d3}")
 
       assert {:ok, %Trip{} = trip} = Trips.create_trip(admin, attrs)
 
@@ -117,10 +132,13 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
     test "deduplicates duplicate dates" do
       admin = admin_fixture()
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
 
       attrs =
         valid_trip_attrs()
-        |> Map.put("dates", "2025-11-21\n2025-11-21\n2025-11-28")
+        |> Map.put("dates", "#{d1}\n#{d1}\n#{d2}")
 
       assert {:ok, %Trip{} = trip} = Trips.create_trip(admin, attrs)
 
@@ -158,10 +176,13 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
     test "each instance has independent ticket inventory" do
       admin = admin_fixture()
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
 
       attrs =
         valid_trip_attrs()
-        |> Map.put("dates", "2025-11-21\n2025-11-28")
+        |> Map.put("dates", "#{d1}\n#{d2}")
         |> Map.put("available_tickets", "100")
 
       assert {:ok, %Trip{} = trip} = Trips.create_trip(admin, attrs)
@@ -177,10 +198,14 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
     test "newline-separated dates are parsed correctly" do
       admin = admin_fixture()
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
+      d3 = Date.add(today, 15)
 
       attrs =
         valid_trip_attrs()
-        |> Map.put("dates", "2025-11-21\n2025-11-28\n2025-12-05")
+        |> Map.put("dates", "#{d1}\n#{d2}\n#{d3}")
 
       assert {:ok, %Trip{} = trip} = Trips.create_trip(admin, attrs)
 
@@ -191,9 +216,9 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
         |> Repo.all()
 
       assert length(instances) == 3
-      assert Enum.at(instances, 0).date == ~D[2025-11-21]
-      assert Enum.at(instances, 1).date == ~D[2025-11-28]
-      assert Enum.at(instances, 2).date == ~D[2025-12-05]
+      assert Enum.at(instances, 0).date == d1
+      assert Enum.at(instances, 1).date == d2
+      assert Enum.at(instances, 2).date == d3
     end
 
     test "mixed comma and newline separators are handled" do
@@ -280,11 +305,14 @@ defmodule EarthScanner.Trips.RecurringTripDatesTest do
 
     test "fails when updating to duplicate date for same trip" do
       admin = admin_fixture()
+      today = Date.utc_today()
+      d1 = Date.add(today, 1)
+      d2 = Date.add(today, 8)
 
       {:ok, trip} =
         Trips.create_trip(
           admin,
-          valid_trip_attrs() |> Map.put("dates", "2025-11-21\n2025-11-28")
+          valid_trip_attrs() |> Map.put("dates", "#{d1}\n#{d2}")
         )
 
       instances =

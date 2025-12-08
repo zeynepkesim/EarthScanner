@@ -3,9 +3,6 @@ defmodule EarthScannerWeb.FR20SearchBoxTest do
 
   alias EarthScanner.{Accounts, Trips}
 
-  @moduletag :fr20
-  @moduletag :skip
-
   # ----------------------------------------------------
   # Helpers
   # ----------------------------------------------------

@@ -1,6 +1,5 @@
 defmodule EarthScanner.Trips.SimilarTripsTest do
   use EarthScanner.DataCase, async: true
-  @moduletag :skip
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
 
