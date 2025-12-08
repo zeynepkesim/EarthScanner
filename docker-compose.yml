@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: earth_scanner_dev
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      MIX_ENV: prod
+      DATABASE_URL: "ecto://postgres:postgres@db/earth_scanner_dev"
+      SECRET_KEY_BASE: "g1a8NRdhoU3t1m60WXUqgZzurOt+t5wId4igf4OL7Bs1gneKh0HS+1hvBuDnzdhu"
+      PHX_HOST: "193.40.11.157"
+      PHX_SERVER: "true"
+      URL_SCHEME: "http"
+      URL_PORT: 80
+      PORT: 4000
+      SESSION_SECURE: "false"
+      SESSION_SIGNING_SALT: "p0fKx1V6Y7cRJ8z3u2QdLwB5nAsTiMhG"
+      SESSION_ENCRYPTION_SALT: "V9rLmC6sQ2eJ4kTa0nYxPbG8wHfUdZqN"
+      # Swoosh / Mail config for dev testing
+      SENDER_EMAIL: "no-reply@earthscanner.test"
+      # Disable outbound email deliveries in this container
+      DISABLE_EMAILS: "true"
+    ports:
+      - "4000:4000"
+    # Entrypoint handles waiting for DB, running migrations, and starting the release
+
+volumes:
+  db_data:

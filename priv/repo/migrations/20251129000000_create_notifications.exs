@@ -3,6 +3,7 @@ defmodule EarthScanner.Repo.Migrations.CreateNotifications do
 
   def change do
     create table(:notifications) do
+      # FR-06: Cascade delete notifications when user is deleted
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :kind, :string, null: false
       add :payload, :map, null: false

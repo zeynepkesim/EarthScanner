@@ -47,6 +47,8 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Show confirmation page
+  # Requires user to be logged in
   def confirm_delete(conn, _params) do
     case conn.assigns[:current_user] do
       nil ->
@@ -60,6 +62,9 @@ defmodule EarthScannerWeb.ProfileController do
     end
   end
 
+  # FR-06: Delete account & data (regular) - Process deletion
+  # Requires re-authentication (password) and explicit confirmation
+  # Action is irreversible
   def delete(conn, %{"delete" => %{"password" => password, "confirm" => confirm}}) do
     case conn.assigns[:current_user] do
       nil ->
@@ -69,12 +74,14 @@ defmodule EarthScannerWeb.ProfileController do
 
       user ->
         cond do
+          # FR-06: Confirmation check - user must explicitly confirm deletion
           confirm != "yes" ->
             conn
             |> put_flash(:error, "Please confirm account deletion.")
             |> redirect(to: ~p"/users/delete")
 
           true ->
+            # FR-06: Re-authentication check and account deletion
             case EarthScanner.Accounts.delete_user(user, password) do
               {:ok, :deleted} ->
                 # drop the entire session to ensure the user is logged out immediately
@@ -102,37 +109,52 @@ defmodule EarthScannerWeb.ProfileController do
     render(conn, :edit_password, changeset: %{})
   end
 
-  def update_password(conn, %{
-        "current_password" => current,
-        "new_password" => new_pass,
-        "new_password_confirmation" => confirm
-      }) do
+  def update_password(conn, params) do
     user = conn.assigns.current_user
 
-    case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
-      {:ok, _updated_user} ->
-        conn
-        # rotate session after password change
-        |> configure_session(renew: true)
-        |> put_session(:user_id, user.id)
-        |> put_flash(:info, "Password updated successfully")
-        |> redirect(to: ~p"/profile")
+    current = params["current_password"] || ""
+    new_pass = params["new_password"] || ""
+    confirm = params["new_password_confirmation"] || ""
 
-      {:error, :invalid_current_password} ->
-        render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
+    # Validate required fields first
+    cond do
+      String.trim(current) == "" ->
+        render(conn, :edit_password, changeset: %{error: "Current password is required"})
 
-      {:error, :password_confirmation_mismatch} ->
-        render(conn, :edit_password, changeset: %{error: "Password confirmation does not match"})
+      String.trim(new_pass) == "" ->
+        render(conn, :edit_password, changeset: %{error: "New password is required"})
 
-      {:error, :password_too_short} ->
-        render(conn, :edit_password,
-          changeset: %{error: "Password must be at least 8 characters"}
-        )
+      String.trim(confirm) == "" ->
+        render(conn, :edit_password, changeset: %{error: "Password confirmation is required"})
 
-      {:error, reason} ->
-        render(conn, :edit_password,
-          changeset: %{error: "Could not change password: #{inspect(reason)}"}
-        )
+      true ->
+        # Proceed with password change
+        case EarthScanner.Accounts.change_password(user, current, new_pass, confirm) do
+          {:ok, _updated_user} ->
+            conn
+            |> configure_session(renew: true)
+            |> put_session(:user_id, user.id)
+            |> put_flash(:info, "Password updated successfully")
+            |> redirect(to: ~p"/profile")
+
+          {:error, :invalid_current_password} ->
+            render(conn, :edit_password, changeset: %{error: "Current password is incorrect"})
+
+          {:error, :password_confirmation_mismatch} ->
+            render(conn, :edit_password,
+              changeset: %{error: "Password confirmation does not match"}
+            )
+
+          {:error, :password_too_short} ->
+            render(conn, :edit_password,
+              changeset: %{error: "Password must be at least 8 characters"}
+            )
+
+          {:error, reason} ->
+            render(conn, :edit_password,
+              changeset: %{error: "Could not change password: #{inspect(reason)}"}
+            )
+        end
     end
   end
 end

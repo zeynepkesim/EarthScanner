@@ -19,3 +19,18 @@ Feature: FR-07 Search by Route
     Given a set of past and future trips exist
     When I search for trips from "Tartu" to "Parnu"
     Then I should not see past trips in the results
+  
+  # Add these negative scenarios
+
+  Scenario: Search fails without source city
+    When I search without providing source
+    Then I should be redirected back to the search page
+    And I should see "Source and destination are required"
+
+  Scenario: Search fails without destination city
+    When I search without providing destination
+    Then I should be redirected back to the search page
+
+  Scenario: Unauthenticated user cannot search
+    When I try to search as an unauthenticated user
+    Then I should be blocked with authentication error

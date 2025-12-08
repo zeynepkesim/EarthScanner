@@ -1,6 +1,5 @@
 defmodule EarthScannerWeb.Admin.TripDetailControllerTest do
   use EarthScannerWeb.ConnCase
-  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Accounts
@@ -9,18 +8,23 @@ defmodule EarthScannerWeb.Admin.TripDetailControllerTest do
 
   setup do
     {:ok, admin} = create_admin()
+    # Use dates relative to now so tests don't break when run at different times
+    departure_dt = DateTime.add(DateTime.utc_now(), 2 * 24 * 3600, :second)
+    arrival_dt = DateTime.add(departure_dt, 6 * 3600, :second)
+    date_str = Date.to_iso8601(Date.add(Date.utc_today(), 2))
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "NYC",
         "destination_city" => "LA",
-        "departure_time" => "2025-12-01T10:00:00Z",
-        "arrival_time" => "2025-12-01T16:00:00Z",
+        "departure_time" => DateTime.to_iso8601(departure_dt),
+        "arrival_time" => DateTime.to_iso8601(arrival_dt),
         "price" => "400.00",
         "co2_level" => "200",
         "available_tickets" => "150",
-        "dates" => "2025-12-01"
+        "dates" => date_str
       })
 
     %{admin: admin, trip: trip}

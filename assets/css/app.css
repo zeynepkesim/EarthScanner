@@ -143,3 +143,109 @@ input:focus-visible {
   background-color: #ffffff;
   color: #1f2937;
 }
+
+/* Aurora background used on the landing page */
+.aurora-background {
+  position: relative;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #0f172a, #020617 60%);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: -35% auto auto -35%;
+  width: 160%;
+  height: 160%;
+  background: conic-gradient(
+      from 120deg,
+      #7c3aed 0deg,
+      #a78bfa 90deg,
+      #34d399 180deg,
+      #06b6d4 270deg,
+      #7c3aed 360deg
+    );
+  /* stronger, crisper aurora */
+  opacity: 0.85;
+  /* keep a static, reduced blur so colors are more visible */
+  filter: blur(48px);
+  /* faster, transform-only animation for better visibility */
+  animation: auroraShift 10s linear infinite;
+  will-change: transform, opacity;
+  transform-origin: center;
+  mix-blend-mode: screen;
+}
+
+.aurora-layer--accent {
+  inset: auto -35% -35% auto;
+  animation-duration: 8s;
+  animation-direction: reverse;
+  opacity: 0.75;
+}
+
+.aurora-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(transparent 95%, rgba(255, 255, 255, 0.05) 100%),
+    linear-gradient(90deg, transparent 95%, rgba(255, 255, 255, 0.05) 100%);
+  background-size: 120px 120px;
+  opacity: 0.35;
+  /* faster grid drift to add visible movement */
+  animation: auroraDrift 8s linear infinite;
+  will-change: transform, opacity;
+}
+
+.aurora-noise {
+  position: absolute;
+  inset: -2px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: soft-light;
+  opacity: 0.45;
+  animation: auroraPulse 4s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes auroraShift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(160deg) scale(1.12);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes auroraDrift {
+  /* faster, shorter drift for better visibility */
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(80px, 80px, 0);
+  }
+}
+
+@keyframes auroraPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Respect user's motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-layer,
+  .aurora-layer--accent,
+  .aurora-grid,
+  .aurora-noise {
+    will-change: auto !important;
+    opacity: 0.6 !important;
+  }
+}

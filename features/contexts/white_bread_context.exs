@@ -174,38 +174,6 @@ defmodule WhiteBreadContext do
     {:ok, state}
   end
 
-  given_ ~r/^I navigate to the delete account page$/, fn state, _ ->
-    navigate_to("http://localhost:4002/users/delete")
-    {:ok, state}
-  end
-
-  when_ ~r/^I submit deletion with a wrong password$/, fn state, _ ->
-    fill_field({:css, "input[name='delete[password]']"}, "Wrong123!")
-    click({:css, "input[name='delete[confirm]']"})
-    submit_element({:id, "delete-account-form"})
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see a delete error$/, fn state, _ ->
-    text = visible_page_text()
-    assert String.contains?(text, "Invalid password") or String.contains?(text, "Please confirm")
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see an irreversible warning$/, fn state, _ ->
-    text = visible_page_text()
-    # check for a short substring to be resilient to wording
-    assert String.contains?(String.downcase(text), "irreversible")
-    {:ok, state}
-  end
-
-  when_ ~r/^I submit deletion with the correct password$/, fn state, _ ->
-    # state.password is set in the login step
-    fill_field({:css, "input[name='delete[password]']"}, state.password)
-    click({:css, "input[name='delete[confirm]']"})
-    submit_element({:id, "delete-account-form"})
-    {:ok, state}
-  end
   # --- ADMIN CREATION (FR-02) ---
 
   given_ ~r/^I am logged in as an admin$/, fn state, _ ->

@@ -77,7 +77,6 @@ defmodule EarthScannerWeb.TripControllerFR32Test do
     assert updated.available_tickets == 45
   end
 
-  @tag :skip
   test "FR-32: past trips are read-only and cannot be edited", %{conn: conn} do
     # Pending: behavior to make past trips read-only must be implemented.
     admin = admin_fixture(%{"username" => "fr32_past", "email" => "fr32_past@test.com"})
@@ -87,7 +86,11 @@ defmodule EarthScannerWeb.TripControllerFR32Test do
     {:ok, trip} =
       Trips.create_trip(
         admin,
-        Map.put(base_trip_attrs(), "dates", past_date) |> Map.put("departure_time", past_date)
+        Map.put(base_trip_attrs(), "dates", past_date)
+        |> Map.put(
+          "departure_time",
+          DateTime.to_iso8601(DateTime.add(DateTime.utc_now(), -7 * 24 * 3600, :second))
+        )
       )
 
     conn = init_test_session(conn, user_id: admin.id)
@@ -99,7 +102,6 @@ defmodule EarthScannerWeb.TripControllerFR32Test do
     assert body =~ "Past trips cannot be modified"
   end
 
-  @tag :skip
   test "FR-32: warns when modifying critical data for trips with sold tickets", %{conn: conn} do
     # Pending TDD: implement warnings/confirmation flow
     admin = admin_fixture(%{"username" => "fr32_warn", "email" => "fr32_warn@test.com"})
@@ -111,6 +113,8 @@ defmodule EarthScannerWeb.TripControllerFR32Test do
     {:ok, user} =
       Accounts.register_user(%{
         "username" => "buyer_fr32",
+        "name" => "Buyer",
+        "last_name" => "Test",
         "password" => "Password123!",
         "password_confirmation" => "Password123!",
         "email" => "buyer_fr32@test.com",
@@ -126,8 +130,14 @@ defmodule EarthScannerWeb.TripControllerFR32Test do
     conn = init_test_session(conn, user_id: admin.id)
 
     # attempt to change departure_time — should require confirmation
+    new_dep = Date.utc_today() |> Date.add(10) |> DateTime.new!(~T[10:00:00])
+    new_arr = DateTime.add(new_dep, 3600, :second)
+
     params = %{
-      "trip" => %{"departure_time" => Date.utc_today() |> Date.add(10) |> Date.to_iso8601()}
+      "trip" => %{
+        "departure_time" => DateTime.to_iso8601(new_dep),
+        "arrival_time" => DateTime.to_iso8601(new_arr)
+      }
     }
 
     conn = put(conn, "/admin/trips/#{trip.id}", params)

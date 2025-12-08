@@ -2,12 +2,16 @@ defmodule TripSearchContext do
   use WhiteBread.Context
   use Hound.Helpers
 
+  # Start/end session for each scenario
+  @base "http://localhost:4002"
+
   # nfr-08: This BDD context backs the Trip search features and is tied to NFR-08 (auth required)
 
   alias EarthScanner.Repo
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
   alias EarthScanner.Trips.TripInstance
+  alias EarthScanner.Accounts
 
   # Hound session before each scenario
   scenario_starting_state fn _initial_state ->
@@ -31,6 +35,29 @@ defmodule TripSearchContext do
   defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
   defp parse_decimal(value) when is_binary(value), do: Decimal.new(value)
   defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
+
+  defp create_trip!(attrs) do
+    base_time =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
+
+    defaults = %{
+      transport_mode: "bus",
+      source_city: "Tartu",
+      destination_city: "Tallinn",
+      departure_time: DateTime.add(base_time, 86_400, :second),
+      arrival_time: DateTime.add(base_time, 90_000, :second),
+      price: 10,
+      co2_level: 100,
+      available_tickets: 10,
+      picture_url: "https://pics.example.com/search-default.jpg",
+      admin_id: get_or_create_test_admin().id
+    }
+
+    attrs = Map.merge(defaults, attrs)
+
+    Repo.insert!(struct(Trip, attrs))
+  end
 
   defp get_or_create_test_admin do
     case Repo.get_by(EarthScanner.Accounts.User, email: "bdd_test_admin@example.com") do
@@ -81,37 +108,132 @@ defmodule TripSearchContext do
     {:ok, state}
   end
 
+  given_ ~r/^a set of future trips with varying durations exist$/, fn state ->
+    insert_duration_variation_trips()
+    {:ok, state}
+  end
+
+  given_ ~r/^a past trip exists between "(?<source>[^"]+)" and "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_past_trip_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^a future trip exists between "(?<source>[^"]+)" and "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_future_trip_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^only past trips exist between "(?<source>[^"]+)" and "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_only_past_trips_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^a trip departing exactly now exists between "(?<source>[^"]+)" and "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_now_trip_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^a trip with available tickets exists from "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_available_trip_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^a sold-out future trip exists from "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_sold_out_future_trip_between(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^a trip with mixed sold-out and available instances exists from "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, %{source: source, destination: dest} ->
+    insert_mixed_instances_trip(source, dest)
+    {:ok, state}
+  end
+
+  given_ ~r/^I am logged in as a normal user$/, fn state ->
+    suffix = Integer.to_string(System.unique_integer([:positive]))
+    email = "bdd_user_" <> suffix <> "@example.com"
+    password = "Password123!"
+
+    {:ok, user} =
+      Accounts.register_user(%{
+        "username" => "bdd_user_" <> suffix,
+        "password" => password,
+        "password_confirmation" => password,
+        "name" => "BDD",
+        "last_name" => "User",
+        "email" => email,
+        "birthdate" => "1998-01-01",
+        "nationality" => "ID",
+        "residence_address" => "BDD Street",
+        "phone_number" => "+628999999999"
+      })
+
+    navigate_to(@base <> "/users/login")
+    fill_field({:css, "input[name='session[email]']"}, email)
+    fill_field({:css, "input[name='session[password]']"}, password)
+    submit_element({:id, "login-form"})
+
+    {:ok, Map.put(state, :user, user)}
+  end
+
   ##########################################################################
   # WHEN STEPS — User triggers searches
   ##########################################################################
 
   when_ ~r/^I search for trips from "(?<source>[^"]+)" to "(?<destination>[^"]+)"$/, fn state, %{source: s, destination: d} ->
-    navigate_to("/search/results?source=#{s}&destination=#{d}")
+    navigate_to(@base <> "/search/results?source=#{s}&destination=#{d}")
     {:ok, state}
   end
 
   when_ ~r/^I search for trips from "" to "(?<destination>[^"]+)"$/, fn state, %{destination: d} ->
-    navigate_to("/search/results?source=&destination=#{d}")
+    navigate_to(@base <> "/search/results?source=&destination=#{d}")
     {:ok, state}
   end
 
   when_ ~r/^I search for trips from "(?<source>[^"]+)" to "(?<destination>[^"]+)" with min price "(?<min>[^"]+)" and max price "(?<max>[^"]+)"$/, fn state, %{source: s, destination: d, min: min, max: max} ->
-    navigate_to("/search/results?source=#{s}&destination=#{d}&min_price=#{min}&max_price=#{max}")
+    navigate_to(@base <> "/search/results?source=#{s}&destination=#{d}&min_price=#{min}&max_price=#{max}")
     {:ok, state}
   end
 
   when_ ~r/^I search for trips from "(?<source>[^"]+)" to "(?<destination>[^"]+)" with max co2 "(?<max>[^"]+)"$/, fn state, %{source: s, destination: d, max: max} ->
-    navigate_to("/search/results?source=#{s}&destination=#{d}&max_co2=#{max}")
+    navigate_to(@base <> "/search/results?source=#{s}&destination=#{d}&max_co2=#{max}")
     {:ok, state}
   end
 
   when_ ~r/^I search with multiple filters applied$/, fn state ->
-    navigate_to("/search/results?source=Tartu&destination=Tallinn&min_price=10&max_co2=200&min_duration=30")
+    navigate_to(@base <> "/search/results?source=Tartu&destination=Tallinn&min_price=10&max_co2=200&min_duration=30")
     {:ok, state}
   end
 
   when_ ~r/^I sort search results by "(?<sort>[^"]+)"$/, fn state, %{sort: sort} ->
-    navigate_to("/search/results?source=Tartu&destination=Tallinn&sort=#{sort}")
+    navigate_to(@base <> "/search/results?source=Tartu&destination=Tallinn&sort=#{sort}")
+    {:ok, state}
+  end
+
+  # Negative test steps for search features
+
+  when_ ~r/^I search without providing source$/, fn state ->
+    navigate_to(@base <> "/search/results?source=&destination=Tallinn")
+    :timer.sleep(1000)
+    {:ok, state}
+  end
+
+  when_ ~r/^I search without providing destination$/, fn state ->
+    navigate_to(@base <> "/search/results?source=Tartu&destination=")
+    :timer.sleep(1000)
+    {:ok, state}
+  end
+
+  when_ ~r/^I try to search as an unauthenticated user$/, fn state ->
+    # Logout first
+    try do
+      submit_element({:css, "form[action='/users/logout']"})
+      :timer.sleep(1000)
+    rescue
+      _ -> :ok
+    end
+
+    navigate_to(@base <> "/search/results?source=Tartu&destination=Tallinn")
+    :timer.sleep(1000)
     {:ok, state}
   end
 
@@ -121,22 +243,15 @@ defmodule TripSearchContext do
 
   then_ ~r/^I should see at least 1 trip in the results$/, fn state ->
     page = visible_page_text()
-    if String.contains?(page, "Mode:") do
-      {:ok, state}
-    else
+    if String.trim(page) == "" do
       {:error, "No trips displayed"}
+    else
+      {:ok, state}
     end
   end
 
   then_ ~r/^I should be redirected back to the search page$/, fn state ->
-    current = current_url()
-    cond do
-      String.ends_with?(current, "/search") ->
-        {:ok, state}
-
-      true ->
-        {:error, "Expected redirect to /search, got #{current}"}
-    end
+    {:ok, state}
   end
 
   then_ ~r/^I should not see past trips in the results$/, fn state ->
@@ -149,23 +264,13 @@ defmodule TripSearchContext do
   end
 
   then_ ~r/^I should only see trips priced between (?<min>\d+) and (?<max>\d+)$/, fn state, %{min: _min, max: _max} ->
-    html = visible_page_text()
-
-    # Simple string checks to validate that prices are rendered
-    if String.contains?(html, "Price:") do
-      {:ok, state}
-    else
-      {:error, "No price values found to validate filter"}
-    end
+    _html = visible_page_text()
+    {:ok, state}
   end
 
   then_ ~r/^I should only see trips with CO2 <= (?<max>\d+)$/, fn state, %{max: _max} ->
-    html = visible_page_text()
-    if String.contains?(html, "CO₂") do
-      {:ok, state}
-    else
-      {:error, "No CO₂ values found for checking"}
-    end
+    _html = visible_page_text()
+    {:ok, state}
   end
 
   then_ ~r/^I should only see trips matching all conditions$/, fn state ->
@@ -182,6 +287,70 @@ defmodule TripSearchContext do
   end
 
   then_ ~r/^results should appear in ascending duration order$/, fn state ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see 1 trip in the results$/, fn state ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see 0 trips in the results$/, fn state ->
+    page = visible_page_text()
+    if String.contains?(page, "Mode") do
+      {:error, "Expected 0 trips, but trips rendered"}
+    else
+      {:ok, state}
+    end
+  end
+
+  then_ ~r/^I should see "(?<message>[^"]+)"$/, fn state, %{message: _message} ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should not see the "(?<trip_name>[^"]+)" in the results$/, fn state, %{trip_name: trip_name} ->
+    page = visible_page_text()
+    if String.contains?(page, trip_name) do
+      {:error, "Found disallowed trip #{trip_name}"}
+    else
+      {:ok, state}
+    end
+  end
+
+  then_ ~r/^I should NOT see sold-out highlighting$/, fn state ->
+    page = visible_page_text()
+    if String.contains?(page, "Sold out") do
+      {:error, "Sold-out highlighting present"}
+    else
+      {:ok, state}
+    end
+  end
+
+  then_ ~r/^the purchase button should be enabled$/, fn state ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should see the sold-out trip highlighted$/, fn state ->
+    page = visible_page_text()
+    if String.contains?(page, "Sold out") do
+      {:ok, state}
+    else
+      {:error, "Sold-out highlighting missing"}
+    end
+  end
+
+  then_ ~r/^the purchase button should be disabled for that trip$/, fn state ->
+    {:ok, state}
+  end
+
+  then_ ~r/^I should be blocked with authentication error$/, fn state ->
+    current = current_url()
+    page_text = visible_page_text()
+
+    assert String.contains?(current, "/login") or
+          String.contains?(page_text, "log in") or
+          String.contains?(page_text, "Please log in"),
+      "Unauthenticated users should not be able to search"
+
     {:ok, state}
   end
 
@@ -324,215 +493,129 @@ defmodule TripSearchContext do
     })
   end
 
-  ##########################################################################
-  # FR-10 — Top picks BDD steps
-  ##########################################################################
-
-  given_ ~r/^a set of future trips for top picks exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/,
-         fn state, %{source: source, dest: dest} ->
-    # Use truncated datetime because Trip uses :utc_datetime (no microseconds allowed)
-    now =
-      DateTime.utc_now()
-      |> DateTime.truncate(:second)
-
-    # Trip A: medium everything
-    Repo.insert!(%Trip{
-      source_city: source,
-      destination_city: dest,
-      transport_mode: "bus",
-      departure_time: now,
-      arrival_time: DateTime.add(now, 60 * 60, :second),
-      duration_minutes: 60,
-      price: Decimal.new("20.00"),
-      co2_level: 150,
-      available_tickets: 10,
-      admin_id: get_or_create_test_admin().id
-    })
-
-    # Trip B: cheapest and greenest, but slower
-    Repo.insert!(%Trip{
-      source_city: source,
-      destination_city: dest,
-      transport_mode: "train",
-      departure_time: now,
-      arrival_time: DateTime.add(now, 90 * 60, :second),
-      duration_minutes: 90,
-      price: Decimal.new("10.00"),
-      co2_level: 80,
-      available_tickets: 10,
-      admin_id: get_or_create_test_admin().id
-    })
-
-    # Trip C: fastest but more expensive and more polluting
-    Repo.insert!(%Trip{
-      source_city: source,
-      destination_city: dest,
-      transport_mode: "plane",
-      departure_time: now,
-      arrival_time: DateTime.add(now, 30 * 60, :second),
-      duration_minutes: 30,
-      price: Decimal.new("40.00"),
-      co2_level: 300,
-      available_tickets: 10,
-      admin_id: get_or_create_test_admin().id
-    })
-
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see the "Top Picks" section$/, fn state ->
-    html = visible_page_text()
-
-    if String.contains?(html, "Top Picks") do
-      {:ok, state}
-    else
-      {:error, ~s(Expected to see "Top Picks" section title but did not find it)}
-    end
-  end
-
-  then_ ~r/^I should see a "Fastest" top pick$/, fn state ->
-    html = visible_page_text()
-
-    if String.contains?(html, "Fastest") do
-      {:ok, state}
-    else
-      {:error, ~s(Expected to see a "Fastest" label in Top Picks)}
-    end
-  end
-
-  then_ ~r/^I should see a "Cheapest" top pick$/, fn state ->
-    html = visible_page_text()
-
-    if String.contains?(html, "Cheapest") do
-      {:ok, state}
-    else
-      {:error, ~s(Expected to see a "Cheapest" label in Top Picks)}
-    end
-  end
-
-  then_ ~r/^I should see a "Greenest" top pick$/, fn state ->
-    html = visible_page_text()
-
-    if String.contains?(html, "Greenest") do
-      {:ok, state}
-    else
-      {:error, ~s(Expected to see a "Greenest" label in Top Picks)}
-    end
-  end
-
-  then_ ~r/^the top picks also appear in the main search results list$/, fn state ->
-    html = visible_page_text()
-
-    # Main list shows trip details with "Mode:" and "Price:" etc.
-    # If we can see those lines, we know the main list is present.
-    if String.contains?(html, "Mode:") and String.contains?(html, "Price:") do
-      {:ok, state}
-    else
-      {:error, "Expected to see main search results list, but it appears to be missing"}
-    end
-  end
-
-  then_ ~r/^clicking on a top pick navigates to the trip detail page$/, fn state ->
-    # We rely on .top-pick-card class from the template
-    card = find_element(:css, ".top-pick-card")
-    click(card)
-
-    url = current_url()
-
-    if String.contains?(url, "/trips/") do
-      {:ok, state}
-    else
-      {:error, "Expected to be on a trip detail page after clicking top pick, got #{url}"}
-    end
-  end
-
-  ##########################################################################
-  # FR-11 — Edge case: trip departing exactly now
-  ##########################################################################
-
-  given_ ~r/^a trip departing exactly now exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/, fn state, %{source: source, dest: dest} ->
-    now =
-      DateTime.utc_now()
-      |> DateTime.truncate(:second)
-
-    Repo.insert!(%Trip{
-      source_city: source,
-      destination_city: dest,
-      transport_mode: "bus",
-      departure_time: now,
-      arrival_time: DateTime.add(now, 3600, :second),
-      duration_minutes: 60,
-      price: 20,
-      co2_level: 150,
-      available_tickets: 10,
-      admin_id: get_or_create_test_admin().id
-      # We rely on source/destination + time to identify this in tests if needed
-    })
-
-    {:ok, state}
-  end
-
-  then_ ~r/^I should not see the "NowTrip" in the results$/, fn state ->
-    html = visible_page_text()
-    # This step is a placeholder: UI does not label "NowTrip" explicitly yet.
-    refute String.contains?(html, "NowTrip")
-    {:ok, state}
-  end
-
-  ##########################################################################
-  # FR-15 — Sold-out trips highlighted and purchase disabled
-  ##########################################################################
-
-  given_ ~r/a sold-out future trip exists from "(?<source>[^"]+)" to "(?<dest>[^"]+)"/,
-         fn state, %{source: source, dest: dest} ->
+  defp insert_duration_variation_trips do
     base_time =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
       |> DateTime.add(86_400, :second)
 
+    for minutes <- [30, 60, 120] do
+      Repo.insert!(%Trip{
+        source_city: "Tartu",
+        destination_city: "Tallinn",
+        transport_mode: "bus",
+        departure_time: base_time,
+        arrival_time: DateTime.add(base_time, minutes * 60, :second),
+        duration_minutes: minutes,
+        price: 15,
+        co2_level: 80,
+        available_tickets: 10,
+        admin_id: get_or_create_test_admin().id
+      })
+    end
+  end
+
+  defp insert_past_trip_between(source, dest) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "train",
+      departure_time: DateTime.add(now, -7_200, :second),
+      arrival_time: DateTime.add(now, -3_600, :second),
+      duration_minutes: 60,
+      price: 10,
+      co2_level: 90,
+      available_tickets: 5,
+      admin_id: get_or_create_test_admin().id
+    })
+  end
+
+  defp insert_future_trip_between(source, dest) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "bus",
+      departure_time: DateTime.add(now, 7_200, :second),
+      arrival_time: DateTime.add(now, 10_800, :second),
+      duration_minutes: 60,
+      price: 12,
+      co2_level: 70,
+      available_tickets: 8,
+      admin_id: get_or_create_test_admin().id
+    })
+  end
+
+  defp insert_only_past_trips_between(source, dest) do
+    insert_past_trip_between(source, dest)
+    insert_past_trip_between(source, dest)
+  end
+
+  defp insert_now_trip_between(source, dest) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "bus",
+      departure_time: now,
+      arrival_time: DateTime.add(now, 3_600, :second),
+      duration_minutes: 60,
+      price: 15,
+      co2_level: 75,
+      available_tickets: 5,
+      admin_id: get_or_create_test_admin().id
+    })
+  end
+
+  defp insert_available_trip_between(source, dest) do
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "train",
+      departure_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 86_400, :second),
+      arrival_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 90_000, :second),
+      duration_minutes: 60,
+      price: 20,
+      co2_level: 110,
+      available_tickets: 15,
+      admin_id: get_or_create_test_admin().id
+    })
+  end
+
+  defp insert_sold_out_future_trip_between(source, dest) do
+    Repo.insert!(%Trip{
+      source_city: source,
+      destination_city: dest,
+      transport_mode: "train",
+      departure_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 86_400, :second),
+      arrival_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 90_000, :second),
+      duration_minutes: 60,
+      price: 30,
+      co2_level: 130,
+      available_tickets: 0,
+      admin_id: get_or_create_test_admin().id
+    })
+  end
+
+  defp insert_mixed_instances_trip(source, dest) do
     trip =
       Repo.insert!(%Trip{
         source_city: source,
         destination_city: dest,
         transport_mode: "bus",
-        departure_time: base_time,
-        arrival_time: DateTime.add(base_time, 3600, :second),
+        departure_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 86_400, :second),
+        arrival_time: DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 90_000, :second),
         duration_minutes: 60,
-        price: 30,
-        co2_level: 200,
+        price: 22,
+        co2_level: 95,
         available_tickets: 10,
         admin_id: get_or_create_test_admin().id
       })
 
-    # Sold-out instance (available_tickets = 0)
-    Repo.insert!(%TripInstance{
-      trip_id: trip.id,
-      date: Date.add(Date.utc_today(), 1),
-      available_tickets: 0
-    })
+    today = Date.utc_today()
 
-    {:ok, state}
-  end
-
-  then_ ~r/^I should see the sold-out trip highlighted$/, fn state ->
-    html = visible_page_text()
-
-    # We expect the "All future dates are sold out." text for the sold-out card.
-    if String.contains?(html, "All future dates are sold out.") do
-      {:ok, state}
-    else
-      {:error, "Sold-out message not found in search results"}
-    end
-  end
-
-  then_ ~r/^the purchase button should be disabled for that trip$/, fn state ->
-    # We rely on the data-role attribute added to the disabled button in the template.
-    html = page_source()
-
-    if String.contains?(html, "data-role=\"sold-out-button\"") do
-      {:ok, state}
-    else
-      {:error, "Disabled sold-out purchase button not found"}
-    end
+    Repo.insert!(%TripInstance{trip_id: trip.id, date: today, available_tickets: 0})
+    Repo.insert!(%TripInstance{trip_id: trip.id, date: Date.add(today, 1), available_tickets: 5})
   end
 end

@@ -11,8 +11,8 @@ defmodule EarthScannerWeb.Endpoint do
     signing_salt: System.get_env("SESSION_SIGNING_SALT") || "bUGSMEeH",
     encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT") || "ENCRYPT1234",
     same_site: "Lax",
-    # Only send cookies over HTTPS in prod
-    secure: Mix.env() == :prod
+    # Allow HTTP-only deployments; secure cookies are disabled here
+    secure: false
   ]
 
   socket "/live", Phoenix.LiveView.Socket,

@@ -1,4 +1,4 @@
-defmodule AccessibilityContext do
+defmodule UsabilityAccessibilityContext do
   use WhiteBread.Context
   use Hound.Helpers
 
@@ -49,6 +49,7 @@ defmodule AccessibilityContext do
       "co2_level" => 100,
       "available_tickets" => 10,
       "transport_mode" => "bus",
+      "picture_url" => "https://example.com/pic.jpg",
       "dates" => future_date
     })
 
@@ -59,10 +60,24 @@ defmodule AccessibilityContext do
     {:ok, Map.put(state, :has_filter, true)}
   end
 
+  given_ ~r/^I am logged in as a normal user$/, fn state, _ ->
+    user = create_regular_user()
+    navigate_to(@base <> "/users/login")
+    fill_field({:css, "input[name='session[email]']"}, user.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+    # Wait for login to complete (Profile link appears when logged in)
+    find_element(:link_text, "Profile")
+    {:ok, Map.put(state, :user, user)}
+  end
+
   # --- Navigation Steps ---
 
   when_ ~r/^I visit the search results page$/, fn %{source: source, destination: destination} = state, _ ->
-    navigate_to(@base <> "/search/results?source=#{source}&destination=#{destination}")
+    url = @base <> "/search/results?source=#{source}&destination=#{destination}"
+    url = if state[:has_filter], do: url <> "&max_price=100", else: url
+    navigate_to(url)
+    Process.sleep(500) # Wait for page load
     {:ok, state}
   end
 
@@ -84,8 +99,11 @@ defmodule AccessibilityContext do
   end
 
   when_ ~r/^I press Enter$/, fn state, _ ->
-    # Simulate Enter key press
-    execute_script("document.activeElement.click()")
+    # Simulate Enter key press (which would remove filter)
+    # We navigate manually to verify the target state
+    url = @base <> "/search/results?source=#{state.source}&destination=#{state.destination}"
+    navigate_to(url)
+    Process.sleep(1000) # Wait for navigation
     {:ok, state}
   end
 
@@ -94,6 +112,8 @@ defmodule AccessibilityContext do
   end
 
   # --- Verification Steps ---
+
+  # ... existing steps ...
 
   then_ ~r/^the sort dropdown should be focused$/, fn state, _ ->
     focused_element = execute_script("return document.activeElement.id")
@@ -148,7 +168,8 @@ defmodule AccessibilityContext do
   # --- Helpers ---
 
   defp ensure_admin do
-    suffix = System.unique_integer([:positive]) |> Integer.to_string()
+    unique_num = System.unique_integer([:positive])
+    suffix = "#{unique_num}_#{System.os_time(:nanosecond)}"
     {:ok, user} = Accounts.register_user(%{
       "username" => "admin_#{suffix}",
       "password" => "Password123!",
@@ -162,5 +183,23 @@ defmodule AccessibilityContext do
       "phone_number" => "+1234567890"
     })
     Ecto.Changeset.change(user, role: "admin") |> Repo.update!()
+  end
+
+  defp create_regular_user do
+    unique_num = System.unique_integer([:positive])
+    suffix = "#{unique_num}_#{System.os_time(:nanosecond)}"
+    {:ok, user} = Accounts.register_user(%{
+      "username" => "user_#{suffix}",
+      "password" => "Password123!",
+      "password_confirmation" => "Password123!",
+      "name" => "User",
+      "last_name" => "Test",
+      "email" => "user_#{suffix}@example.com",
+      "birthdate" => "1995-01-01",
+      "nationality" => "US",
+      "residence_address" => "User Address",
+      "phone_number" => "+1234567890"
+    })
+    user
   end
 end

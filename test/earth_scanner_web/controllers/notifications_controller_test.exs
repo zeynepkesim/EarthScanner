@@ -22,6 +22,7 @@ defmodule EarthScannerWeb.NotificationsControllerTest do
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
 
     attrs = %{
+      "picture_url" => "https://via.placeholder.com/150",
       "transport_mode" => "plane",
       "source_city" => "Tallinn",
       "destination_city" => "Paris",
@@ -54,6 +55,7 @@ defmodule EarthScannerWeb.NotificationsControllerTest do
     arrival_dt = DateTime.add(departure_dt, 2 * 3600, :second)
 
     attrs = %{
+      "picture_url" => "https://via.placeholder.com/150",
       "transport_mode" => "plane",
       "source_city" => "Madrid",
       "destination_city" => "Rome",

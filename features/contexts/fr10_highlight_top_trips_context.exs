@@ -1,4 +1,7 @@
-defmodule TopTripsContext do
+# FR-10: Highlight Top Trips BDD Context
+# Tests for displaying fastest, cheapest, and greenest trips in search results
+
+defmodule HighlightTopTripsContext do
   use WhiteBread.Context
   use Hound.Helpers
 
@@ -10,6 +13,7 @@ defmodule TopTripsContext do
 
   scenario_starting_state fn _ ->
     Hound.start_session()
+
     %{}
   end
 
@@ -22,13 +26,36 @@ defmodule TopTripsContext do
   # GIVEN STEPS
   ##########################################################################
 
+  given_ ~r/^I am logged in as a regular user$/, fn state ->
+    # Create and login as a regular user (not admin) for search access
+    user = ensure_regular_user()
+
+    # Navigate to login page and login
+    navigate_to(@base <> "/users/login")
+    Process.sleep(500)
+
+    fill_field({:css, "input[name='session[email]']"}, user.email)
+    fill_field({:css, "input[name='session[password]']"}, "Password123!")
+    submit_element({:id, "login-form"})
+    Process.sleep(1000)
+
+    {:ok, Map.put(state, :current_user, user)}
+  end
+
+  given_ ~r/^the database is clean for this test$/, fn state ->
+    # Clean up trips from previous scenarios to ensure clean slate
+    # This runs AFTER login, so user session is preserved
+    Repo.delete_all(EarthScanner.Trips.Trip)
+    {:ok, state}
+  end
+
   given_ ~r/^a set of future trips for top picks exists between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/,
          fn state, %{source: source, dest: dest} ->
     admin = ensure_admin_user()
     future_date = Date.utc_today() |> Date.add(7)
 
     # Trip A: medium everything
-    Trips.create_trip(admin, %{
+    {:ok, trip1} = Trips.create_trip(admin, %{
       "source_city" => source,
       "destination_city" => dest,
       "departure_time" => DateTime.new!(future_date, ~T[10:00:00]),
@@ -37,11 +64,12 @@ defmodule TopTripsContext do
       "available_tickets" => 10,
       "co2_level" => 150,
       "transport_mode" => "bus",
+      "picture_url" => "https://via.placeholder.com/150",
       "dates" => Date.to_iso8601(future_date)
     })
 
-    # Trip B: cheapest and greenest
-    Trips.create_trip(admin, %{
+    # Trip B: cheapest and greenest, but slower
+    {:ok, trip2} = Trips.create_trip(admin, %{
       "source_city" => source,
       "destination_city" => dest,
       "departure_time" => DateTime.new!(future_date, ~T[11:00:00]),
@@ -50,11 +78,12 @@ defmodule TopTripsContext do
       "available_tickets" => 10,
       "co2_level" => 80,
       "transport_mode" => "train",
+      "picture_url" => "https://via.placeholder.com/150",
       "dates" => Date.to_iso8601(future_date)
     })
 
     # Trip C: fastest
-    Trips.create_trip(admin, %{
+    {:ok, trip3} = Trips.create_trip(admin, %{
       "source_city" => source,
       "destination_city" => dest,
       "departure_time" => DateTime.new!(future_date, ~T[09:00:00]),
@@ -63,6 +92,7 @@ defmodule TopTripsContext do
       "available_tickets" => 10,
       "co2_level" => 300,
       "transport_mode" => "plane",
+      "picture_url" => "https://via.placeholder.com/150",
       "dates" => Date.to_iso8601(future_date)
     })
 
@@ -78,18 +108,19 @@ defmodule TopTripsContext do
   given_ ~r/^only past trips exist between "(?<source>[^"]+)" and "(?<dest>[^"]+)"$/,
          fn state, %{source: source, dest: dest} ->
     admin = ensure_admin_user()
-    past_date = Date.utc_today() |> Date.add(-7)
+    yesterday = DateTime.utc_now() |> DateTime.add(-86_400, :second) |> DateTime.truncate(:second)
 
     Trips.create_trip(admin, %{
       "source_city" => source,
       "destination_city" => dest,
-      "departure_time" => DateTime.new!(past_date, ~T[10:00:00]),
-      "arrival_time" => DateTime.new!(past_date, ~T[11:00:00]),
+      "departure_time" => yesterday,
+      "arrival_time" => DateTime.add(yesterday, 3600, :second),
       "price" => "20.00",
       "available_tickets" => 10,
       "co2_level" => 150,
       "transport_mode" => "bus",
-      "dates" => Date.to_iso8601(past_date)
+      "picture_url" => "https://via.placeholder.com/150",
+      "dates" => Date.to_iso8601(Date.utc_today() |> Date.add(-1))
     })
 
     {:ok, state}
@@ -109,6 +140,7 @@ defmodule TopTripsContext do
       "available_tickets" => 10,
       "co2_level" => 100,
       "transport_mode" => "bus",
+      "picture_url" => "https://via.placeholder.com/150",
       "dates" => Date.to_iso8601(future_date)
     })
 
@@ -236,6 +268,31 @@ defmodule TopTripsContext do
   ##########################################################################
   # HELPER FUNCTIONS
   ##########################################################################
+
+  defp ensure_regular_user do
+    email = "bdd_fr10_regular_user@example.com"
+    password = "Password123!"
+
+    case Accounts.get_user_by_email(email) do
+      nil ->
+        {:ok, user} = Accounts.register_user(%{
+          "username" => "fr10_regular",
+          "password" => password,
+          "password_confirmation" => password,
+          "name" => "FR10",
+          "last_name" => "Regular",
+          "email" => email,
+          "birthdate" => "1995-01-01",
+          "nationality" => "EE",
+          "residence_address" => "User Street 1",
+          "phone_number" => "+37250000000"
+        })
+        user
+
+      user ->
+        user
+    end
+  end
 
   defp ensure_admin_user do
     suffix = :erlang.unique_integer([:positive]) |> Integer.to_string()

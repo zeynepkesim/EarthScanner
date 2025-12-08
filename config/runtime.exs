@@ -52,11 +52,19 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
+  scheme = System.get_env("URL_SCHEME") || "https"
+
+  url_port =
+    System.get_env("URL_PORT") ||
+      case scheme do
+        "http" -> "80"
+        _ -> "443"
+      end
 
   config :earth_scanner, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :earth_scanner, EarthScannerWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: host, port: String.to_integer(url_port), scheme: scheme],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -116,4 +124,21 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Req
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  # Allow disabling email delivery at runtime by setting DISABLE_EMAILS=true.
+  # When disabled, we set the Swoosh adapter to Local so outgoing emails are
+  # captured in-memory and never sent to external SMTP/APIs. This is useful
+  # for deployments where email should be suppressed (staging, temporary
+  # maintenance, etc.). To enable sending again, unset DISABLE_EMAILS or set
+  # it to "false".
+  disable_emails = System.get_env("DISABLE_EMAILS") in ["1", "true", "yes"]
+
+  if disable_emails do
+    # In prod, fall back to non-sending adapter to avoid crashes when email infra is unavailable.
+    config :earth_scanner, EarthScanner.Mailer, adapter: Swoosh.Adapters.Test
+    # Re-enable local storage for the Test adapter so deliveries no-op cleanly.
+    config :swoosh, local: true
+    # Avoid requiring an API client for the Test adapter.
+    config :swoosh, :api_client, false
+  end
 end

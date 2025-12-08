@@ -1,12 +1,15 @@
-defmodule EarthScanner.Trips.Fr10TopTripsTest do
+# FR-10: Highlight Top Trips TDD Tests
+# Tests for compute_top_trips/1 function with comprehensive coverage
+
+defmodule EarthScanner.Trips.HighlightTopTripsTest do
   use EarthScanner.DataCase, async: true
-  @moduletag :skip
 
   alias EarthScanner.Repo
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
   alias TripTestHelper
 
+  # FR-10: Positive Scenario - Basic top trips selection
   test "compute_top_trips/1 returns fastest, cheapest and greenest trips with deterministic tie-breaking" do
     admin = TripTestHelper.admin_fixture()
 
@@ -57,11 +60,13 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
 
     top_trips = Trips.compute_top_trips([trip1, trip2, trip3])
 
+    # FR-10: Verify correct trip selection
     assert top_trips.fastest.id == trip2.id
     assert top_trips.cheapest.id == trip3.id
     assert top_trips.greenest.id == trip3.id
   end
 
+  # FR-10: Negative Scenario - Empty list
   test "compute_top_trips/1 returns nil when no trips are provided" do
     top_trips = Trips.compute_top_trips([])
 
@@ -70,6 +75,7 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
     assert top_trips.greenest == nil
   end
 
+  # FR-10: Edge Case - Single trip in all categories
   test "compute_top_trips/1 returns same trip for all categories when only one trip exists" do
     admin = TripTestHelper.admin_fixture()
 
@@ -89,11 +95,13 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
 
     top_trips = Trips.compute_top_trips([trip])
 
+    # FR-10: Same trip should appear in all three categories
     assert top_trips.fastest.id == trip.id
     assert top_trips.cheapest.id == trip.id
     assert top_trips.greenest.id == trip.id
   end
 
+  # FR-10: Positive Scenario - Multiple trips with distinct winners
   test "compute_top_trips/1 handles multiple trips correctly" do
     admin = TripTestHelper.admin_fixture()
 
@@ -155,14 +163,15 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
 
     top_trips = Trips.compute_top_trips([trip1, trip2, trip3, trip4])
 
-    # Trip3 is fastest (90 min)
+    # FR-10: Trip3 is fastest (90 min)
     assert top_trips.fastest.id == trip3.id
-    # Trip2 is cheapest (15.0)
+    # FR-10: Trip2 is cheapest (15.0)
     assert top_trips.cheapest.id == trip2.id
-    # Trip4 is greenest (80 CO2)
+    # FR-10: Trip4 is greenest (80 CO2)
     assert top_trips.greenest.id == trip4.id
   end
 
+  # FR-10: Edge Case - Tie-breaking (price → duration → id)
   test "compute_top_trips/1 handles tie-breaking deterministically" do
     admin = TripTestHelper.admin_fixture()
 
@@ -197,14 +206,15 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
 
     top_trips = Trips.compute_top_trips([trip1, trip2])
 
-    # Both have same duration, should pick deterministically (first by ID)
+    # FR-10: Both have same duration, should pick deterministically (first by ID)
     assert top_trips.fastest.id in [trip1.id, trip2.id]
-    # Trip2 is cheapest
+    # FR-10: Trip2 is cheapest
     assert top_trips.cheapest.id == trip2.id
-    # Trip2 is greenest
+    # FR-10: Trip2 is greenest
     assert top_trips.greenest.id == trip2.id
   end
 
+  # FR-10: Edge Case - Same trip wins all categories
   test "compute_top_trips/1 allows same trip in multiple categories" do
     admin = TripTestHelper.admin_fixture()
 
@@ -240,7 +250,7 @@ defmodule EarthScanner.Trips.Fr10TopTripsTest do
 
     top_trips = Trips.compute_top_trips([super_trip, other_trip])
 
-    # Super trip should be in all three categories
+    # FR-10: Super trip should be in all three categories
     assert top_trips.fastest.id == super_trip.id
     assert top_trips.cheapest.id == super_trip.id
     assert top_trips.greenest.id == super_trip.id

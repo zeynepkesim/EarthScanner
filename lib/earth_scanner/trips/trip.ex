@@ -5,6 +5,7 @@ defmodule EarthScanner.Trips.Trip do
   alias EarthScanner.Accounts.User
   alias EarthScanner.Trips.TripInstance
 
+  # FR-29: Trip schema with all required fields
   schema "trips" do
     field :picture_url, :string
     field :transport_mode, :string
@@ -12,15 +13,17 @@ defmodule EarthScanner.Trips.Trip do
     field :destination_city, :string
     field :departure_time, :utc_datetime
     field :arrival_time, :utc_datetime
+    # FR-29: Auto-computed
     field :duration_minutes, :integer
     field :price, :decimal
     field :co2_level, :integer
-    field :available_tickets, :integer
 
-    # 👉 NEW FIELD
     field :recommended_price, :decimal
 
+    field :available_tickets, :integer
+
     belongs_to :admin, User, foreign_key: :admin_id
+    # FR-36: Recurring trip instances
     has_many :instances, TripInstance
     has_many :purchases, through: [:instances, :purchases]
 
@@ -37,13 +40,14 @@ defmodule EarthScanner.Trips.Trip do
     co2_level
     available_tickets
     admin_id
+    picture_url
   )a
 
   @optional_fields ~w(
-    picture_url
     recommended_price
   )a
 
+  # FR-29: Trip changeset with validations
   def changeset(trip, attrs) do
     trip
     |> cast(attrs, @required_fields ++ @optional_fields)
@@ -52,13 +56,15 @@ defmodule EarthScanner.Trips.Trip do
     |> validate_number(:available_tickets, greater_than: 0)
     |> validate_number(:price, greater_than: 0)
     |> validate_number(:co2_level, greater_than_or_equal_to: 0)
+    # FR-29: Auto-compute duration
     |> compute_duration()
     |> compute_recommended_price()
+    # FR-29: Validate times
     |> validate_arrival_after_departure()
   end
 
   # --------------------------------------------------------
-  # 1) Automatically compute duration
+  # FR-29: Automatically compute trip duration in minutes
   # --------------------------------------------------------
   defp compute_duration(changeset) do
     dep = get_field(changeset, :departure_time)
@@ -79,6 +85,7 @@ defmodule EarthScanner.Trips.Trip do
 
   # --------------------------------------------------------
   # 2) Automatically compute recommended price
+  # Based on transport mode and CO2 level
   # --------------------------------------------------------
   defp compute_recommended_price(changeset) do
     mode = get_field(changeset, :transport_mode)
@@ -90,6 +97,8 @@ defmodule EarthScanner.Trips.Trip do
           "plane" -> 0.15
           "train" -> 0.05
           "bus" -> 0.07
+          # Invalid transport modes will be caught by validation
+          _ -> 0.0
         end
 
       recommended =
@@ -104,7 +113,7 @@ defmodule EarthScanner.Trips.Trip do
   end
 
   # --------------------------------------------------------
-  # 3) Validate arrival > departure
+  # FR-29: Validate arrival time is after departure time
   # --------------------------------------------------------
   defp validate_arrival_after_departure(changeset) do
     dep = get_field(changeset, :departure_time)

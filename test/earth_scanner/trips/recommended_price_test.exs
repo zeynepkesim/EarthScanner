@@ -1,7 +1,6 @@
 # FR-34: Recommended Price
 defmodule EarthScanner.Trips.RecommendedPriceTest do
   use EarthScanner.DataCase, async: true
-  @moduletag :skip
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
 
@@ -11,6 +10,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "plane",
         "source_city" => "Tallinn",
         "destination_city" => "Paris",
@@ -31,6 +31,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "train",
         "source_city" => "Tallinn",
         "destination_city" => "Riga",
@@ -51,6 +52,7 @@ defmodule EarthScanner.Trips.RecommendedPriceTest do
       admin = insert_admin()
 
       attrs = %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "bus",
         "source_city" => "Berlin",
         "destination_city" => "Prague",

@@ -39,3 +39,14 @@ Feature: FR-20 Search trips for regular users
     When I submit correct login credentials
     And I search for trips from "" to "Tallinn"
     Then I should be redirected back to the search page
+  
+  Scenario: Admin user cannot see or use regular user search box
+    Given I am logged in as an admin
+    When I visit the homepage
+    Then I should not see the search box on the homepage
+    And I should not be able to access search results
+
+  Scenario: Search with special characters is handled safely
+    Given I am logged in as a regular user
+    When I search for trips with special characters in source
+    Then the search should handle it gracefully without errors

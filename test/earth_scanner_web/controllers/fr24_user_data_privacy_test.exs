@@ -45,6 +45,7 @@ defmodule EarthScannerWeb.FR24UserDataPrivacyTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "source_city" => "Tartu",
         "destination_city" => "Tallinn",
         "transport_mode" => "bus",

@@ -11,6 +11,7 @@ defmodule EarthScannerWeb.TripsControllerTest do
 
     {:ok, trip} =
       Trips.create_trip(admin, %{
+        "picture_url" => "https://via.placeholder.com/150",
         "transport_mode" => "bus",
         "source_city" => "Tallinn",
         "destination_city" => "Vilnius",

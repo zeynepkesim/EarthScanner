@@ -1,6 +1,5 @@
 defmodule EarthScanner.Trips.FR07SearchByRouteTest do
   use EarthScanner.DataCase
-  @moduletag :skip
 
   alias EarthScanner.Trips
   alias EarthScanner.Trips.Trip
@@ -11,12 +10,15 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
 
   describe "search_future_trips/3 - FR-07: Search by Route (Basic)" do
     setup do
+      Repo.delete_all(Trip)
+      Repo.delete_all(EarthScanner.Accounts.User)
       admin = create_admin_user()
       now = DateTime.utc_now()
 
       # Create past trip (should NOT appear in results)
       {:ok, past_trip} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -31,6 +33,7 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
       # Create future trips for Tallinn -> Tartu
       {:ok, future_trip_1} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -44,6 +47,7 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
 
       {:ok, future_trip_2} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "train",
           "source_city" => "Tallinn",
           "destination_city" => "Tartu",
@@ -58,6 +62,7 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
       # Create different route
       {:ok, different_route} =
         Trips.create_trip(admin, %{
+          "picture_url" => "https://via.placeholder.com/150",
           "transport_mode" => "bus",
           "source_city" => "Tartu",
           "destination_city" => "Pärnu",
@@ -150,6 +155,7 @@ defmodule EarthScanner.Trips.FR07SearchByRouteTest do
         for i <- 1..12 do
           {:ok, trip} =
             Trips.create_trip(admin, %{
+              "picture_url" => "https://via.placeholder.com/150",
               "transport_mode" => "bus",
               "source_city" => "Tallinn",
               "destination_city" => "Tartu",

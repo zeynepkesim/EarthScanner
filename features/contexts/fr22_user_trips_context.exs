@@ -157,6 +157,7 @@ defmodule FR22UserTripsContext do
         "price" => "75.00",
         "co2_level" => "90",
         "available_tickets" => "5",
+        "picture_url" => "https://pics.example.com/fr22.jpg",
         "dates" => Date.to_iso8601(date)
       }
     end
